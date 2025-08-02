@@ -1,7 +1,10 @@
+use std::fs::{read, read_dir, read_to_string};
+
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
-const SCREEN_WIDTH: u32 = 150;
-const SCREEN_HEIGHT: u32 = 200;
+const SCREEN_WIDTH: usize = 192;
+const SCREEN_HEIGHT: usize = 144;
+const SPRITE_SIZE: usize = 8;
 
 struct Spritesheet {
     texture: Texture2D,
@@ -24,7 +27,7 @@ impl Spritesheet {
         let y = id / (self.height / SPRITE_SIZE);
         (x, y)
     }
-    fn draw_tile(&self, scale_factor: u32, x: usize, y: usize, id: usize, rotation: f32) {
+    fn draw_tile(&self, scale_factor: usize, x: usize, y: usize, id: usize, rotation: f32) {
         let (texture_x, texture_y) = self.id_to_pos(id);
         let size = SPRITE_SIZE as f32 * scale_factor as f32;
         let params = DrawTextureParams {
@@ -48,9 +51,50 @@ impl Spritesheet {
             params,
         );
     }
+    fn draw_map(&self, scale_factor: usize, map: &Map) {
+        for y in 0..SCREEN_HEIGHT / SPRITE_SIZE {
+            for x in 0..SCREEN_WIDTH / SPRITE_SIZE {
+                let tile = map.data[y][x].checked_sub(1);
+                if let Some(tile) = tile {
+                    self.draw_tile(scale_factor, x * SPRITE_SIZE, y * SPRITE_SIZE, tile, 0.0);
+                }
+            }
+        }
+    }
 }
 
-const SPRITE_SIZE: usize = 8;
+struct Map {
+    data: [[usize; SCREEN_WIDTH / SPRITE_SIZE]; SCREEN_HEIGHT / SPRITE_SIZE],
+    points: Vec<(usize, usize)>,
+}
+
+fn load_maps() -> Vec<Map> {
+    let mut maps = Vec::new();
+    for item in read_dir("tiled/maps")
+        .expect("tiled/maps is missing!!")
+        .flatten()
+    {
+        let data = read_to_string(item.path()).expect("failed to read map data :(");
+        let data = data
+            .split_once("<data encoding=\"csv\">")
+            .expect("bad map data")
+            .1
+            .split_once("</data>")
+            .expect("bad map data")
+            .0;
+        let mut split = data.split(',');
+        let data = std::array::from_fn(|_| {
+            std::array::from_fn(|_| split.next().unwrap().trim().parse().unwrap())
+        });
+        let map = Map {
+            data: data,
+            points: Vec::new(),
+        };
+        maps.push(map);
+    }
+
+    maps
+}
 
 #[macroquad::main("sludge")]
 async fn main() {
@@ -60,24 +104,15 @@ async fn main() {
             .await
             .expect("spritesheet.png is missing!!"),
     );
+    let maps = load_maps();
+
     loop {
         // update scale factor
         let (screen_width, screen_height) = screen_size();
         scale_factor =
-            (screen_width as u32 / SCREEN_WIDTH).min(screen_height as u32 / SCREEN_HEIGHT);
+            (screen_width as usize / SCREEN_WIDTH).min(screen_height as usize / SCREEN_HEIGHT);
         clear_background(BLACK);
-
-        for y in 0..32 {
-            for x in 0..32 {
-                spritesheet.draw_tile(
-                    scale_factor,
-                    x * SPRITE_SIZE,
-                    y * SPRITE_SIZE,
-                    x + y * 32,
-                    0.0,
-                );
-            }
-        }
+        spritesheet.draw_map(scale_factor, &maps[0]);
 
         next_frame().await;
     }
