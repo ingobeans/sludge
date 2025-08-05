@@ -1,4 +1,4 @@
-use std::fs::{read, read_dir, read_to_string};
+use std::fs::{read_dir, read_to_string};
 
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
@@ -68,6 +68,16 @@ struct Map {
     points: Vec<(usize, usize)>,
 }
 
+fn parse_xml_to_map(
+    xml: &str,
+) -> [[usize; SCREEN_WIDTH / SPRITE_SIZE]; SCREEN_HEIGHT / SPRITE_SIZE] {
+    let mut split = xml.split(',');
+    let data = std::array::from_fn(|_| {
+        std::array::from_fn(|_| split.next().unwrap().trim().parse().unwrap())
+    });
+    data
+}
+
 fn load_maps() -> Vec<Map> {
     let mut maps = Vec::new();
     for item in read_dir("tiled/maps")
@@ -82,10 +92,7 @@ fn load_maps() -> Vec<Map> {
             .split_once("</data>")
             .expect("bad map data")
             .0;
-        let mut split = data.split(',');
-        let data = std::array::from_fn(|_| {
-            std::array::from_fn(|_| split.next().unwrap().trim().parse().unwrap())
-        });
+        let data = parse_xml_to_map(data);
         let map = Map {
             data: data,
             points: Vec::new(),
