@@ -24,9 +24,9 @@ impl Spritesheet {
         let y = id / (self.height / SPRITE_SIZE);
         (x, y)
     }
-    pub fn draw_tile(&self, scale_factor: usize, x: usize, y: usize, id: usize, flipped: bool) {
+    pub fn draw_tile(&self, x: usize, y: usize, id: usize, flipped: bool, rotation: f32) {
         let (texture_x, texture_y) = self.id_to_pos(id);
-        let size = SPRITE_SIZE as f32 * scale_factor as f32;
+        let size = SPRITE_SIZE as f32;
         let params = DrawTextureParams {
             dest_size: Some(Vec2 { x: size, y: size }),
             source: Some(Rect {
@@ -35,25 +35,19 @@ impl Spritesheet {
                 w: SPRITE_SIZE as f32,
                 h: SPRITE_SIZE as f32,
             }),
-            rotation: 0.0,
+            rotation,
             flip_x: flipped,
             flip_y: false,
             pivot: None,
         };
-        draw_texture_ex(
-            &self.texture,
-            x as f32 * scale_factor as f32,
-            y as f32 * scale_factor as f32,
-            WHITE,
-            params,
-        );
+        draw_texture_ex(&self.texture, x as f32, y as f32, WHITE, params);
     }
-    pub fn draw_tilemap(&self, scale_factor: usize, map: &TileMap) {
+    pub fn draw_tilemap(&self, map: &TileMap) {
         for y in 0..SCREEN_HEIGHT / SPRITE_SIZE {
             for x in 0..SCREEN_WIDTH / SPRITE_SIZE {
                 let tile = map[y][x].checked_sub(1);
                 if let Some(tile) = tile {
-                    self.draw_tile(scale_factor, x * SPRITE_SIZE, y * SPRITE_SIZE, tile, false);
+                    self.draw_tile(x * SPRITE_SIZE, y * SPRITE_SIZE, tile, false, 0.0);
                 }
             }
         }

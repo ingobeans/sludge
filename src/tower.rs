@@ -1,5 +1,7 @@
 use std::collections::VecDeque;
 
+use macroquad::math::Vec2;
+
 use crate::cards::{Card, CardType, FiringContext, Projectile};
 
 // this is kind of dumb but i did it like this okay
@@ -34,28 +36,6 @@ pub fn get_towers() -> [Tower; 3] {
     };
     [tower1, tower2, tower3]
 }
-#[derive(Clone, Copy)]
-pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-impl Direction {
-    pub fn to_vector(&self) -> (isize, isize) {
-        match self {
-            Direction::Down => (0, -1),
-            Direction::Up => (0, 1),
-            Direction::Right => (1, 0),
-            Direction::Left => (-1, 0),
-        }
-    }
-}
-impl Default for Direction {
-    fn default() -> Self {
-        Self::Left
-    }
-}
 
 #[derive(Clone, Default)]
 /// A user placed tower
@@ -68,7 +48,7 @@ pub struct Tower {
     pub shoot_delay: f32,
     pub recharge_speed: f32,
     pub delay_counter: f32,
-    pub direction: Direction,
+    pub direction: Vec2,
 }
 
 fn draw_next(deck: &mut VecDeque<Card>) -> Vec<Card> {
@@ -130,7 +110,7 @@ fn apply_modifiers_to_context(context: &mut FiringContext, deck: &Vec<Card>) {
 pub fn fire_deck(
     origin_x: usize,
     origin_y: usize,
-    direction: Direction,
+    direction: Vec2,
     deck: Vec<Card>,
     context: &mut FiringContext,
 ) {

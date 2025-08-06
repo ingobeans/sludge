@@ -1,3 +1,4 @@
+use std::f32::consts::PI;
 use std::time::Instant;
 
 use crate::cards::*;
@@ -97,10 +98,12 @@ impl Sludge {
         let mut tower1 = base_towers[0].clone();
         tower1.x = map.tower_spawnpoints[0].0;
         tower1.y = map.tower_spawnpoints[0].1;
+        tower1.direction = Vec2::new(-1.0, 0.0);
 
         let mut tower2 = base_towers[1].clone();
         tower2.x = map.tower_spawnpoints[1].0;
         tower2.y = map.tower_spawnpoints[1].1;
+        tower2.direction = Vec2::new(-1.0, 0.0);
 
         let mut inventory = std::array::from_fn(|_| std::array::from_fn(|_| None.clone()).clone());
         let all_cards = get_cards();
@@ -150,7 +153,7 @@ impl Sludge {
         self.map.is_unobstructed(x, y)
     }
     /// Returns whether a UI element was interacted with
-    fn handle_ui_input(&mut self, local_x: f32, local_y: f32) -> bool {
+    fn handle_ui_input(&mut self, local_x: u16, local_y: u16) -> bool {
         let local_x = local_x as usize;
         let local_y = local_y as usize;
 
@@ -202,11 +205,7 @@ impl Sludge {
             )
         }
     }
-    fn handle_input(&mut self, scale_factor: usize) {
-        let (mouse_x, mouse_y) = mouse_position();
-        let local_x = mouse_x / scale_factor as f32;
-        let local_y = mouse_y / scale_factor as f32;
-
+    fn handle_input(&mut self, local_x: u16, local_y: u16) {
         // if we're currently dragging a tower
         if self.moving.is_some() {
             let mut tower_x = 0;
@@ -241,8 +240,9 @@ impl Sludge {
             // (also sorted based on distance for multiple matches)
             let mut clicked = None;
             for (index, tower) in self.towers.iter().enumerate() {
-                let distance = ((tower.x as f32 + SPRITE_SIZE as f32 / 2.0 - local_x).powi(2)
-                    + (tower.y as f32 + SPRITE_SIZE as f32 / 2.0 - local_y).powi(2))
+                let distance = ((tower.x as f32 + SPRITE_SIZE as f32 / 2.0 - local_x as f32)
+                    .powi(2)
+                    + (tower.y as f32 + SPRITE_SIZE as f32 / 2.0 - local_y as f32).powi(2))
                 .sqrt();
                 if distance <= SPRITE_SIZE as f32 {
                     if clicked.is_none() {
@@ -291,148 +291,100 @@ impl Sludge {
             }
         }
     }
-    fn draw_ui(&self, scale_factor: usize) {
+    fn draw_ui(&self, local_x: u16, local_y: u16) {
         if let Some(selected) = self.selected {
             let tower = &self.towers[selected];
             for (index, card_slot) in tower.card_slots.iter().enumerate() {
                 // todo: draw text
                 let tile_x = index * (SPRITE_SIZE + 3);
                 let tile_y = 8;
-                ui::draw_square(
-                    scale_factor,
-                    tile_x,
-                    tile_y,
-                    SPRITE_SIZE + 4,
-                    SPRITE_SIZE + 4,
-                );
+                ui::draw_square(tile_x, tile_y, SPRITE_SIZE + 4, SPRITE_SIZE + 4);
                 if let Some(card) = card_slot {
-                    self.card_sheet.draw_tile(
-                        scale_factor,
-                        tile_x + 2,
-                        tile_y + 2,
-                        card.sprite,
-                        false,
-                    );
+                    self.card_sheet
+                        .draw_tile(tile_x + 2, tile_y + 2, card.sprite, false, 0.0);
                 }
             }
         }
         if self.inventory_open {
-            ui::draw_body(
-                scale_factor,
-                SCREEN_WIDTH - MENU_WIDTH,
-                0,
-                MENU_WIDTH,
-                SCREEN_HEIGHT,
-            );
+            ui::draw_body(SCREEN_WIDTH - MENU_WIDTH, 0, MENU_WIDTH, SCREEN_HEIGHT);
             for y in 0..self.inventory.len() {
                 for x in 0..self.inventory[0].len() {
                     let tile_x = SCREEN_WIDTH - MENU_WIDTH + 2 + x * 11;
                     let tile_y = 2 + y * 11;
-                    ui::draw_square(scale_factor, tile_x, tile_y, 12, 12);
+                    ui::draw_square(tile_x, tile_y, 12, 12);
                     if let Some(card) = &self.inventory[y][x] {
-                        self.card_sheet.draw_tile(
-                            scale_factor,
-                            tile_x + 2,
-                            tile_y + 2,
-                            card.sprite,
-                            false,
-                        );
+                        self.card_sheet
+                            .draw_tile(tile_x + 2, tile_y + 2, card.sprite, false, 0.0);
                     }
                 }
             }
         }
         let (handle_x, handle_y, flipped) = self.get_menu_handle_state();
         self.icon_sheet
-            .draw_tile(scale_factor, handle_x, handle_y, 35, flipped);
+            .draw_tile(handle_x, handle_y, 35, flipped, 0.0);
 
         if let Some(selected) = self.selected {
             let tower = &self.towers[selected];
-            self.icon_sheet
-                .draw_tile(scale_factor, tower.x, tower.y, 32, false);
+            self.icon_sheet.draw_tile(tower.x, tower.y, 32, false, 0.0);
         }
         if let Some(tower) = &self.moving {
-            self.icon_sheet.draw_tile(
-                scale_factor,
-                tower.x,
-                tower.y.saturating_sub(4),
-                tower.sprite,
-                false,
-            );
             self.icon_sheet
-                .draw_tile(scale_factor, tower.x, tower.y, 33, false);
+                .draw_tile(tower.x, tower.y.saturating_sub(4), tower.sprite, false, 0.0);
+            self.icon_sheet.draw_tile(tower.x, tower.y, 33, false, 0.0);
             if !self.is_valid_tower_placement(tower.x, tower.y) {
-                self.icon_sheet.draw_tile(
-                    scale_factor,
-                    tower.x,
-                    tower.y.saturating_sub(4),
-                    34,
-                    false,
-                );
+                self.icon_sheet
+                    .draw_tile(tower.x, tower.y.saturating_sub(4), 34, false, 0.0);
             }
         }
         if let Some(card) = &self.cursor_card {
-            let (mouse_x, mouse_y) = mouse_position();
-            let local_x = mouse_x / scale_factor as f32;
-            let local_y = mouse_y / scale_factor as f32;
             let x = (local_x as usize).saturating_sub(SPRITE_SIZE / 2);
             let y = (local_y as usize).saturating_sub(SPRITE_SIZE / 2);
             ui::draw_square(
-                scale_factor,
                 x.saturating_sub(2),
                 y.saturating_sub(2),
                 SPRITE_SIZE + 4,
                 SPRITE_SIZE + 4,
             );
-            self.card_sheet
-                .draw_tile(scale_factor, x, y, card.sprite, false);
+            self.card_sheet.draw_tile(x, y, card.sprite, false, 0.0);
         }
     }
-    fn draw(&self, scale_factor: usize) {
-        self.tileset
-            .draw_tilemap(scale_factor, &self.map.background);
-        self.tileset
-            .draw_tilemap(scale_factor, &self.map.obstructions);
+    fn draw(&self) {
+        self.tileset.draw_tilemap(&self.map.background);
+        self.tileset.draw_tilemap(&self.map.obstructions);
         for enemy in &self.enemies {
             let anim_frame = enemy.score / enemy.ty.speed % enemy.ty.anim_length;
-            self.icon_sheet.draw_tile(
-                scale_factor,
-                enemy.x,
-                enemy.y,
-                enemy.ty.sprite + anim_frame,
-                false,
-            );
+            self.icon_sheet
+                .draw_tile(enemy.x, enemy.y, enemy.ty.sprite + anim_frame, false, 0.0);
         }
         for tower in self.towers.iter() {
             self.icon_sheet
-                .draw_tile(scale_factor, tower.x, tower.y, tower.sprite, false);
+                .draw_tile(tower.x, tower.y, tower.sprite, false, 0.0);
         }
         for projectile in self.projectiles.iter() {
             match &projectile.draw_type {
-                ProjectileDrawType::Sprite(index) => {
+                ProjectileDrawType::Sprite(index, rotation_mode) => {
+                    let rotation = match rotation_mode {
+                        SpriteRotationMode::Direction => projectile.direction.to_angle(),
+                        SpriteRotationMode::Spin => (15 - projectile.life % 30) as f32 / 15.0 * PI,
+                        SpriteRotationMode::None => 0.0,
+                    };
                     self.particle_sheet.draw_tile(
-                        scale_factor,
                         projectile.x,
                         projectile.y,
                         *index,
                         false,
+                        rotation,
                     );
                 }
                 ProjectileDrawType::Particle(particle) => {
-                    (particle.function)(
-                        particle,
-                        projectile.x,
-                        projectile.y,
-                        &self.particle_sheet,
-                        scale_factor,
-                    );
+                    (particle.function)(particle, projectile.x, projectile.y, &self.particle_sheet);
                 }
                 _ => {}
             }
         }
         for (particle, x, y) in self.orphaned_particles.iter() {
-            (particle.function)(particle, *x, *y, &self.particle_sheet, scale_factor);
+            (particle.function)(particle, *x, *y, &self.particle_sheet);
         }
-        self.draw_ui(scale_factor)
     }
     fn update_particles(&mut self) {
         let mut death_queue = Vec::new();
@@ -450,7 +402,10 @@ impl Sludge {
     fn update_projectiles(&mut self) {
         let mut death_queue = Vec::new();
         for (index, projectile) in self.projectiles.iter_mut().enumerate() {
-            let (move_x, move_y) = projectile.direction.to_vector();
+            let (move_x, move_y) = (
+                projectile.direction.x as isize,
+                projectile.direction.y as isize,
+            );
             projectile.x =
                 (projectile.x as isize + move_x * projectile.modifier_data.speed as isize) as usize;
             projectile.y =
@@ -530,17 +485,35 @@ async fn main() {
 
     let mut last = Instant::now();
 
+    let render_target = render_target(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32);
+    render_target.texture.set_filter(FilterMode::Nearest);
+
+    let low_res_camera = Camera2D {
+        render_target: Some(render_target),
+        zoom: Vec2::new(
+            1.0 / SCREEN_WIDTH as f32 * 2.0,
+            1.0 / SCREEN_HEIGHT as f32 * 2.0,
+        ),
+        target: Vec2::new(SCREEN_WIDTH as f32 / 2.0, SCREEN_HEIGHT as f32 / 2.0),
+
+        ..Default::default()
+    };
     loop {
         // update scale factor
         let (screen_width, screen_height) = screen_size();
-        scale_factor =
-            (screen_width as usize / SCREEN_WIDTH).min(screen_height as usize / SCREEN_HEIGHT);
+        scale_factor = (screen_width as u16 / SCREEN_WIDTH as u16)
+            .min(screen_height as u16 / SCREEN_HEIGHT as u16);
         clear_background(BLACK);
+        set_camera(&low_res_camera);
 
         let now = Instant::now();
         let deltatime_ms = (now - last).as_millis();
 
-        game.handle_input(scale_factor);
+        let (mouse_x, mouse_y) = mouse_position();
+        let local_x = mouse_x as u16 / scale_factor;
+        let local_y = mouse_y as u16 / scale_factor;
+
+        game.handle_input(local_x, local_y);
 
         // run update loops at fixed 30 FPS
         if deltatime_ms >= 1000 / 30 {
@@ -552,12 +525,26 @@ async fn main() {
         }
 
         // always draw
-        game.draw(scale_factor);
+        game.draw();
+        game.draw_ui(local_x, local_y);
 
-        // debug
-        //if is_key_pressed(KeyCode::Space) {
-        //    game.round_in_progress = !game.round_in_progress;
-        //}
+        // draw low res render to screen
+        set_default_camera();
+        let render_target = &low_res_camera.render_target;
+        let texture = render_target.clone().unwrap();
+        draw_texture_ex(
+            &texture.texture,
+            0.0,
+            0.0,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(Vec2::new(
+                    (SCREEN_WIDTH as u16 * scale_factor) as f32,
+                    (SCREEN_HEIGHT as u16 * scale_factor) as f32,
+                )),
+                ..Default::default()
+            },
+        );
 
         next_frame().await;
     }

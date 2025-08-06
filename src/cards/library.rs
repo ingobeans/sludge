@@ -30,7 +30,7 @@ pub fn aiming() -> Card {
 
 pub fn magicbolt() -> Card {
     let projectile = Projectile {
-        draw_type: ProjectileDrawType::Sprite(0),
+        draw_type: ProjectileDrawType::Sprite(0, SpriteRotationMode::Direction),
         modifier_data: CardModifierData {
             speed: 8,
             lifetime: 40,
@@ -66,7 +66,7 @@ pub fn bomb() -> Card {
         ..Default::default()
     };
     let projectile = Projectile {
-        draw_type: ProjectileDrawType::Sprite(1),
+        draw_type: ProjectileDrawType::Sprite(1, SpriteRotationMode::Spin),
         modifier_data: CardModifierData {
             speed: 1,
             lifetime: 40,

@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::{particle::Particle, tower::Direction};
+use macroquad::math::Vec2;
+
+use crate::particle::Particle;
 
 mod library;
 
@@ -28,8 +30,18 @@ impl Default for CardType {
 }
 
 #[derive(Clone)]
+pub enum SpriteRotationMode {
+    /// Fixed/no rotation
+    None,
+    /// Faces direction it is traveling
+    Direction,
+    /// It goes round and round
+    Spin,
+}
+
+#[derive(Clone)]
 pub enum ProjectileDrawType {
-    Sprite(usize),
+    Sprite(usize, SpriteRotationMode),
     Particle(Particle),
     None,
 }
@@ -43,11 +55,16 @@ impl Default for ProjectileDrawType {
 pub struct Projectile {
     pub x: usize,
     pub y: usize,
-    pub direction: Direction,
+    /// Direction projectile is traveling
+    pub direction: Vec2,
     pub draw_type: ProjectileDrawType,
     pub life: isize,
+    /// Payload released on hit. Only used on trigger projectiles.
     pub payload: Vec<Card>,
+    /// Like payload, except inate to the projectile, like the rocket releasing explosion on hit.
+    /// The reason for the seperation is so that modifiers from the main payload don't affect the inate payload.
     pub inate_payload: Vec<Card>,
+    /// Released on death. Used by ex. the bomb exploding when its lifetime runs out.
     pub death_payload: Vec<Card>,
     pub modifier_data: CardModifierData,
 }
