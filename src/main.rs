@@ -79,7 +79,7 @@ struct Sludge {
     moving: Option<Tower>,
     selected: Option<usize>,
     cursor_card: Option<Card>,
-    inventory: [[Option<Card>; (MENU_WIDTH - 4) / 11]; (SCREEN_HEIGHT - 4) / 11],
+    inventory: [[Option<Card>; (MENU_WIDTH - 4) / CARD_SIZE]; (SCREEN_HEIGHT - 4) / CARD_SIZE],
     inventory_open: bool,
     tileset: Spritesheet,
     icon_sheet: Spritesheet,
@@ -168,8 +168,8 @@ impl Sludge {
             return true;
         }
         if local_x > SCREEN_WIDTH - MENU_WIDTH + 2 && local_x < SCREEN_WIDTH - 3 && local_y > 2 {
-            let tile_x = (local_x + MENU_WIDTH - SCREEN_WIDTH - 2) / 11;
-            let tile_y = (local_y - 2) / 11;
+            let tile_x = (local_x + MENU_WIDTH - SCREEN_WIDTH - 2) / CARD_SIZE;
+            let tile_y = (local_y - 2) / CARD_SIZE;
             if tile_y < self.inventory.len() {
                 if is_mouse_button_pressed(MouseButton::Left) {
                     std::mem::swap(&mut self.cursor_card, &mut self.inventory[tile_y][tile_x]);
@@ -179,7 +179,7 @@ impl Sludge {
         } else if local_y > 8 && local_y < 8 + SPRITE_SIZE + 4 {
             if let Some(selected) = self.selected {
                 let tower = &mut self.towers[selected];
-                let tile_x = local_x / (SPRITE_SIZE + 3);
+                let tile_x = local_x / (CARD_SIZE);
                 if tile_x < tower.card_slots.len() {
                     if is_mouse_button_pressed(MouseButton::Left) {
                         std::mem::swap(&mut self.cursor_card, &mut tower.card_slots[tile_x]);
@@ -299,25 +299,25 @@ impl Sludge {
             let tower = &self.towers[selected];
             for (index, card_slot) in tower.card_slots.iter().enumerate() {
                 // todo: draw text
-                let tile_x = index * (SPRITE_SIZE + 3);
+                let tile_x = index * CARD_SIZE;
                 let tile_y = 8;
                 if let Some(card) = card_slot {
                     card.draw(&self.card_sheet, tile_x + 2, tile_y + 2);
                 } else {
-                    ui::draw_square(tile_x, tile_y, SPRITE_SIZE + 4, SPRITE_SIZE + 4);
+                    ui::draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
                 }
             }
         }
         if self.inventory_open {
-            ui::draw_body(SCREEN_WIDTH - MENU_WIDTH, 0, MENU_WIDTH, SCREEN_HEIGHT);
+            ui::draw_square(SCREEN_WIDTH - MENU_WIDTH, 0, MENU_WIDTH, SCREEN_HEIGHT);
             for y in 0..self.inventory.len() {
                 for x in 0..self.inventory[0].len() {
-                    let tile_x = SCREEN_WIDTH - MENU_WIDTH + 2 + x * 11;
-                    let tile_y = 2 + y * 11;
+                    let tile_x = SCREEN_WIDTH - MENU_WIDTH + 2 + x * CARD_SIZE;
+                    let tile_y = 2 + y * CARD_SIZE;
                     if let Some(card) = &self.inventory[y][x] {
                         card.draw(&self.card_sheet, tile_x + 2, tile_y + 2);
                     } else {
-                        ui::draw_square(tile_x, tile_y, 12, 12);
+                        ui::draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
                     }
                 }
             }

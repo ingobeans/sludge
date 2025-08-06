@@ -172,22 +172,22 @@ impl Card {
             y.saturating_sub(2) as f32,
             (SPRITE_SIZE + 4) as f32,
             (SPRITE_SIZE + 4) as f32,
-            UI_OUTER_BORDER_COLOR,
+            self.ty.get_border_color(),
         );
         draw_rectangle(
             x.saturating_sub(1) as f32,
             y.saturating_sub(1) as f32,
             (SPRITE_SIZE + 2) as f32,
             (SPRITE_SIZE + 2) as f32,
-            self.ty.get_border_color(),
-        );
-        draw_rectangle(
-            x as f32,
-            y as f32,
-            SPRITE_SIZE as f32,
-            SPRITE_SIZE as f32,
             UI_BG_COLOR,
         );
+        //draw_rectangle(
+        //    x as f32,
+        //    y as f32,
+        //    SPRITE_SIZE as f32,
+        //    SPRITE_SIZE as f32,
+        //    UI_BG_COLOR,
+        //);
         card_sheet.draw_tile(x, y, self.sprite, false, 0.0);
         if self.is_trigger {
             card_sheet.draw_tile(x, y, 32, false, 0.0);
