@@ -5,11 +5,11 @@ use macroquad::math::Vec2;
 use crate::cards::{Card, CardType, FiringContext, Projectile};
 
 // this is kind of dumb but i did it like this okay
-pub fn get_towers() -> [Tower; 3] {
+pub fn get_towers() -> [Tower; 4] {
     let tower1 = Tower {
         sprite: 0,
         card_slots: vec![None; 6],
-        shoot_delay: 0.32,
+        shoot_delay: 0.1,
         recharge_speed: 0.50,
         ..Default::default()
     };
@@ -27,14 +27,14 @@ pub fn get_towers() -> [Tower; 3] {
         recharge_speed: 0.65,
         ..Default::default()
     };
-    let tower3 = Tower {
+    let tower4 = Tower {
         sprite: 9,
         card_slots: vec![None; 8],
         shoot_delay: 0.25,
         recharge_speed: 0.65,
         ..Default::default()
     };
-    [tower1, tower2, tower3]
+    [tower1, tower2, tower3, tower4]
 }
 
 #[derive(Clone, Default)]
@@ -55,23 +55,21 @@ fn draw_next(deck: &mut VecDeque<Card>) -> Vec<Card> {
     let mut cards = Vec::new();
     let mut current_draw = 1;
     while let Some(mut card) = deck.pop_front() {
-        match card.ty {
-            CardType::Modifier => {
+        match &mut card.ty {
+            CardType::Modifier(_) => {
                 cards.push(card);
             }
             CardType::Multidraw(draw) => {
+                current_draw += *draw;
                 cards.push(card);
-                current_draw += draw;
             }
-            CardType::Projectile(_) => {
+            CardType::Projectile(projectile, _) => {
                 current_draw -= 1;
 
                 // if card is trigger, draw one more time and set that as this card's payload
                 if card.is_trigger {
                     let payload = draw_next(deck);
-                    if let Some(projectile) = &mut card.projectile {
-                        projectile.payload = payload;
-                    }
+                    projectile.payload = payload;
                 }
                 cards.push(card);
 
@@ -86,23 +84,25 @@ fn draw_next(deck: &mut VecDeque<Card>) -> Vec<Card> {
 
 fn apply_modifiers_to_context(context: &mut FiringContext, deck: &Vec<Card>) {
     for card in deck {
-        match card.ty {
-            CardType::Modifier => {
-                context.modifier_data.merge(&card.modifier_data);
+        match &card.ty {
+            CardType::Modifier(modifier_data) => {
+                context.modifier_data.merge(&modifier_data);
             }
-            CardType::Projectile(_) => {
-                context.modifier_data.merge_projectile(&card.modifier_data);
+            CardType::Projectile(projectile, _) => {
+                context
+                    .modifier_data
+                    .merge_projectile(&projectile.modifier_data);
+
+                // in noita, modifiers on spells in the payload affect the entire wand's recharge speed.
+                // the following code is just to emulate that.
+                if !projectile.payload.is_empty() {
+                    let mut mock_context = FiringContext::default();
+                    apply_modifiers_to_context(&mut mock_context, &projectile.payload);
+                    context.modifier_data.recharge_speed +=
+                        mock_context.modifier_data.recharge_speed;
+                }
             }
             _ => {}
-        }
-        if let Some(projectile) = &card.projectile {
-            if !projectile.payload.is_empty() {
-                // in noita, modifiers on spells in the payload affect the entire wand's recharge speed.
-                // this code is just to emulate that.
-                let mut mock_context = FiringContext::default();
-                apply_modifiers_to_context(&mut mock_context, &projectile.payload);
-                context.modifier_data.recharge_speed += mock_context.modifier_data.recharge_speed;
-            }
         }
     }
 }
@@ -116,7 +116,7 @@ pub fn fire_deck(
 ) {
     apply_modifiers_to_context(context, &deck);
     for card in deck {
-        if let Some(mut projectile) = card.projectile {
+        if let CardType::Projectile(mut projectile, _) = card.ty {
             projectile.modifier_data.merge(&context.modifier_data);
 
             projectile.x = origin_x;
@@ -131,6 +131,9 @@ impl Tower {
     pub fn can_shoot(&self) -> bool {
         self.delay_counter <= 0.0
     }
+    pub fn recharge(&mut self) {
+        self.delay_counter = self.delay_counter.max(self.recharge_speed)
+    }
     pub fn shoot(&mut self) -> Vec<Projectile> {
         let (drawn, should_recharge) = self.draw_next();
         let mut context = FiringContext::default();
@@ -139,6 +142,7 @@ impl Tower {
         fire_deck(self.x, self.y, self.direction, drawn, &mut context);
 
         let mut cooldown = context.modifier_data.shoot_delay;
+        self.delay_counter = context.modifier_data.shoot_delay;
         if should_recharge {
             self.card_index = 0;
             cooldown = cooldown.max(context.modifier_data.recharge_speed)

@@ -244,7 +244,7 @@ checksum = "d66dc143e6b11c1eddc06d5c423cfc97062865baf299914ab64caa38182078fe"
 
 [[package]]
 name = "sludge"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "hashmap_macro",
  "macroquad",

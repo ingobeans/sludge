@@ -1,31 +1,63 @@
 use std::collections::HashMap;
 
-use macroquad::math::Vec2;
+use macroquad::{color::Color, math::Vec2, shapes::draw_rectangle};
 
-use crate::particle::Particle;
+use crate::{
+    consts::{SPRITE_SIZE, UI_BG_COLOR, UI_INNER_BORDER_COLOR, UI_OUTER_BORDER_COLOR},
+    map::Spritesheet,
+    particle::Particle,
+    ui,
+};
 
 mod library;
 
-pub fn get_cards() -> [Card; 4] {
-    [
+/// Returns all player-achievable cards
+pub fn get_cards() -> Vec<Card> {
+    let mut cards = vec![
         library::aiming(),
         library::magicbolt(),
         library::bomb(),
         library::speed(),
-    ]
+        library::double(),
+        library::rocket(),
+    ];
+
+    let mut triggers = Vec::new();
+    // generate trigger variants of projectile cards that allow it
+    for card in &cards {
+        if let CardType::Projectile(_, trigger_allowed) = card.ty {
+            if trigger_allowed {
+                let mut trigger = card.clone();
+                trigger.is_trigger = true;
+                triggers.push(trigger);
+            }
+        }
+    }
+
+    cards.append(&mut triggers);
+    cards
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub enum CardType {
     /// bool is whether projectile is allowed to be a trigger
-    Projectile(bool),
-    Modifier,
+    Projectile(Projectile, bool),
+    Modifier(CardModifierData),
     /// usize is how many cards to draw.
     Multidraw(usize),
 }
+impl CardType {
+    fn get_border_color(&self) -> Color {
+        match self {
+            Self::Projectile(_, _) => Color::from_hex(0x9e2835),
+            Self::Modifier(_) => Color::from_hex(0x4f6781),
+            Self::Multidraw(_) => Color::from_hex(0xafbfd2),
+        }
+    }
+}
 impl Default for CardType {
     fn default() -> Self {
-        Self::Projectile(false)
+        Self::Modifier(CardModifierData::default())
     }
 }
 
@@ -132,6 +164,33 @@ pub struct Card {
     pub ty: CardType,
     pub sprite: usize,
     pub is_trigger: bool,
-    pub modifier_data: CardModifierData,
-    pub projectile: Option<Projectile>,
+}
+impl Card {
+    pub fn draw(&self, card_sheet: &Spritesheet, x: usize, y: usize) {
+        draw_rectangle(
+            x.saturating_sub(2) as f32,
+            y.saturating_sub(2) as f32,
+            (SPRITE_SIZE + 4) as f32,
+            (SPRITE_SIZE + 4) as f32,
+            UI_OUTER_BORDER_COLOR,
+        );
+        draw_rectangle(
+            x.saturating_sub(1) as f32,
+            y.saturating_sub(1) as f32,
+            (SPRITE_SIZE + 2) as f32,
+            (SPRITE_SIZE + 2) as f32,
+            self.ty.get_border_color(),
+        );
+        draw_rectangle(
+            x as f32,
+            y as f32,
+            SPRITE_SIZE as f32,
+            SPRITE_SIZE as f32,
+            UI_BG_COLOR,
+        );
+        card_sheet.draw_tile(x, y, self.sprite, false, 0.0);
+        if self.is_trigger {
+            card_sheet.draw_tile(x, y, 32, false, 0.0);
+        }
+    }
 }

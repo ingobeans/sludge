@@ -1,5 +1,3 @@
-use macroquad::prelude::*;
-
 use crate::{consts::SPRITE_SIZE, map::Spritesheet, ui};
 
 #[derive(Clone)]

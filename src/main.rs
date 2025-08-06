@@ -183,6 +183,9 @@ impl Sludge {
                 if tile_x < tower.card_slots.len() {
                     if is_mouse_button_pressed(MouseButton::Left) {
                         std::mem::swap(&mut self.cursor_card, &mut tower.card_slots[tile_x]);
+                        // when we modify cards of a tower, reset its cards index counter
+                        tower.card_index = 0;
+                        tower.recharge();
                         return true;
                     }
                 }
@@ -298,10 +301,10 @@ impl Sludge {
                 // todo: draw text
                 let tile_x = index * (SPRITE_SIZE + 3);
                 let tile_y = 8;
-                ui::draw_square(tile_x, tile_y, SPRITE_SIZE + 4, SPRITE_SIZE + 4);
                 if let Some(card) = card_slot {
-                    self.card_sheet
-                        .draw_tile(tile_x + 2, tile_y + 2, card.sprite, false, 0.0);
+                    card.draw(&self.card_sheet, tile_x + 2, tile_y + 2);
+                } else {
+                    ui::draw_square(tile_x, tile_y, SPRITE_SIZE + 4, SPRITE_SIZE + 4);
                 }
             }
         }
@@ -311,10 +314,10 @@ impl Sludge {
                 for x in 0..self.inventory[0].len() {
                     let tile_x = SCREEN_WIDTH - MENU_WIDTH + 2 + x * 11;
                     let tile_y = 2 + y * 11;
-                    ui::draw_square(tile_x, tile_y, 12, 12);
                     if let Some(card) = &self.inventory[y][x] {
-                        self.card_sheet
-                            .draw_tile(tile_x + 2, tile_y + 2, card.sprite, false, 0.0);
+                        card.draw(&self.card_sheet, tile_x + 2, tile_y + 2);
+                    } else {
+                        ui::draw_square(tile_x, tile_y, 12, 12);
                     }
                 }
             }
@@ -339,13 +342,8 @@ impl Sludge {
         if let Some(card) = &self.cursor_card {
             let x = (local_x as usize).saturating_sub(SPRITE_SIZE / 2);
             let y = (local_y as usize).saturating_sub(SPRITE_SIZE / 2);
-            ui::draw_square(
-                x.saturating_sub(2),
-                y.saturating_sub(2),
-                SPRITE_SIZE + 4,
-                SPRITE_SIZE + 4,
-            );
-            self.card_sheet.draw_tile(x, y, card.sprite, false, 0.0);
+
+            card.draw(&self.card_sheet, x, y);
         }
     }
     fn draw(&self) {
@@ -388,7 +386,7 @@ impl Sludge {
     }
     fn update_particles(&mut self) {
         let mut death_queue = Vec::new();
-        for (index, (particle, x, y)) in self.orphaned_particles.iter_mut().enumerate() {
+        for (index, (particle, _, _)) in self.orphaned_particles.iter_mut().enumerate() {
             particle.life += 1;
             if particle.life >= particle.lifetime {
                 // kill the orhpan
