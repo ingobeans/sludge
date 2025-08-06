@@ -51,10 +51,10 @@ impl Spritesheet {
             params,
         );
     }
-    fn draw_map(&self, scale_factor: usize, map: &Map) {
+    fn draw_tilemap(&self, scale_factor: usize, map: &TileMap) {
         for y in 0..SCREEN_HEIGHT / SPRITE_SIZE {
             for x in 0..SCREEN_WIDTH / SPRITE_SIZE {
-                let tile = map.data[y][x].checked_sub(1);
+                let tile = map[y][x].checked_sub(1);
                 if let Some(tile) = tile {
                     self.draw_tile(scale_factor, x * SPRITE_SIZE, y * SPRITE_SIZE, tile, 0.0);
                 }
@@ -63,19 +63,85 @@ impl Spritesheet {
     }
 }
 
+type TileMap = [[usize; SCREEN_WIDTH / SPRITE_SIZE]; SCREEN_HEIGHT / SPRITE_SIZE];
+
+#[derive(Debug)]
+#[allow(dead_code)]
+struct BadMapDataError(&'static str);
+
 struct Map {
-    data: [[usize; SCREEN_WIDTH / SPRITE_SIZE]; SCREEN_HEIGHT / SPRITE_SIZE],
+    background: TileMap,
+    obstructions: TileMap,
     points: Vec<(usize, usize)>,
 }
 
-fn parse_xml_to_map(
-    xml: &str,
-) -> [[usize; SCREEN_WIDTH / SPRITE_SIZE]; SCREEN_HEIGHT / SPRITE_SIZE] {
+/// Parses an enemy path from a tilemap. Starts at tile with ID=33, and follows neighbouring ID=34 until stop.
+fn parse_points_from_tilemap(map: &TileMap) -> Vec<(usize, usize)> {
+    let mut points = Vec::new();
+    // find start
+    let mut current_x = 0;
+    let mut current_y = 0;
+    'master: for y in 0..map.len() {
+        for x in 0..map[0].len() {
+            let tile = map[y][x];
+            if tile == 33 {
+                current_x = x;
+                current_y = y;
+                points.push((x, y));
+                break 'master;
+            }
+        }
+    }
+
+    let neighbour_directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
+    'master: loop {
+        for dir in neighbour_directions {
+            let y = ((current_y as isize) + dir.1)
+                .max(0)
+                .min(map.len() as isize - 1) as usize;
+            let x = ((current_x as isize) + dir.0)
+                .max(0)
+                .min(map[0].len() as isize - 1) as usize;
+            if points.contains(&(x, y)) {
+                continue;
+            }
+            if map[y][x] == 34 {
+                current_x = x;
+                current_y = y;
+                points.push((x, y));
+                continue 'master;
+            }
+        }
+        return points;
+    }
+}
+
+fn parse_tilemap_layer(xml: &str, layer_name: &str) -> Result<TileMap, BadMapDataError> {
+    let pattern = format!("name=\"{layer_name}\" ");
+    let xml = xml
+        .split_once(&pattern)
+        .ok_or(BadMapDataError("layer not found"))?
+        .1
+        .split_once("<data encoding=\"csv\">")
+        .ok_or(BadMapDataError("layer's data not found"))?
+        .1
+        .split_once("</data>")
+        .ok_or(BadMapDataError("layer data corrupted"))?
+        .0;
     let mut split = xml.split(',');
-    let data = std::array::from_fn(|_| {
-        std::array::from_fn(|_| split.next().unwrap().trim().parse().unwrap())
-    });
-    data
+    let mut data: TileMap = [[0; SCREEN_WIDTH / SPRITE_SIZE]; SCREEN_HEIGHT / SPRITE_SIZE];
+    for y in 0..data.len() {
+        for x in 0..data[0].len() {
+            data[y][x] = split
+                .next()
+                .ok_or(BadMapDataError("layer data too short!"))?
+                .trim()
+                .parse()
+                .ok()
+                .ok_or(BadMapDataError("layer data has invalid digit"))?
+        }
+    }
+    Ok(data)
 }
 
 fn load_maps() -> Vec<Map> {
@@ -85,17 +151,14 @@ fn load_maps() -> Vec<Map> {
         .flatten()
     {
         let data = read_to_string(item.path()).expect("failed to read map data :(");
-        let data = data
-            .split_once("<data encoding=\"csv\">")
-            .expect("bad map data")
-            .1
-            .split_once("</data>")
-            .expect("bad map data")
-            .0;
-        let data = parse_xml_to_map(data);
+        let background = parse_tilemap_layer(&data, "Background").expect("bad map data");
+        let obstructions = parse_tilemap_layer(&data, "Obstructions").expect("bad map data");
+        let path = parse_tilemap_layer(&data, "Path").expect("bad map data");
+
         let map = Map {
-            data: data,
-            points: Vec::new(),
+            background,
+            obstructions,
+            points: parse_points_from_tilemap(&path),
         };
         maps.push(map);
     }
@@ -119,7 +182,11 @@ async fn main() {
         scale_factor =
             (screen_width as usize / SCREEN_WIDTH).min(screen_height as usize / SCREEN_HEIGHT);
         clear_background(BLACK);
-        spritesheet.draw_map(scale_factor, &maps[0]);
+        spritesheet.draw_tilemap(scale_factor, &maps[0].background);
+        spritesheet.draw_tilemap(scale_factor, &maps[0].obstructions);
+        for (x, y) in &maps[0].points {
+            spritesheet.draw_tile(scale_factor, x * SPRITE_SIZE, y * SPRITE_SIZE, 33, 0.0);
+        }
 
         next_frame().await;
     }
