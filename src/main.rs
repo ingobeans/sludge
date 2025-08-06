@@ -1,174 +1,14 @@
-use std::{
-    fs::{read_dir, read_to_string},
-    time::Instant,
-};
+use std::time::Instant;
 
+use crate::cards::*;
+use crate::consts::*;
+use crate::map::*;
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
-const SCREEN_WIDTH: usize = 192;
-const SCREEN_HEIGHT: usize = 144;
-const SPRITE_SIZE: usize = 8;
-
-struct Spritesheet {
-    texture: Texture2D,
-    width: usize,
-    height: usize,
-}
-impl Spritesheet {
-    fn new(texture: Texture2D) -> Self {
-        texture.set_filter(FilterMode::Nearest);
-        let width = texture.width() as usize;
-        let height = texture.height() as usize;
-        Self {
-            texture,
-            width,
-            height,
-        }
-    }
-    fn id_to_pos(&self, id: usize) -> (usize, usize) {
-        let x = id % (self.width / SPRITE_SIZE);
-        let y = id / (self.height / SPRITE_SIZE);
-        (x, y)
-    }
-    fn draw_tile(&self, scale_factor: usize, x: usize, y: usize, id: usize, rotation: f32) {
-        let (texture_x, texture_y) = self.id_to_pos(id);
-        let size = SPRITE_SIZE as f32 * scale_factor as f32;
-        let params = DrawTextureParams {
-            dest_size: Some(Vec2 { x: size, y: size }),
-            source: Some(Rect {
-                x: (texture_x * SPRITE_SIZE) as f32,
-                y: (texture_y * SPRITE_SIZE) as f32,
-                w: SPRITE_SIZE as f32,
-                h: SPRITE_SIZE as f32,
-            }),
-            rotation,
-            flip_x: false,
-            flip_y: false,
-            pivot: None,
-        };
-        draw_texture_ex(
-            &self.texture,
-            x as f32 * scale_factor as f32,
-            y as f32 * scale_factor as f32,
-            WHITE,
-            params,
-        );
-    }
-    fn draw_tilemap(&self, scale_factor: usize, map: &TileMap) {
-        for y in 0..SCREEN_HEIGHT / SPRITE_SIZE {
-            for x in 0..SCREEN_WIDTH / SPRITE_SIZE {
-                let tile = map[y][x].checked_sub(1);
-                if let Some(tile) = tile {
-                    self.draw_tile(scale_factor, x * SPRITE_SIZE, y * SPRITE_SIZE, tile, 0.0);
-                }
-            }
-        }
-    }
-}
-
-type TileMap = [[usize; SCREEN_WIDTH / SPRITE_SIZE]; SCREEN_HEIGHT / SPRITE_SIZE];
-
-#[derive(Debug)]
-#[allow(dead_code)]
-struct BadMapDataError(&'static str);
-
-#[derive(Clone)]
-struct Map {
-    background: TileMap,
-    obstructions: TileMap,
-    points: Vec<(usize, usize)>,
-}
-
-/// Parses an enemy path from a tilemap. Starts at tile with ID=33, and follows neighbouring ID=34 until stop.
-fn parse_points_from_tilemap(map: &TileMap) -> Vec<(usize, usize)> {
-    let mut points = Vec::new();
-    // find start
-    let mut current_x = 0;
-    let mut current_y = 0;
-    'master: for y in 0..map.len() {
-        for x in 0..map[0].len() {
-            let tile = map[y][x];
-            if tile == 33 {
-                current_x = x;
-                current_y = y;
-                points.push((x, y));
-                break 'master;
-            }
-        }
-    }
-
-    let neighbour_directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
-    'master: loop {
-        for dir in neighbour_directions {
-            let y = ((current_y as isize) + dir.1)
-                .max(0)
-                .min(map.len() as isize - 1) as usize;
-            let x = ((current_x as isize) + dir.0)
-                .max(0)
-                .min(map[0].len() as isize - 1) as usize;
-            if points.contains(&(x, y)) {
-                continue;
-            }
-            if map[y][x] == 34 {
-                current_x = x;
-                current_y = y;
-                points.push((x, y));
-                continue 'master;
-            }
-        }
-        return points;
-    }
-}
-
-fn parse_tilemap_layer(xml: &str, layer_name: &str) -> Result<TileMap, BadMapDataError> {
-    let pattern = format!("name=\"{layer_name}\" ");
-    let xml = xml
-        .split_once(&pattern)
-        .ok_or(BadMapDataError("layer not found"))?
-        .1
-        .split_once("<data encoding=\"csv\">")
-        .ok_or(BadMapDataError("layer's data not found"))?
-        .1
-        .split_once("</data>")
-        .ok_or(BadMapDataError("layer data corrupted"))?
-        .0;
-    let mut split = xml.split(',');
-    let mut data: TileMap = [[0; SCREEN_WIDTH / SPRITE_SIZE]; SCREEN_HEIGHT / SPRITE_SIZE];
-    for y in 0..data.len() {
-        for x in 0..data[0].len() {
-            data[y][x] = split
-                .next()
-                .ok_or(BadMapDataError("layer data too short!"))?
-                .trim()
-                .parse()
-                .ok()
-                .ok_or(BadMapDataError("layer data has invalid digit"))?
-        }
-    }
-    Ok(data)
-}
-
-fn load_maps() -> Vec<Map> {
-    let mut maps = Vec::new();
-    for item in read_dir("tiled/maps")
-        .expect("tiled/maps is missing!!")
-        .flatten()
-    {
-        let data = read_to_string(item.path()).expect("failed to read map data :(");
-        let background = parse_tilemap_layer(&data, "Background").expect("bad map data");
-        let obstructions = parse_tilemap_layer(&data, "Obstructions").expect("bad map data");
-        let path = parse_tilemap_layer(&data, "Path").expect("bad map data");
-
-        let map = Map {
-            background,
-            obstructions,
-            points: parse_points_from_tilemap(&path),
-        };
-        maps.push(map);
-    }
-
-    maps
-}
+mod cards;
+mod consts;
+mod map;
+mod ui;
 
 enum DamageType {
     Magic,
@@ -196,7 +36,7 @@ struct Enemy {
 const ENEMY_TYPES: &[EnemyType] = &[
     // spider
     EnemyType {
-        sprite: 1 + 1 * 32,
+        sprite: 2 * 32,
         anim_length: 2,
         speed: 1,
         damage_resistance: Vec::new(),
@@ -224,8 +64,6 @@ fn move_towards(
     return *source_x == target_x && *source_y == target_y;
 }
 
-const STARTING_LIVES: u8 = 100;
-
 async fn load_spritesheet(path: &str) -> Spritesheet {
     let error = format!("{} is missing!!", path);
     Spritesheet::new(load_texture(path).await.expect(&error))
@@ -234,7 +72,12 @@ async fn load_spritesheet(path: &str) -> Spritesheet {
 struct Sludge {
     map: Map,
     enemies: Vec<Enemy>,
+    towers: Vec<Tower>,
     lives: u8,
+    round: u8,
+    round_in_progress: bool,
+    moving: Option<Tower>,
+    selected: Option<usize>,
     tileset: Spritesheet,
     icons: Spritesheet,
     cards: Spritesheet,
@@ -244,10 +87,38 @@ impl Sludge {
         let tileset = load_spritesheet("spritesheet.png").await;
         let icons = load_spritesheet("icons.png").await;
         let cards = load_spritesheet("cards.png").await;
+
+        // add starting towers
+        let tower1 = Tower {
+            x: map.tower_spawnpoints[0].0,
+            y: map.tower_spawnpoints[0].1,
+            sprite: 0,
+            cards: Vec::new(),
+            card_index: 0,
+            shoot_delay: 0.32,
+            delay_counter: 0.0,
+            direction: Direction::LEFT,
+        };
+        let tower2 = Tower {
+            x: map.tower_spawnpoints[1].0,
+            y: map.tower_spawnpoints[1].1,
+            sprite: 3,
+            cards: Vec::new(),
+            card_index: 0,
+            shoot_delay: 0.32,
+            delay_counter: 0.0,
+            direction: Direction::LEFT,
+        };
+
         Self {
             map,
             enemies: Vec::new(),
+            towers: vec![tower1, tower2],
             lives: STARTING_LIVES,
+            round: 0,
+            round_in_progress: false,
+            moving: None,
+            selected: None,
             tileset,
             icons,
             cards,
@@ -264,6 +135,76 @@ impl Sludge {
         };
         self.enemies.push(enemy);
     }
+    fn is_valid_tower_placement(&self, x: usize, y: usize) -> bool {
+        for tower in &self.towers {
+            let distance =
+                ((tower.x as f32 - x as f32).powi(2) + (tower.y as f32 - y as f32).powi(2)).sqrt();
+            if distance < SPRITE_SIZE as f32 {
+                return false;
+            }
+        }
+        self.map.is_unobstructed(x, y)
+    }
+    fn handle_input(&mut self, scale_factor: usize) {
+        let (mouse_x, mouse_y) = mouse_position();
+        let local_x = mouse_x / scale_factor as f32;
+        let local_y = mouse_y / scale_factor as f32;
+        if self.moving.is_some() {
+            let mut tower_x = 0;
+            let mut tower_y = 0;
+            if let Some(tower) = &mut self.moving {
+                tower.x = (local_x as usize)
+                    .saturating_sub(SPRITE_SIZE / 2)
+                    .min(SCREEN_WIDTH - 1 - SPRITE_SIZE);
+                tower.y = (local_y as usize).min(SCREEN_HEIGHT - 1 - SPRITE_SIZE);
+
+                tower_x = tower.x;
+                tower_y = tower.y;
+            }
+            let valid = self.is_valid_tower_placement(tower_x, tower_y);
+            if !is_mouse_button_down(MouseButton::Left) && valid {
+                self.towers.push(self.moving.take().unwrap());
+            }
+            return;
+        }
+        if is_mouse_button_pressed(MouseButton::Left) {
+            // find if we're clicking tower
+            let mut clicked = None;
+            for (index, tower) in self.towers.iter().enumerate() {
+                let distance = ((tower.x as f32 + SPRITE_SIZE as f32 / 2.0 - local_x).powi(2)
+                    + (tower.y as f32 + SPRITE_SIZE as f32 / 2.0 - local_y).powi(2))
+                .sqrt();
+                if distance <= 8.0 {
+                    if clicked.is_none() {
+                        clicked = Some((index, distance))
+                    } else {
+                        let old_distance = clicked.unwrap().1;
+                        if distance < old_distance {
+                            clicked = Some((index, distance))
+                        }
+                    }
+                }
+            }
+            if clicked.is_none() {
+                if self.selected.is_some() {
+                    self.selected = None;
+                }
+                return;
+            }
+            let clicked = clicked.unwrap().0;
+            if self.selected.is_none() {
+                self.selected = Some(clicked);
+            } else {
+                let old_selected = self.selected.unwrap();
+                if old_selected != clicked {
+                    self.selected = Some(clicked);
+                } else {
+                    self.selected = None;
+                    self.moving = Some(self.towers.remove(clicked));
+                }
+            }
+        }
+    }
     fn draw(&self, scale_factor: usize) {
         self.tileset
             .draw_tilemap(scale_factor, &self.map.background);
@@ -279,8 +220,36 @@ impl Sludge {
                 0.0,
             );
         }
+        for (index, tower) in self.towers.iter().enumerate() {
+            self.icons
+                .draw_tile(scale_factor, tower.x, tower.y, tower.sprite, 0.0);
+            if let Some(selected) = self.selected {
+                if selected == index {
+                    self.icons
+                        .draw_tile(scale_factor, tower.x, tower.y, 32, 0.0);
+                }
+            }
+        }
+        if let Some(tower) = &self.moving {
+            self.icons.draw_tile(
+                scale_factor,
+                tower.x,
+                tower.y.saturating_sub(4),
+                tower.sprite,
+                0.0,
+            );
+            self.icons
+                .draw_tile(scale_factor, tower.x, tower.y, 33, 0.0);
+            if !self.is_valid_tower_placement(tower.x, tower.y) {
+                self.icons
+                    .draw_tile(scale_factor, tower.x, tower.y.saturating_sub(4), 34, 0.0);
+            }
+        }
     }
     fn update_enemies(&mut self) {
+        if !self.round_in_progress {
+            return;
+        }
         let mut death_queue = Vec::new();
 
         for (index, enemy) in self.enemies.iter_mut().enumerate() {
@@ -302,6 +271,10 @@ impl Sludge {
         for index in death_queue {
             self.enemies.remove(index - remove_offset);
             remove_offset += 1;
+        }
+        if self.enemies.len() == 0 {
+            self.round_in_progress = false;
+            self.round += 1;
         }
     }
 }
@@ -325,14 +298,20 @@ async fn main() {
         let now = Instant::now();
         let time_since_last = (now - last).as_millis();
 
-        // run update loops at fixed 60 FPS
-        if time_since_last >= 1000 / 60 {
+        // run update loops at fixed 30 FPS
+        if time_since_last >= 1000 / 30 {
             last = now;
             game.update_enemies();
         }
 
         // always draw
         game.draw(scale_factor);
+
+        game.handle_input(scale_factor);
+        // debug
+        if is_key_pressed(KeyCode::Space) {
+            game.round_in_progress = !game.round_in_progress;
+        }
 
         next_frame().await;
     }
