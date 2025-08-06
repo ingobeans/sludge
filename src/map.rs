@@ -24,7 +24,7 @@ impl Spritesheet {
         let y = id / (self.height / SPRITE_SIZE);
         (x, y)
     }
-    pub fn draw_tile(&self, scale_factor: usize, x: usize, y: usize, id: usize, rotation: f32) {
+    pub fn draw_tile(&self, scale_factor: usize, x: usize, y: usize, id: usize, flipped: bool) {
         let (texture_x, texture_y) = self.id_to_pos(id);
         let size = SPRITE_SIZE as f32 * scale_factor as f32;
         let params = DrawTextureParams {
@@ -35,8 +35,8 @@ impl Spritesheet {
                 w: SPRITE_SIZE as f32,
                 h: SPRITE_SIZE as f32,
             }),
-            rotation,
-            flip_x: false,
+            rotation: 0.0,
+            flip_x: flipped,
             flip_y: false,
             pivot: None,
         };
@@ -53,7 +53,7 @@ impl Spritesheet {
             for x in 0..SCREEN_WIDTH / SPRITE_SIZE {
                 let tile = map[y][x].checked_sub(1);
                 if let Some(tile) = tile {
-                    self.draw_tile(scale_factor, x * SPRITE_SIZE, y * SPRITE_SIZE, tile, 0.0);
+                    self.draw_tile(scale_factor, x * SPRITE_SIZE, y * SPRITE_SIZE, tile, false);
                 }
             }
         }

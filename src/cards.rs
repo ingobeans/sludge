@@ -7,15 +7,18 @@ pub enum Direction {
     RIGHT,
 }
 
+#[derive(Clone, Copy)]
 /// A card used by towers
-pub struct Card {}
+pub struct Card {
+    pub sprite: usize,
+}
 
 /// A user placed tower
 pub struct Tower {
     pub x: usize,
     pub y: usize,
     pub sprite: usize,
-    pub cards: Vec<Card>,
+    pub card_slots: Vec<Option<Card>>,
     pub card_index: usize,
     pub shoot_delay: f32,
     pub delay_counter: f32,

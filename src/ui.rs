@@ -1,4 +1,4 @@
-use macroquad::prelude::*;
+use macroquad::{color::BLACK, shapes::draw_rectangle};
 
 use crate::consts::*;
 
@@ -22,5 +22,17 @@ pub fn draw_body(scale_factor: usize, x: usize, y: usize, w: usize, h: usize) {
         w - 4.0 * scale_factor,
         h - 4.0 * scale_factor,
         UI_BG_COLOR,
+    );
+}
+pub fn draw_text(scale_factor: usize, x: usize, y: usize, text: &str) {
+    let scale_factor = scale_factor as f32;
+    let x = x as f32 * scale_factor;
+    let y = y as f32 * scale_factor + 5.0;
+    macroquad::text::draw_text(
+        text,
+        x * scale_factor,
+        y * scale_factor,
+        8.0 * scale_factor,
+        BLACK,
     );
 }
