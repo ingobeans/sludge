@@ -61,6 +61,7 @@ fn draw_next(deck: &mut VecDeque<Card>) -> Vec<Card> {
             }
             CardType::Multidraw(draw) => {
                 current_draw += *draw;
+                current_draw -= 1;
                 cards.push(card);
             }
             CardType::Projectile(projectile, _) => {

@@ -7,6 +7,21 @@ pub struct Particle {
     pub function: &'static dyn Fn(&Particle, usize, usize, &Spritesheet),
 }
 
+pub const BUBBLE: Particle = Particle {
+    life: 0,
+    lifetime: 20,
+    function: &|this, x, y, particles| {
+        let stage_1_end = 10;
+        let frame_amt = 3;
+        let anim_frame_offset =
+            (this.life.saturating_sub(stage_1_end) / (10 / frame_amt)) as usize * 2;
+
+        let move_y = this.life.min(stage_1_end) * 2 / stage_1_end;
+
+        particles.draw_tile(x, y - move_y as usize, 3 + anim_frame_offset, false, 0.0);
+    },
+};
+
 pub const EXPLOSION: Particle = Particle {
     life: 0,
     lifetime: 10,
@@ -24,6 +39,5 @@ pub const EXPLOSION: Particle = Particle {
                 );
             }
         }
-        ui::draw_square(x, y, 1, 1);
     },
 };

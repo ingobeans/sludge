@@ -2,6 +2,38 @@ use hashmap_macro::hashmap;
 
 use crate::{cards::*, particle};
 
+pub fn acidify() -> Card {
+    Card {
+        ty: CardType::Modifier(CardModifierData {
+            damage: hashmap!(DamageType::Acid => 10),
+            shoot_delay: 0.2,
+            ..Default::default()
+        }),
+        sprite: 17,
+        ..Default::default()
+    }
+}
+
+pub fn bubble() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Particle(particle::BUBBLE),
+        modifier_data: CardModifierData {
+            speed: 0,
+            lifetime: 10,
+            piercing: true,
+            shoot_delay: 0.05,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    Card {
+        ty: CardType::Projectile(projectile, false),
+        sprite: 9,
+        ..Default::default()
+    }
+}
+
 pub fn rocket() -> Card {
     let explosion_projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::EXPLOSION.clone()),
@@ -45,6 +77,14 @@ pub fn double() -> Card {
     }
 }
 
+pub fn triple() -> Card {
+    Card {
+        ty: CardType::Multidraw(3),
+        sprite: 6,
+        ..Default::default()
+    }
+}
+
 pub fn speed() -> Card {
     Card {
         ty: CardType::Modifier(CardModifierData {
@@ -72,7 +112,7 @@ pub fn magicbolt() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(0, SpriteRotationMode::Direction),
         modifier_data: CardModifierData {
-            speed: 8,
+            speed: 7,
             lifetime: 40,
             shoot_delay: 0.1,
             damage: hashmap!(DamageType::Magic => 3),

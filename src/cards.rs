@@ -2,24 +2,25 @@ use std::collections::HashMap;
 
 use macroquad::{color::Color, math::Vec2, shapes::draw_rectangle};
 
-use crate::{
-    consts::{SPRITE_SIZE, UI_BG_COLOR, UI_INNER_BORDER_COLOR, UI_OUTER_BORDER_COLOR},
-    map::Spritesheet,
-    particle::Particle,
-    ui,
-};
+use crate::{consts::*, map::Spritesheet, particle::Particle};
 
 mod library;
 
 /// Returns all player-achievable cards
 pub fn get_cards() -> Vec<Card> {
     let mut cards = vec![
+        // modifiers
         library::aiming(),
-        library::magicbolt(),
-        library::bomb(),
         library::speed(),
+        library::acidify(),
+        // multidraw
         library::double(),
+        library::triple(),
+        // projectiles
         library::rocket(),
+        library::bomb(),
+        library::magicbolt(),
+        library::bubble(),
     ];
 
     let mut triggers = Vec::new();
@@ -101,7 +102,7 @@ pub struct Projectile {
     pub modifier_data: CardModifierData,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum DamageType {
     Magic,
     Pierce,

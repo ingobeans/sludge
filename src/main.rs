@@ -399,6 +399,8 @@ impl Sludge {
     }
     fn update_projectiles(&mut self) {
         let mut death_queue = Vec::new();
+        let mut new_projectiles = Vec::new();
+
         for (index, projectile) in self.projectiles.iter_mut().enumerate() {
             let (move_x, move_y) = (
                 projectile.direction.x as isize,
@@ -412,7 +414,33 @@ impl Sludge {
             if let ProjectileDrawType::Particle(particle) = &mut projectile.draw_type {
                 particle.life += 1;
             }
+            let mut dead = false;
             if projectile.life >= projectile.modifier_data.lifetime {
+                dead = true;
+            }
+            // check if projectile hit any enemy
+            for enemy in self.enemies.iter() {
+                let distance = ((enemy.x as f32 - projectile.x as f32).powi(2)
+                    + (enemy.y as f32 - projectile.y as f32).powi(2))
+                .sqrt();
+                if distance < 8.0 {
+                    if !projectile.modifier_data.piercing {
+                        dead = true;
+                    }
+                    if !projectile.payload.is_empty() {
+                        let mut context = FiringContext::default();
+                        fire_deck(
+                            projectile.x,
+                            projectile.y,
+                            projectile.direction,
+                            projectile.payload.clone(),
+                            &mut context,
+                        );
+                        new_projectiles.append(&mut context.spawn_list);
+                    }
+                }
+            }
+            if dead {
                 death_queue.push(index);
             }
         }
@@ -435,6 +463,7 @@ impl Sludge {
                 }
             }
         }
+        self.projectiles.append(&mut new_projectiles);
     }
     fn update_towers(&mut self, deltatime_ms: u128) {
         for tower in self.towers.iter_mut() {
