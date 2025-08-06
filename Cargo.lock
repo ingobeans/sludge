@@ -118,6 +118,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashmap_macro"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8a181d5ff5b742b5a830beb8c172562e6f22dccba6e1308bbacaba9fda84c8d"
+
+[[package]]
 name = "image"
 version = "0.24.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -238,8 +244,9 @@ checksum = "d66dc143e6b11c1eddc06d5c423cfc97062865baf299914ab64caa38182078fe"
 
 [[package]]
 name = "sludge"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
+ "hashmap_macro",
  "macroquad",
 ]
 

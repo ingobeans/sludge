@@ -3,20 +3,17 @@ use std::time::Instant;
 use crate::cards::*;
 use crate::consts::*;
 use crate::map::*;
+use crate::particle::Particle;
+use crate::tower::*;
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
 mod cards;
 mod consts;
 mod map;
+mod particle;
+mod tower;
 mod ui;
 
-enum DamageType {
-    Magic,
-    Pierce,
-    Explosion,
-    Cold,
-    Acid,
-}
 /// Struct that holds information about an enemy type
 struct EnemyType {
     sprite: usize,
@@ -73,46 +70,62 @@ struct Sludge {
     map: Map,
     enemies: Vec<Enemy>,
     towers: Vec<Tower>,
+    projectiles: Vec<Projectile>,
+    orphaned_particles: Vec<(Particle, usize, usize)>,
     lives: u8,
     round: u8,
     round_in_progress: bool,
     moving: Option<Tower>,
     selected: Option<usize>,
+    cursor_card: Option<Card>,
     inventory: [[Option<Card>; (MENU_WIDTH - 4) / 11]; (SCREEN_HEIGHT - 4) / 11],
-    card_inventory_open: bool,
+    inventory_open: bool,
     tileset: Spritesheet,
-    icons: Spritesheet,
-    cards: Spritesheet,
+    icon_sheet: Spritesheet,
+    card_sheet: Spritesheet,
+    particle_sheet: Spritesheet,
 }
 impl Sludge {
     async fn new(map: Map) -> Self {
         let tileset = load_spritesheet("spritesheet.png").await;
-        let icons = load_spritesheet("icons.png").await;
-        let cards = load_spritesheet("cards.png").await;
+        let icon_sheet = load_spritesheet("icons.png").await;
+        let card_sheet = load_spritesheet("cards.png").await;
+        let particle_sheet = load_spritesheet("particles.png").await;
 
         // add starting towers
-        let mut tower1 = TOWERS[0].clone();
+        let base_towers = get_towers();
+        let mut tower1 = base_towers[0].clone();
         tower1.x = map.tower_spawnpoints[0].0;
         tower1.y = map.tower_spawnpoints[0].1;
 
-        let mut tower2 = TOWERS[1].clone();
+        let mut tower2 = base_towers[1].clone();
         tower2.x = map.tower_spawnpoints[1].0;
         tower2.y = map.tower_spawnpoints[1].1;
 
+        let mut inventory = std::array::from_fn(|_| std::array::from_fn(|_| None.clone()).clone());
+        let all_cards = get_cards();
+        for (index, card) in all_cards.into_iter().enumerate() {
+            inventory[index / inventory[0].len()][index % inventory[0].len()] = Some(card);
+        }
+
         Self {
             map,
-            enemies: Vec::new(),
+            enemies: Vec::with_capacity(100),
             towers: vec![tower1, tower2],
+            projectiles: Vec::with_capacity(100),
+            orphaned_particles: Vec::with_capacity(100),
             lives: STARTING_LIVES,
             round: 0,
             round_in_progress: false,
             moving: None,
             selected: None,
-            inventory: [[None; (MENU_WIDTH - 4) / 11]; (SCREEN_HEIGHT - 4) / 11],
-            card_inventory_open: false,
+            cursor_card: None,
+            inventory,
+            inventory_open: false,
             tileset,
-            icons,
-            cards,
+            icon_sheet,
+            card_sheet,
+            particle_sheet,
         }
     }
     fn spawn_enemy(&mut self, ty: &'static EnemyType) {
@@ -148,13 +161,34 @@ impl Sludge {
             && local_y < handle_y + SPRITE_SIZE
             && is_mouse_button_pressed(MouseButton::Left)
         {
-            self.card_inventory_open = !self.card_inventory_open;
+            self.inventory_open = !self.inventory_open;
             return true;
+        }
+        if local_x > SCREEN_WIDTH - MENU_WIDTH + 2 && local_x < SCREEN_WIDTH - 3 && local_y > 2 {
+            let tile_x = (local_x + MENU_WIDTH - SCREEN_WIDTH - 2) / 11;
+            let tile_y = (local_y - 2) / 11;
+            if tile_y < self.inventory.len() {
+                if is_mouse_button_pressed(MouseButton::Left) {
+                    std::mem::swap(&mut self.cursor_card, &mut self.inventory[tile_y][tile_x]);
+                }
+                return true;
+            }
+        } else if local_y > 8 && local_y < 8 + SPRITE_SIZE + 4 {
+            if let Some(selected) = self.selected {
+                let tower = &mut self.towers[selected];
+                let tile_x = local_x / (SPRITE_SIZE + 3);
+                if tile_x < tower.card_slots.len() {
+                    if is_mouse_button_pressed(MouseButton::Left) {
+                        std::mem::swap(&mut self.cursor_card, &mut tower.card_slots[tile_x]);
+                    }
+                    return true;
+                }
+            }
         }
         false
     }
     fn get_menu_handle_state(&self) -> (usize, usize, bool) {
-        if self.card_inventory_open {
+        if self.inventory_open {
             (
                 SCREEN_WIDTH - MENU_WIDTH - SPRITE_SIZE,
                 SCREEN_HEIGHT / 2 - SPRITE_SIZE,
@@ -210,7 +244,7 @@ impl Sludge {
                 let distance = ((tower.x as f32 + SPRITE_SIZE as f32 / 2.0 - local_x).powi(2)
                     + (tower.y as f32 + SPRITE_SIZE as f32 / 2.0 - local_y).powi(2))
                 .sqrt();
-                if distance <= 8.0 {
+                if distance <= SPRITE_SIZE as f32 {
                     if clicked.is_none() {
                         clicked = Some((index, distance))
                     } else {
@@ -225,7 +259,7 @@ impl Sludge {
             if clicked.is_none() {
                 if self.selected.is_some() {
                     self.selected = None;
-                    self.card_inventory_open = false;
+                    self.inventory_open = false;
                 }
                 return;
             }
@@ -233,7 +267,7 @@ impl Sludge {
             let clicked = clicked.unwrap().0;
             if self.selected.is_none() {
                 self.selected = Some(clicked);
-                self.card_inventory_open = true;
+                self.inventory_open = true;
             } else {
                 // if we did click a tower, and we previously did have a selected tower, check if theyre the same
                 let old_selected = self.selected.unwrap();
@@ -244,6 +278,15 @@ impl Sludge {
                     // if they are the same, start moving that tower
                     self.selected = None;
                     self.moving = Some(self.towers.remove(clicked));
+                }
+            }
+        }
+        if is_key_down(KeyCode::Space) {
+            if let Some(selected) = self.selected {
+                let tower = &mut self.towers[selected];
+                if tower.can_shoot() {
+                    let mut spawn_queue = tower.shoot();
+                    self.projectiles.append(&mut spawn_queue);
                 }
             }
         }
@@ -263,12 +306,17 @@ impl Sludge {
                     SPRITE_SIZE + 4,
                 );
                 if let Some(card) = card_slot {
-                    self.cards
-                        .draw_tile(scale_factor, tile_x, tile_y, card.sprite, false);
+                    self.card_sheet.draw_tile(
+                        scale_factor,
+                        tile_x + 2,
+                        tile_y + 2,
+                        card.sprite,
+                        false,
+                    );
                 }
             }
         }
-        if self.card_inventory_open {
+        if self.inventory_open {
             ui::draw_body(
                 scale_factor,
                 SCREEN_WIDTH - MENU_WIDTH,
@@ -278,39 +326,65 @@ impl Sludge {
             );
             for y in 0..self.inventory.len() {
                 for x in 0..self.inventory[0].len() {
-                    ui::draw_square(
-                        scale_factor,
-                        SCREEN_WIDTH - MENU_WIDTH + 2 + x * 11,
-                        2 + y * 11,
-                        12,
-                        12,
-                    );
+                    let tile_x = SCREEN_WIDTH - MENU_WIDTH + 2 + x * 11;
+                    let tile_y = 2 + y * 11;
+                    ui::draw_square(scale_factor, tile_x, tile_y, 12, 12);
+                    if let Some(card) = &self.inventory[y][x] {
+                        self.card_sheet.draw_tile(
+                            scale_factor,
+                            tile_x + 2,
+                            tile_y + 2,
+                            card.sprite,
+                            false,
+                        );
+                    }
                 }
             }
         }
         let (handle_x, handle_y, flipped) = self.get_menu_handle_state();
-        self.icons
+        self.icon_sheet
             .draw_tile(scale_factor, handle_x, handle_y, 35, flipped);
 
         if let Some(selected) = self.selected {
             let tower = &self.towers[selected];
-            self.icons
+            self.icon_sheet
                 .draw_tile(scale_factor, tower.x, tower.y, 32, false);
         }
         if let Some(tower) = &self.moving {
-            self.icons.draw_tile(
+            self.icon_sheet.draw_tile(
                 scale_factor,
                 tower.x,
                 tower.y.saturating_sub(4),
                 tower.sprite,
                 false,
             );
-            self.icons
+            self.icon_sheet
                 .draw_tile(scale_factor, tower.x, tower.y, 33, false);
             if !self.is_valid_tower_placement(tower.x, tower.y) {
-                self.icons
-                    .draw_tile(scale_factor, tower.x, tower.y.saturating_sub(4), 34, false);
+                self.icon_sheet.draw_tile(
+                    scale_factor,
+                    tower.x,
+                    tower.y.saturating_sub(4),
+                    34,
+                    false,
+                );
             }
+        }
+        if let Some(card) = &self.cursor_card {
+            let (mouse_x, mouse_y) = mouse_position();
+            let local_x = mouse_x / scale_factor as f32;
+            let local_y = mouse_y / scale_factor as f32;
+            let x = (local_x as usize).saturating_sub(SPRITE_SIZE / 2);
+            let y = (local_y as usize).saturating_sub(SPRITE_SIZE / 2);
+            ui::draw_square(
+                scale_factor,
+                x.saturating_sub(2),
+                y.saturating_sub(2),
+                SPRITE_SIZE + 4,
+                SPRITE_SIZE + 4,
+            );
+            self.card_sheet
+                .draw_tile(scale_factor, x, y, card.sprite, false);
         }
     }
     fn draw(&self, scale_factor: usize) {
@@ -320,7 +394,7 @@ impl Sludge {
             .draw_tilemap(scale_factor, &self.map.obstructions);
         for enemy in &self.enemies {
             let anim_frame = enemy.score / enemy.ty.speed % enemy.ty.anim_length;
-            self.icons.draw_tile(
+            self.icon_sheet.draw_tile(
                 scale_factor,
                 enemy.x,
                 enemy.y,
@@ -329,10 +403,90 @@ impl Sludge {
             );
         }
         for tower in self.towers.iter() {
-            self.icons
+            self.icon_sheet
                 .draw_tile(scale_factor, tower.x, tower.y, tower.sprite, false);
         }
+        for projectile in self.projectiles.iter() {
+            match &projectile.draw_type {
+                ProjectileDrawType::Sprite(index) => {
+                    self.particle_sheet.draw_tile(
+                        scale_factor,
+                        projectile.x,
+                        projectile.y,
+                        *index,
+                        false,
+                    );
+                }
+                ProjectileDrawType::Particle(particle) => {
+                    (particle.function)(
+                        particle,
+                        projectile.x,
+                        projectile.y,
+                        &self.particle_sheet,
+                        scale_factor,
+                    );
+                }
+                _ => {}
+            }
+        }
+        for (particle, x, y) in self.orphaned_particles.iter() {
+            (particle.function)(particle, *x, *y, &self.particle_sheet, scale_factor);
+        }
         self.draw_ui(scale_factor)
+    }
+    fn update_particles(&mut self) {
+        let mut death_queue = Vec::new();
+        for (index, (particle, x, y)) in self.orphaned_particles.iter_mut().enumerate() {
+            particle.life += 1;
+            if particle.life >= particle.lifetime {
+                // kill the orhpan
+                death_queue.push(index);
+            }
+        }
+        for (remove_offset, index) in death_queue.iter().enumerate() {
+            self.orphaned_particles.remove(index - remove_offset);
+        }
+    }
+    fn update_projectiles(&mut self) {
+        let mut death_queue = Vec::new();
+        for (index, projectile) in self.projectiles.iter_mut().enumerate() {
+            let (move_x, move_y) = projectile.direction.to_vector();
+            projectile.x = (projectile.x as isize + move_x * projectile.speed as isize) as usize;
+            projectile.y = (projectile.y as isize + move_y * projectile.speed as isize) as usize;
+            projectile.life += 1;
+            if let ProjectileDrawType::Particle(particle) = &mut projectile.draw_type {
+                particle.life += 1;
+            }
+            if projectile.life >= projectile.lifetime {
+                death_queue.push(index);
+            }
+        }
+        for (remove_offset, index) in death_queue.iter().enumerate() {
+            let killed = self.projectiles.remove(index - remove_offset);
+            if !killed.death_payload.is_empty() {
+                let mut context = FiringContext::default();
+                fire_deck(
+                    killed.x,
+                    killed.y,
+                    killed.direction,
+                    killed.death_payload,
+                    &mut context,
+                );
+                self.projectiles.append(&mut context.spawn_list);
+            }
+            if let ProjectileDrawType::Particle(particle) = killed.draw_type {
+                if particle.life < particle.lifetime {
+                    self.orphaned_particles.push((particle, killed.x, killed.y));
+                }
+            }
+        }
+    }
+    fn update_towers(&mut self, deltatime_ms: u128) {
+        for tower in self.towers.iter_mut() {
+            if !tower.can_shoot() {
+                tower.delay_counter -= deltatime_ms as f32 / 1000.0;
+            }
+        }
     }
     fn update_enemies(&mut self) {
         if !self.round_in_progress {
@@ -382,23 +536,26 @@ async fn main() {
         clear_background(BLACK);
 
         let now = Instant::now();
-        let time_since_last = (now - last).as_millis();
+        let deltatime_ms = (now - last).as_millis();
 
         game.handle_input(scale_factor);
 
         // run update loops at fixed 30 FPS
-        if time_since_last >= 1000 / 30 {
+        if deltatime_ms >= 1000 / 30 {
             last = now;
             game.update_enemies();
+            game.update_projectiles();
+            game.update_particles();
+            game.update_towers(deltatime_ms);
         }
 
         // always draw
         game.draw(scale_factor);
 
         // debug
-        if is_key_pressed(KeyCode::Space) {
-            game.round_in_progress = !game.round_in_progress;
-        }
+        //if is_key_pressed(KeyCode::Space) {
+        //    game.round_in_progress = !game.round_in_progress;
+        //}
 
         next_frame().await;
     }

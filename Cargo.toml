@@ -1,7 +1,8 @@
 [package]
 name = "sludge"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 
 [dependencies]
+hashmap_macro = "0.1.0"
 macroquad = "0.4.14"
