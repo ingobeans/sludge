@@ -4,8 +4,13 @@ use crate::{particle::Particle, tower::Direction};
 
 mod library;
 
-pub fn get_cards() -> [Card; 3] {
-    [library::aiming(), library::magicbolt(), library::bomb()]
+pub fn get_cards() -> [Card; 4] {
+    [
+        library::aiming(),
+        library::magicbolt(),
+        library::bomb(),
+        library::speed(),
+    ]
 }
 
 #[derive(Clone, Copy)]
@@ -40,14 +45,11 @@ pub struct Projectile {
     pub y: usize,
     pub direction: Direction,
     pub draw_type: ProjectileDrawType,
-    pub speed: usize,
-    pub lifetime: usize,
-    pub life: usize,
-    pub piercing: bool,
-    pub damage: HashMap<DamageType, usize>,
+    pub life: isize,
     pub payload: Vec<Card>,
     pub inate_payload: Vec<Card>,
     pub death_payload: Vec<Card>,
+    pub modifier_data: CardModifierData,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -65,28 +67,45 @@ impl Default for DamageType {
 }
 #[derive(Clone, Default)]
 pub struct FiringContext {
-    pub shoot_delay: f32,
-    pub recharge_speed: f32,
     pub draw_count: usize,
-    pub aim: bool,
     pub damage_modifiers: HashMap<DamageType, isize>,
-    pub lifetime: isize,
-    pub piercing: bool,
-    pub speed: isize,
     pub spawn_list: Vec<Projectile>,
     pub origin_x: usize,
     pub origin_y: usize,
+    pub modifier_data: CardModifierData,
 }
 
-#[derive(Clone)]
-pub enum CardFunction {
-    SummonProjectile(Projectile),
-    ModifyContext(&'static dyn Fn(&mut FiringContext)),
-    None,
+#[derive(Clone, Default)]
+pub struct CardModifierData {
+    pub shoot_delay: f32,
+    pub recharge_speed: f32,
+    pub aim: bool,
+    pub lifetime: isize,
+    pub piercing: bool,
+    pub speed: isize,
+    pub damage: HashMap<DamageType, usize>,
 }
-impl Default for CardFunction {
-    fn default() -> Self {
-        Self::None
+impl CardModifierData {
+    /// Like [CardModifierData::merge] but only merges shoot_delay and recharge_speed fields, which are the only fields that
+    /// projectile type cards modify
+    pub fn merge_projectile(&mut self, other: &CardModifierData) {
+        self.shoot_delay += other.shoot_delay;
+        self.recharge_speed += other.recharge_speed;
+    }
+    pub fn merge(&mut self, other: &CardModifierData) {
+        self.shoot_delay += other.shoot_delay;
+        self.recharge_speed += other.recharge_speed;
+        self.aim |= other.aim;
+        self.lifetime += other.lifetime;
+        self.piercing |= other.piercing;
+        self.speed += other.speed;
+        for (k, v) in &other.damage {
+            if let Some(amt) = self.damage.get_mut(&k) {
+                *amt += v;
+            } else {
+                self.damage.insert(k.clone(), *v);
+            }
+        }
     }
 }
 
@@ -95,6 +114,7 @@ impl Default for CardFunction {
 pub struct Card {
     pub ty: CardType,
     pub sprite: usize,
-    pub function: CardFunction,
     pub is_trigger: bool,
+    pub modifier_data: CardModifierData,
+    pub projectile: Option<Projectile>,
 }

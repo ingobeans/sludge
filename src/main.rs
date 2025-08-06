@@ -150,7 +150,7 @@ impl Sludge {
         self.map.is_unobstructed(x, y)
     }
     /// Returns whether a UI element was interacted with
-    fn handle_ui_input(&mut self, scale_factor: usize, local_x: f32, local_y: f32) -> bool {
+    fn handle_ui_input(&mut self, local_x: f32, local_y: f32) -> bool {
         let local_x = local_x as usize;
         let local_y = local_y as usize;
 
@@ -170,8 +170,8 @@ impl Sludge {
             if tile_y < self.inventory.len() {
                 if is_mouse_button_pressed(MouseButton::Left) {
                     std::mem::swap(&mut self.cursor_card, &mut self.inventory[tile_y][tile_x]);
+                    return true;
                 }
-                return true;
             }
         } else if local_y > 8 && local_y < 8 + SPRITE_SIZE + 4 {
             if let Some(selected) = self.selected {
@@ -180,8 +180,8 @@ impl Sludge {
                 if tile_x < tower.card_slots.len() {
                     if is_mouse_button_pressed(MouseButton::Left) {
                         std::mem::swap(&mut self.cursor_card, &mut tower.card_slots[tile_x]);
+                        return true;
                     }
-                    return true;
                 }
             }
         }
@@ -233,7 +233,7 @@ impl Sludge {
         }
 
         // handle ui elements. if an element is interacted with, also return to stop other inputs being handled.
-        if self.handle_ui_input(scale_factor, local_x, local_y) {
+        if self.handle_ui_input(local_x, local_y) {
             return;
         }
         if is_mouse_button_pressed(MouseButton::Left) {
@@ -451,13 +451,15 @@ impl Sludge {
         let mut death_queue = Vec::new();
         for (index, projectile) in self.projectiles.iter_mut().enumerate() {
             let (move_x, move_y) = projectile.direction.to_vector();
-            projectile.x = (projectile.x as isize + move_x * projectile.speed as isize) as usize;
-            projectile.y = (projectile.y as isize + move_y * projectile.speed as isize) as usize;
+            projectile.x =
+                (projectile.x as isize + move_x * projectile.modifier_data.speed as isize) as usize;
+            projectile.y =
+                (projectile.y as isize + move_y * projectile.modifier_data.speed as isize) as usize;
             projectile.life += 1;
             if let ProjectileDrawType::Particle(particle) = &mut projectile.draw_type {
                 particle.life += 1;
             }
-            if projectile.life >= projectile.lifetime {
+            if projectile.life >= projectile.modifier_data.lifetime {
                 death_queue.push(index);
             }
         }

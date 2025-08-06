@@ -119,7 +119,6 @@ fn parse_spawnpoints_from_tilemap(map: &TileMap) -> [(usize, usize); 4] {
             }
         }
     }
-    println!("{:?}", points);
     points
 }
 

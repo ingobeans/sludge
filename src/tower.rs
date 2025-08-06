@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::cards::{Card, CardFunction, CardType, FiringContext, Projectile};
+use crate::cards::{Card, CardType, FiringContext, Projectile};
 
 // this is kind of dumb but i did it like this okay
 pub fn get_towers() -> [Tower; 3] {
@@ -89,7 +89,7 @@ fn draw_next(deck: &mut VecDeque<Card>) -> Vec<Card> {
                 // if card is trigger, draw one more time and set that as this card's payload
                 if card.is_trigger {
                     let payload = draw_next(deck);
-                    if let CardFunction::SummonProjectile(projectile) = &mut card.function {
+                    if let Some(projectile) = &mut card.projectile {
                         projectile.payload = payload;
                     }
                 }
@@ -106,18 +106,23 @@ fn draw_next(deck: &mut VecDeque<Card>) -> Vec<Card> {
 
 fn apply_modifiers_to_context(context: &mut FiringContext, deck: &Vec<Card>) {
     for card in deck {
-        match &card.function {
-            CardFunction::ModifyContext(function) => function(context),
-            CardFunction::SummonProjectile(projectile) => {
-                if !projectile.payload.is_empty() {
-                    // in noita, modifiers on spells in the payload affect the entire wand's recharge speed.
-                    // this code is just to emulate that.
-                    let mut mock_context = FiringContext::default();
-                    apply_modifiers_to_context(&mut mock_context, &projectile.payload);
-                    context.recharge_speed += mock_context.recharge_speed;
-                }
+        match card.ty {
+            CardType::Modifier => {
+                context.modifier_data.merge(&card.modifier_data);
+            }
+            CardType::Projectile(_) => {
+                context.modifier_data.merge_projectile(&card.modifier_data);
             }
             _ => {}
+        }
+        if let Some(projectile) = &card.projectile {
+            if !projectile.payload.is_empty() {
+                // in noita, modifiers on spells in the payload affect the entire wand's recharge speed.
+                // this code is just to emulate that.
+                let mut mock_context = FiringContext::default();
+                apply_modifiers_to_context(&mut mock_context, &projectile.payload);
+                context.modifier_data.recharge_speed += mock_context.modifier_data.recharge_speed;
+            }
         }
     }
 }
@@ -131,25 +136,13 @@ pub fn fire_deck(
 ) {
     apply_modifiers_to_context(context, &deck);
     for card in deck {
-        match card.function {
-            CardFunction::SummonProjectile(mut projectile) => {
-                // apply context to projectile
-                projectile.speed = (projectile.speed as isize + context.speed) as usize;
-                projectile.lifetime = (projectile.lifetime as isize + context.lifetime) as usize;
-                projectile.piercing |= context.piercing;
+        if let Some(mut projectile) = card.projectile {
+            projectile.modifier_data.merge(&context.modifier_data);
 
-                for (damage_type, amt) in &context.damage_modifiers {
-                    let old = projectile.damage.get(damage_type).unwrap().clone();
-                    *projectile.damage.get_mut(damage_type).unwrap() =
-                        (old as isize + amt) as usize;
-                }
-                // set projectile's starting pos and orientation
-                projectile.x = origin_x;
-                projectile.y = origin_y;
-                projectile.direction = direction;
-                context.spawn_list.push(projectile);
-            }
-            _ => {}
+            projectile.x = origin_x;
+            projectile.y = origin_y;
+            projectile.direction = direction;
+            context.spawn_list.push(projectile);
         }
     }
 }
@@ -161,14 +154,14 @@ impl Tower {
     pub fn shoot(&mut self) -> Vec<Projectile> {
         let (drawn, should_recharge) = self.draw_next();
         let mut context = FiringContext::default();
-        context.recharge_speed = self.recharge_speed;
-        context.shoot_delay = self.shoot_delay;
+        context.modifier_data.recharge_speed = self.recharge_speed;
+        context.modifier_data.shoot_delay = self.shoot_delay;
         fire_deck(self.x, self.y, self.direction, drawn, &mut context);
 
-        let mut cooldown = context.shoot_delay;
+        let mut cooldown = context.modifier_data.shoot_delay;
         if should_recharge {
             self.card_index = 0;
-            cooldown = cooldown.max(context.recharge_speed)
+            cooldown = cooldown.max(context.modifier_data.recharge_speed)
         }
         self.delay_counter = cooldown;
 

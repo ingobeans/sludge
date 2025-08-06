@@ -19,8 +19,8 @@ pub const EXPLOSION: Particle = Particle {
             for j in 0..2 {
                 particles.draw_tile(
                     scale_factor,
-                    x + j * SPRITE_SIZE - SPRITE_SIZE,
-                    y + i * SPRITE_SIZE - SPRITE_SIZE,
+                    (x + j * SPRITE_SIZE).saturating_sub(SPRITE_SIZE),
+                    (y + i * SPRITE_SIZE).saturating_sub(SPRITE_SIZE),
                     32 + anim_frame_offset + i * 32 + j,
                     false,
                 );
