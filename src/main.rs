@@ -166,6 +166,60 @@ fn load_maps() -> Vec<Map> {
     maps
 }
 
+enum DamageType {
+    Magic,
+    Pierce,
+    Explosion,
+    Cold,
+    Acid,
+}
+/// Struct that holds information about an enemy type
+struct EnemyType {
+    sprite: usize,
+    anim_length: usize,
+    speed: usize,
+    damage_resistance: Vec<DamageType>,
+}
+/// A live instance of an enemy
+struct Enemy {
+    ty: &'static EnemyType,
+    x: usize,
+    y: usize,
+    next_path_point: usize,
+    score: usize,
+}
+
+const ENEMY_TYPES: &[EnemyType] = &[
+    // spider
+    EnemyType {
+        sprite: 1 + 1 * 32,
+        anim_length: 2,
+        speed: 2,
+        damage_resistance: Vec::new(),
+    },
+];
+
+/// Move source x and y towards target x and y with speed. Returns if the target was reached/hit.
+fn move_towards(
+    speed: usize,
+    source_x: &mut usize,
+    source_y: &mut usize,
+    target_x: usize,
+    target_y: usize,
+) -> bool {
+    if *source_x < target_x {
+        *source_x += speed;
+    } else if *source_x > target_x {
+        *source_x -= speed;
+    }
+    if *source_y < target_y {
+        *source_y += speed;
+    } else if *source_y > target_y {
+        *source_y -= speed;
+    }
+    return *source_x == target_x && *source_y == target_y;
+}
+
 #[macroquad::main("sludge")]
 async fn main() {
     let mut scale_factor;
@@ -174,7 +228,20 @@ async fn main() {
             .await
             .expect("spritesheet.png is missing!!"),
     );
+    let icons_spritesheet = Spritesheet::new(
+        load_texture("icons.png")
+            .await
+            .expect("icons.png is missing!!"),
+    );
     let maps = load_maps();
+    let mut enemies: Vec<Enemy> = Vec::new();
+    enemies.push(Enemy {
+        ty: &ENEMY_TYPES[0],
+        x: maps[0].points[0].0 * SPRITE_SIZE,
+        y: maps[0].points[0].1 * SPRITE_SIZE,
+        next_path_point: 1,
+        score: 0,
+    });
 
     loop {
         // update scale factor
@@ -184,8 +251,35 @@ async fn main() {
         clear_background(BLACK);
         spritesheet.draw_tilemap(scale_factor, &maps[0].background);
         spritesheet.draw_tilemap(scale_factor, &maps[0].obstructions);
-        for (x, y) in &maps[0].points {
-            spritesheet.draw_tile(scale_factor, x * SPRITE_SIZE, y * SPRITE_SIZE, 33, 0.0);
+
+        let mut death_queue = Vec::new();
+
+        for (index, enemy) in enemies.iter_mut().enumerate() {
+            let anim_frame = enemy.score / enemy.ty.speed % enemy.ty.anim_length;
+            icons_spritesheet.draw_tile(
+                scale_factor,
+                enemy.x,
+                enemy.y,
+                enemy.ty.sprite + anim_frame,
+                0.0,
+            );
+            let next_x = maps[0].points[enemy.next_path_point].0 * SPRITE_SIZE;
+            let next_y = maps[0].points[enemy.next_path_point].1 * SPRITE_SIZE;
+            // move enemy towards next path point. if point is reached, increment next path point index
+            if move_towards(enemy.ty.speed, &mut enemy.x, &mut enemy.y, next_x, next_y) {
+                enemy.next_path_point += 1;
+                // if at last path point, kill this enemy
+                if enemy.next_path_point >= maps[0].points.len() {
+                    death_queue.push(index);
+                }
+            }
+            enemy.score += enemy.ty.speed;
+        }
+
+        let mut remove_offset = 0;
+        for index in death_queue {
+            enemies.remove(index - remove_offset);
+            remove_offset += 1;
         }
 
         next_frame().await;
