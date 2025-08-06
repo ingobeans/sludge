@@ -61,7 +61,7 @@ fn move_towards(
     } else if *source_y > target_y {
         *source_y -= speed;
     }
-    return *source_x == target_x && *source_y == target_y;
+    *source_x == target_x && *source_y == target_y
 }
 
 async fn load_spritesheet(path: &str) -> Spritesheet {
@@ -78,6 +78,7 @@ struct Sludge {
     round_in_progress: bool,
     moving: Option<Tower>,
     selected: Option<usize>,
+    inventory: [[Option<Card>; (MENU_WIDTH - 4) / 11]; (SCREEN_HEIGHT - 4) / 11],
     card_inventory_open: bool,
     tileset: Spritesheet,
     icons: Spritesheet,
@@ -90,26 +91,13 @@ impl Sludge {
         let cards = load_spritesheet("cards.png").await;
 
         // add starting towers
-        let tower1 = Tower {
-            x: map.tower_spawnpoints[0].0,
-            y: map.tower_spawnpoints[0].1,
-            sprite: 0,
-            card_slots: vec![None; 6],
-            card_index: 0,
-            shoot_delay: 0.32,
-            delay_counter: 0.0,
-            direction: Direction::LEFT,
-        };
-        let tower2 = Tower {
-            x: map.tower_spawnpoints[1].0,
-            y: map.tower_spawnpoints[1].1,
-            sprite: 3,
-            card_slots: vec![None; 3],
-            card_index: 0,
-            shoot_delay: 0.32,
-            delay_counter: 0.0,
-            direction: Direction::LEFT,
-        };
+        let mut tower1 = TOWERS[0].clone();
+        tower1.x = map.tower_spawnpoints[0].0;
+        tower1.y = map.tower_spawnpoints[0].1;
+
+        let mut tower2 = TOWERS[1].clone();
+        tower2.x = map.tower_spawnpoints[1].0;
+        tower2.y = map.tower_spawnpoints[1].1;
 
         Self {
             map,
@@ -120,6 +108,7 @@ impl Sludge {
             round_in_progress: false,
             moving: None,
             selected: None,
+            inventory: [[None; (MENU_WIDTH - 4) / 11]; (SCREEN_HEIGHT - 4) / 11],
             card_inventory_open: false,
             tileset,
             icons,
@@ -157,11 +146,10 @@ impl Sludge {
             && local_x < handle_x + SPRITE_SIZE
             && local_y > handle_y
             && local_y < handle_y + SPRITE_SIZE
+            && is_mouse_button_pressed(MouseButton::Left)
         {
-            if is_mouse_button_pressed(MouseButton::Left) {
-                self.card_inventory_open = !self.card_inventory_open;
-                return true;
-            }
+            self.card_inventory_open = !self.card_inventory_open;
+            return true;
         }
         false
     }
@@ -185,31 +173,38 @@ impl Sludge {
         let local_x = mouse_x / scale_factor as f32;
         let local_y = mouse_y / scale_factor as f32;
 
+        // if we're currently dragging a tower
         if self.moving.is_some() {
             let mut tower_x = 0;
             let mut tower_y = 0;
             if let Some(tower) = &mut self.moving {
+                // set tower x and y to cursor position (offset by 4 so its centered, and clamped to be inside map)
                 tower.x = (local_x as usize)
                     .saturating_sub(SPRITE_SIZE / 2)
                     .min(SCREEN_WIDTH - 1 - SPRITE_SIZE);
                 tower.y = (local_y as usize).min(SCREEN_HEIGHT - 1 - SPRITE_SIZE);
 
+                // store new pos so we can access it outside of this `if let` scope
                 tower_x = tower.x;
                 tower_y = tower.y;
             }
             let valid = self.is_valid_tower_placement(tower_x, tower_y);
+            // if we're no longer holding LMB and the spot is valid, place tower there
             if !is_mouse_button_down(MouseButton::Left) && valid {
                 self.towers.push(self.moving.take().unwrap());
                 self.selected = Some(self.towers.len() - 1);
             }
+            // stop any other input events from being handled
             return;
         }
 
+        // handle ui elements. if an element is interacted with, also return to stop other inputs being handled.
         if self.handle_ui_input(scale_factor, local_x, local_y) {
             return;
         }
         if is_mouse_button_pressed(MouseButton::Left) {
-            // find if we're clicking tower
+            // find tower being clicked by iterating through all towers and checking if distance to cursor <= 8.0
+            // (also sorted based on distance for multiple matches)
             let mut clicked = None;
             for (index, tower) in self.towers.iter().enumerate() {
                 let distance = ((tower.x as f32 + SPRITE_SIZE as f32 / 2.0 - local_x).powi(2)
@@ -226,6 +221,7 @@ impl Sludge {
                     }
                 }
             }
+            // if we didnt click any tower, and we previously had a selected tower, deselect it
             if clicked.is_none() {
                 if self.selected.is_some() {
                     self.selected = None;
@@ -233,15 +229,19 @@ impl Sludge {
                 }
                 return;
             }
+            // if we did click a tower, and we previously didnt have a selected tower, select it
             let clicked = clicked.unwrap().0;
             if self.selected.is_none() {
                 self.selected = Some(clicked);
                 self.card_inventory_open = true;
             } else {
+                // if we did click a tower, and we previously did have a selected tower, check if theyre the same
                 let old_selected = self.selected.unwrap();
+                // if theyre not the same, move selection to the newly pressed tower
                 if old_selected != clicked {
                     self.selected = Some(clicked);
                 } else {
+                    // if they are the same, start moving that tower
                     self.selected = None;
                     self.moving = Some(self.towers.remove(clicked));
                 }
@@ -253,21 +253,18 @@ impl Sludge {
             let tower = &self.towers[selected];
             for (index, card_slot) in tower.card_slots.iter().enumerate() {
                 // todo: draw text
-                ui::draw_body(
+                let tile_x = index * (SPRITE_SIZE + 3);
+                let tile_y = 8;
+                ui::draw_square(
                     scale_factor,
-                    index * (SPRITE_SIZE + 4),
-                    8,
+                    tile_x,
+                    tile_y,
                     SPRITE_SIZE + 4,
                     SPRITE_SIZE + 4,
                 );
                 if let Some(card) = card_slot {
-                    self.cards.draw_tile(
-                        scale_factor,
-                        index * (SPRITE_SIZE + 4),
-                        8,
-                        card.sprite,
-                        false,
-                    );
+                    self.cards
+                        .draw_tile(scale_factor, tile_x, tile_y, card.sprite, false);
                 }
             }
         }
@@ -279,6 +276,17 @@ impl Sludge {
                 MENU_WIDTH,
                 SCREEN_HEIGHT,
             );
+            for y in 0..self.inventory.len() {
+                for x in 0..self.inventory[0].len() {
+                    ui::draw_square(
+                        scale_factor,
+                        SCREEN_WIDTH - MENU_WIDTH + 2 + x * 11,
+                        2 + y * 11,
+                        12,
+                        12,
+                    );
+                }
+            }
         }
         let (handle_x, handle_y, flipped) = self.get_menu_handle_state();
         self.icons
@@ -347,10 +355,8 @@ impl Sludge {
             enemy.score += enemy.ty.speed;
         }
 
-        let mut remove_offset = 0;
-        for index in death_queue {
+        for (remove_offset, index) in death_queue.iter().enumerate() {
             self.enemies.remove(index - remove_offset);
-            remove_offset += 1;
         }
         if self.enemies.len() == 0 {
             self.round_in_progress = false;
