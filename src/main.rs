@@ -1,4 +1,7 @@
-use std::fs::{read_dir, read_to_string};
+use std::{
+    fs::{read_dir, read_to_string},
+    time::Instant,
+};
 
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
@@ -69,6 +72,7 @@ type TileMap = [[usize; SCREEN_WIDTH / SPRITE_SIZE]; SCREEN_HEIGHT / SPRITE_SIZE
 #[allow(dead_code)]
 struct BadMapDataError(&'static str);
 
+#[derive(Clone)]
 struct Map {
     background: TileMap,
     obstructions: TileMap,
@@ -194,7 +198,7 @@ const ENEMY_TYPES: &[EnemyType] = &[
     EnemyType {
         sprite: 1 + 1 * 32,
         anim_length: 2,
-        speed: 2,
+        speed: 1,
         damage_resistance: Vec::new(),
     },
 ];
@@ -220,56 +224,74 @@ fn move_towards(
     return *source_x == target_x && *source_y == target_y;
 }
 
-#[macroquad::main("sludge")]
-async fn main() {
-    let mut scale_factor;
-    let spritesheet = Spritesheet::new(
-        load_texture("spritesheet.png")
-            .await
-            .expect("spritesheet.png is missing!!"),
-    );
-    let icons_spritesheet = Spritesheet::new(
-        load_texture("icons.png")
-            .await
-            .expect("icons.png is missing!!"),
-    );
-    let maps = load_maps();
-    let mut enemies: Vec<Enemy> = Vec::new();
-    enemies.push(Enemy {
-        ty: &ENEMY_TYPES[0],
-        x: maps[0].points[0].0 * SPRITE_SIZE,
-        y: maps[0].points[0].1 * SPRITE_SIZE,
-        next_path_point: 1,
-        score: 0,
-    });
+const STARTING_LIVES: u8 = 100;
 
-    loop {
-        // update scale factor
-        let (screen_width, screen_height) = screen_size();
-        scale_factor =
-            (screen_width as usize / SCREEN_WIDTH).min(screen_height as usize / SCREEN_HEIGHT);
-        clear_background(BLACK);
-        spritesheet.draw_tilemap(scale_factor, &maps[0].background);
-        spritesheet.draw_tilemap(scale_factor, &maps[0].obstructions);
+async fn load_spritesheet(path: &str) -> Spritesheet {
+    let error = format!("{} is missing!!", path);
+    Spritesheet::new(load_texture(path).await.expect(&error))
+}
 
-        let mut death_queue = Vec::new();
-
-        for (index, enemy) in enemies.iter_mut().enumerate() {
+struct Sludge {
+    map: Map,
+    enemies: Vec<Enemy>,
+    lives: u8,
+    tileset: Spritesheet,
+    icons: Spritesheet,
+    cards: Spritesheet,
+}
+impl Sludge {
+    async fn new(map: Map) -> Self {
+        let tileset = load_spritesheet("spritesheet.png").await;
+        let icons = load_spritesheet("icons.png").await;
+        let cards = load_spritesheet("cards.png").await;
+        Self {
+            map,
+            enemies: Vec::new(),
+            lives: STARTING_LIVES,
+            tileset,
+            icons,
+            cards,
+        }
+    }
+    fn spawn_enemy(&mut self, ty: &'static EnemyType) {
+        let spawn = self.map.points[0];
+        let enemy = Enemy {
+            ty,
+            x: spawn.0 * SPRITE_SIZE,
+            y: spawn.1 * SPRITE_SIZE,
+            next_path_point: 1,
+            score: 0,
+        };
+        self.enemies.push(enemy);
+    }
+    fn draw(&self, scale_factor: usize) {
+        self.tileset
+            .draw_tilemap(scale_factor, &self.map.background);
+        self.tileset
+            .draw_tilemap(scale_factor, &self.map.obstructions);
+        for enemy in &self.enemies {
             let anim_frame = enemy.score / enemy.ty.speed % enemy.ty.anim_length;
-            icons_spritesheet.draw_tile(
+            self.icons.draw_tile(
                 scale_factor,
                 enemy.x,
                 enemy.y,
                 enemy.ty.sprite + anim_frame,
                 0.0,
             );
-            let next_x = maps[0].points[enemy.next_path_point].0 * SPRITE_SIZE;
-            let next_y = maps[0].points[enemy.next_path_point].1 * SPRITE_SIZE;
+        }
+    }
+    fn update_enemies(&mut self) {
+        let mut death_queue = Vec::new();
+
+        for (index, enemy) in self.enemies.iter_mut().enumerate() {
+            let next_x = self.map.points[enemy.next_path_point].0 * SPRITE_SIZE;
+            let next_y = self.map.points[enemy.next_path_point].1 * SPRITE_SIZE;
+
             // move enemy towards next path point. if point is reached, increment next path point index
             if move_towards(enemy.ty.speed, &mut enemy.x, &mut enemy.y, next_x, next_y) {
                 enemy.next_path_point += 1;
                 // if at last path point, kill this enemy
-                if enemy.next_path_point >= maps[0].points.len() {
+                if enemy.next_path_point >= self.map.points.len() {
                     death_queue.push(index);
                 }
             }
@@ -278,9 +300,39 @@ async fn main() {
 
         let mut remove_offset = 0;
         for index in death_queue {
-            enemies.remove(index - remove_offset);
+            self.enemies.remove(index - remove_offset);
             remove_offset += 1;
         }
+    }
+}
+
+#[macroquad::main("sludge")]
+async fn main() {
+    let mut scale_factor;
+    let maps = load_maps();
+    let mut game = Sludge::new(maps[0].clone()).await;
+    game.spawn_enemy(&ENEMY_TYPES[0]);
+
+    let mut last = Instant::now();
+
+    loop {
+        // update scale factor
+        let (screen_width, screen_height) = screen_size();
+        scale_factor =
+            (screen_width as usize / SCREEN_WIDTH).min(screen_height as usize / SCREEN_HEIGHT);
+        clear_background(BLACK);
+
+        let now = Instant::now();
+        let time_since_last = (now - last).as_millis();
+
+        // run update loops at fixed 60 FPS
+        if time_since_last >= 1000 / 60 {
+            last = now;
+            game.update_enemies();
+        }
+
+        // always draw
+        game.draw(scale_factor);
 
         next_frame().await;
     }
