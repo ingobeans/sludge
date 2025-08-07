@@ -7,6 +7,14 @@ pub struct Particle {
     pub function: &'static dyn Fn(&Particle, usize, usize, &Spritesheet),
 }
 
+pub const HIT_MARKER: Particle = Particle {
+    life: 0,
+    lifetime: 2,
+    function: &|_, x, y, particles| {
+        particles.draw_tile(x, y, 6, false, 0.0);
+    },
+};
+
 pub const BUBBLE: Particle = Particle {
     life: 0,
     lifetime: 20,

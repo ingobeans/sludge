@@ -424,9 +424,12 @@ impl Sludge {
                     + (enemy.y as f32 - projectile.y as f32).powi(2))
                 .sqrt();
                 if distance < 8.0 {
+                    // hit!
                     if !projectile.modifier_data.piercing {
+                        // kil projectile if not piercing
                         dead = true;
                     }
+                    // send trigger payload
                     if !projectile.payload.is_empty() {
                         let mut context = FiringContext::default();
                         fire_deck(
@@ -438,6 +441,12 @@ impl Sludge {
                         );
                         new_projectiles.append(&mut context.spawn_list);
                     }
+                    // spawn hitmarker particle
+                    self.orphaned_particles.push((
+                        particle::HIT_MARKER,
+                        projectile.x,
+                        projectile.y,
+                    ));
                 }
             }
             if dead {
