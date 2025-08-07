@@ -6,6 +6,8 @@ pub const SPRITE_SIZE: usize = 8;
 
 pub const CARD_SIZE: usize = SPRITE_SIZE + 4;
 
+pub const DEFAULT_SPAWN_DELAY: u8 = 30;
+
 pub const STARTING_LIVES: u8 = 100;
 
 pub const UI_BG_COLOR: Color = Color::from_hex(0xb86f50);

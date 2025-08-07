@@ -1,0 +1,4 @@
+delay30 0x5
+delay30 0x10
+delay10 0x5 delay30 1x2
+delay30 1x10 0x10

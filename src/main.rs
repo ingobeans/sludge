@@ -3,43 +3,21 @@ use std::time::Instant;
 
 use crate::cards::*;
 use crate::consts::*;
+use crate::enemy::*;
 use crate::map::*;
 use crate::particle::Particle;
+use crate::rounds::*;
 use crate::tower::*;
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
 mod cards;
 mod consts;
+mod enemy;
 mod map;
 mod particle;
+mod rounds;
 mod tower;
 mod ui;
-
-/// Struct that holds information about an enemy type
-struct EnemyType {
-    sprite: usize,
-    anim_length: usize,
-    speed: usize,
-    damage_resistance: Vec<DamageType>,
-}
-/// A live instance of an enemy
-struct Enemy {
-    ty: &'static EnemyType,
-    x: usize,
-    y: usize,
-    next_path_point: usize,
-    score: usize,
-}
-
-const ENEMY_TYPES: &[EnemyType] = &[
-    // spider
-    EnemyType {
-        sprite: 2 * 32,
-        anim_length: 2,
-        speed: 1,
-        damage_resistance: Vec::new(),
-    },
-];
 
 /// Move source x and y towards target x and y with speed. Returns if the target was reached/hit.
 fn move_towards(
@@ -74,8 +52,7 @@ struct Sludge {
     projectiles: Vec<Projectile>,
     orphaned_particles: Vec<(Particle, usize, usize)>,
     lives: u8,
-    round: u8,
-    round_in_progress: bool,
+    round_manager: RoundManager,
     moving: Option<Tower>,
     selected: Option<usize>,
     cursor_card: Option<Card>,
@@ -118,8 +95,7 @@ impl Sludge {
             projectiles: Vec::with_capacity(100),
             orphaned_particles: Vec::with_capacity(100),
             lives: STARTING_LIVES,
-            round: 0,
-            round_in_progress: false,
+            round_manager: load_round_data(),
             moving: None,
             selected: None,
             cursor_card: None,
@@ -139,6 +115,7 @@ impl Sludge {
             y: spawn.1 * SPRITE_SIZE,
             next_path_point: 1,
             score: 0,
+            moving_left: false,
         };
         self.enemies.push(enemy);
     }
@@ -351,8 +328,12 @@ impl Sludge {
         self.tileset.draw_tilemap(&self.map.obstructions);
         for enemy in &self.enemies {
             let anim_frame = enemy.score / enemy.ty.speed % enemy.ty.anim_length;
+            let mut flipped = false;
+            if enemy.moving_left && enemy.ty.should_flip {
+                flipped = true;
+            }
             self.icon_sheet
-                .draw_tile(enemy.x, enemy.y, enemy.ty.sprite + anim_frame, false, 0.0);
+                .draw_tile(enemy.x, enemy.y, enemy.ty.sprite + anim_frame, flipped, 0.0);
         }
         for tower in self.towers.iter() {
             self.icon_sheet
@@ -482,14 +463,23 @@ impl Sludge {
         }
     }
     fn update_enemies(&mut self) {
-        if !self.round_in_progress {
+        if !self.round_manager.in_progress {
             return;
         }
+        if let Some(enemy) = self.round_manager.update() {
+            self.spawn_enemy(enemy);
+        }
+
         let mut death_queue = Vec::new();
 
         for (index, enemy) in self.enemies.iter_mut().enumerate() {
             let next_x = self.map.points[enemy.next_path_point].0 * SPRITE_SIZE;
             let next_y = self.map.points[enemy.next_path_point].1 * SPRITE_SIZE;
+            if next_x > enemy.x {
+                enemy.moving_left = false;
+            } else if next_x < enemy.x {
+                enemy.moving_left = true;
+            }
 
             // move enemy towards next path point. if point is reached, increment next path point index
             if move_towards(enemy.ty.speed, &mut enemy.x, &mut enemy.y, next_x, next_y) {
@@ -506,8 +496,7 @@ impl Sludge {
             self.enemies.remove(index - remove_offset);
         }
         if self.enemies.len() == 0 {
-            self.round_in_progress = false;
-            self.round += 1;
+            self.round_manager.finish_round();
         }
     }
 }
@@ -517,7 +506,6 @@ async fn main() {
     let mut scale_factor;
     let maps = load_maps();
     let mut game = Sludge::new(maps[0].clone()).await;
-    game.spawn_enemy(&ENEMY_TYPES[0]);
 
     let mut last = Instant::now();
 
@@ -551,7 +539,7 @@ async fn main() {
 
         game.handle_input(local_x, local_y);
 
-        // run update loops at fixed 30 FPS
+        // run update loops at fixed FPS
         if deltatime_ms >= 1000 / 30 {
             last = now;
             game.update_enemies();
@@ -581,6 +569,11 @@ async fn main() {
                 ..Default::default()
             },
         );
+
+        // debug
+        if is_key_pressed(KeyCode::E) {
+            game.round_manager.in_progress = true;
+        }
 
         next_frame().await;
     }

@@ -187,8 +187,8 @@ pub fn parse_tilemap_layer(xml: &str, layer_name: &str) -> Result<TileMap, BadMa
 
 pub fn load_maps() -> Vec<Map> {
     let mut maps = Vec::new();
-    for item in read_dir("tiled/maps")
-        .expect("tiled/maps is missing!!")
+    for item in read_dir("data/maps")
+        .expect("data/maps is missing!!")
         .flatten()
     {
         let data = read_to_string(item.path()).expect("failed to read map data :(");
