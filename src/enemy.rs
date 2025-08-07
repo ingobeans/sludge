@@ -10,7 +10,7 @@ pub enum DamageResistance {
 pub struct EnemyType {
     pub sprite: usize,
     pub anim_length: usize,
-    pub speed: usize,
+    pub speed: i16,
     pub damage_resistance: DamageResistance,
     /// If enemy should flip its sprite when moving to the left
     pub should_flip: bool,
@@ -18,11 +18,11 @@ pub struct EnemyType {
 /// A live instance of an enemy
 pub struct Enemy {
     pub ty: &'static EnemyType,
-    pub x: usize,
-    pub y: usize,
+    pub x: i16,
+    pub y: i16,
     pub next_path_point: usize,
     /// Tracks how far along the path this enemy has moved
-    pub score: usize,
+    pub score: i16,
     /// Is enemy moving left?
     pub moving_left: bool,
 }

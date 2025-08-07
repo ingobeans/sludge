@@ -86,12 +86,12 @@ impl Default for ProjectileDrawType {
 
 #[derive(Default, Clone)]
 pub struct Projectile {
-    pub x: usize,
-    pub y: usize,
+    pub x: i16,
+    pub y: i16,
     /// Direction projectile is traveling
     pub direction: Vec2,
     pub draw_type: ProjectileDrawType,
-    pub life: isize,
+    pub life: i16,
     /// Payload released on hit. Only used on trigger projectiles.
     pub payload: Vec<Card>,
     /// Like payload, except inate to the projectile, like the rocket releasing explosion on hit.
@@ -118,7 +118,7 @@ impl Default for DamageType {
 #[derive(Clone, Default)]
 pub struct FiringContext {
     pub draw_count: usize,
-    pub damage_modifiers: HashMap<DamageType, isize>,
+    pub damage_modifiers: HashMap<DamageType, i16>,
     pub spawn_list: Vec<Projectile>,
     pub origin_x: usize,
     pub origin_y: usize,
@@ -130,9 +130,9 @@ pub struct CardModifierData {
     pub shoot_delay: f32,
     pub recharge_speed: f32,
     pub aim: bool,
-    pub lifetime: isize,
+    pub lifetime: i16,
     pub piercing: bool,
-    pub speed: isize,
+    pub speed: i16,
     pub damage: HashMap<DamageType, usize>,
 }
 impl CardModifierData {
@@ -150,7 +150,7 @@ impl CardModifierData {
         self.piercing |= other.piercing;
         self.speed += other.speed;
         for (k, v) in &other.damage {
-            if let Some(amt) = self.damage.get_mut(&k) {
+            if let Some(amt) = self.damage.get_mut(k) {
                 *amt += v;
             } else {
                 self.damage.insert(k.clone(), *v);
@@ -167,7 +167,7 @@ pub struct Card {
     pub is_trigger: bool,
 }
 impl Card {
-    pub fn draw(&self, card_sheet: &Spritesheet, x: usize, y: usize) {
+    pub fn draw(&self, card_sheet: &Spritesheet, x: i16, y: i16) {
         draw_rectangle(
             x.saturating_sub(2) as f32,
             y.saturating_sub(2) as f32,

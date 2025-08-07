@@ -19,19 +19,19 @@ impl Spritesheet {
             height,
         }
     }
-    pub fn id_to_pos(&self, id: usize) -> (usize, usize) {
-        let x = id % (self.width / SPRITE_SIZE);
-        let y = id / (self.height / SPRITE_SIZE);
+    fn id_to_pos(&self, id: usize) -> (usize, usize) {
+        let x = id % (self.width / SPRITE_SIZE_USIZE);
+        let y = id / (self.height / SPRITE_SIZE_USIZE);
         (x, y)
     }
-    pub fn draw_tile(&self, x: usize, y: usize, id: usize, flipped: bool, rotation: f32) {
+    pub fn draw_tile(&self, x: i16, y: i16, id: usize, flipped: bool, rotation: f32) {
         let (texture_x, texture_y) = self.id_to_pos(id);
         let size = SPRITE_SIZE as f32;
         let params = DrawTextureParams {
             dest_size: Some(Vec2 { x: size, y: size }),
             source: Some(Rect {
-                x: (texture_x * SPRITE_SIZE) as f32,
-                y: (texture_y * SPRITE_SIZE) as f32,
+                x: (texture_x * SPRITE_SIZE_USIZE) as f32,
+                y: (texture_y * SPRITE_SIZE_USIZE) as f32,
                 w: SPRITE_SIZE as f32,
                 h: SPRITE_SIZE as f32,
             }),
@@ -43,9 +43,11 @@ impl Spritesheet {
         draw_texture_ex(&self.texture, x as f32, y as f32, WHITE, params);
     }
     pub fn draw_tilemap(&self, map: &TileMap) {
-        for y in 0..SCREEN_HEIGHT / SPRITE_SIZE {
-            for x in 0..SCREEN_WIDTH / SPRITE_SIZE {
+        for y in 0..SCREEN_HEIGHT_USIZE / SPRITE_SIZE_USIZE {
+            for x in 0..SCREEN_WIDTH_USIZE / SPRITE_SIZE_USIZE {
                 let tile = map[y][x].checked_sub(1);
+                let x = x as i16;
+                let y = y as i16;
                 if let Some(tile) = tile {
                     self.draw_tile(x * SPRITE_SIZE, y * SPRITE_SIZE, tile, false, 0.0);
                 }
@@ -54,7 +56,8 @@ impl Spritesheet {
     }
 }
 
-pub type TileMap = [[usize; SCREEN_WIDTH / SPRITE_SIZE]; SCREEN_HEIGHT / SPRITE_SIZE];
+pub type TileMap =
+    [[usize; SCREEN_WIDTH_USIZE / SPRITE_SIZE_USIZE]; SCREEN_HEIGHT_USIZE / SPRITE_SIZE_USIZE];
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -64,26 +67,26 @@ pub struct BadMapDataError(&'static str);
 pub struct Map {
     pub background: TileMap,
     pub obstructions: TileMap,
-    pub points: Vec<(usize, usize)>,
+    pub points: Vec<(i16, i16)>,
     pub tower_spawnpoints: [(usize, usize); 4],
 }
 impl Map {
     pub fn is_unobstructed(&self, x: usize, y: usize) -> bool {
         // make size slightly smaller than sprite size so you can squeeze towers in slightly tighter spots
-        let size = SPRITE_SIZE - 1;
+        let size = SPRITE_SIZE_USIZE - 1;
 
         let top_left = (x, y);
         let top_right = (x + size, y);
         let bottom_left = (x, y + size);
         let bottom_right = (x + size, y + size);
         for (corner_x, corner_y) in [top_left, top_right, bottom_left, bottom_right] {
-            if self.obstructions[corner_y / SPRITE_SIZE][corner_x / SPRITE_SIZE] != 0 {
+            if self.obstructions[corner_y / SPRITE_SIZE_USIZE][corner_x / SPRITE_SIZE_USIZE] != 0 {
                 return false;
             }
-            if self
-                .points
-                .contains(&(corner_x / SPRITE_SIZE, corner_y / SPRITE_SIZE))
-            {
+            if self.points.contains(&(
+                (corner_x / SPRITE_SIZE_USIZE) as i16,
+                (corner_y / SPRITE_SIZE_USIZE) as i16,
+            )) {
                 return false;
             }
         }
@@ -100,10 +103,10 @@ fn parse_spawnpoints_from_tilemap(map: &TileMap) -> [(usize, usize); 4] {
             let tile = map[y][x];
             found += 1;
             match tile {
-                65 => points[0] = (x * SPRITE_SIZE, y * SPRITE_SIZE),
-                66 => points[1] = (x * SPRITE_SIZE, y * SPRITE_SIZE),
-                97 => points[2] = (x * SPRITE_SIZE, y * SPRITE_SIZE),
-                98 => points[3] = (x * SPRITE_SIZE, y * SPRITE_SIZE),
+                65 => points[0] = (x * SPRITE_SIZE_USIZE, y * SPRITE_SIZE_USIZE),
+                66 => points[1] = (x * SPRITE_SIZE_USIZE, y * SPRITE_SIZE_USIZE),
+                97 => points[2] = (x * SPRITE_SIZE_USIZE, y * SPRITE_SIZE_USIZE),
+                98 => points[3] = (x * SPRITE_SIZE_USIZE, y * SPRITE_SIZE_USIZE),
                 _ => {
                     found -= 1;
                 }
@@ -117,7 +120,7 @@ fn parse_spawnpoints_from_tilemap(map: &TileMap) -> [(usize, usize); 4] {
 }
 
 /// Parses an enemy path from a tilemap. Starts at tile with ID=33, and follows neighbouring ID=34 until stop.
-fn parse_points_from_tilemap(map: &TileMap) -> Vec<(usize, usize)> {
+fn parse_points_from_tilemap(map: &TileMap) -> Vec<(i16, i16)> {
     let mut points = Vec::new();
     // find start
     let mut current_x = 0;
@@ -126,6 +129,8 @@ fn parse_points_from_tilemap(map: &TileMap) -> Vec<(usize, usize)> {
         for x in 0..map[0].len() {
             let tile = map[y][x];
             if tile == 33 {
+                let x = x as i16;
+                let y = y as i16;
                 current_x = x;
                 current_y = y;
                 points.push((x, y));
@@ -139,14 +144,14 @@ fn parse_points_from_tilemap(map: &TileMap) -> Vec<(usize, usize)> {
         for dir in neighbour_directions {
             let y = ((current_y as isize) + dir.1)
                 .max(0)
-                .min(map.len() as isize - 1) as usize;
+                .min(map.len() as isize - 1) as i16;
             let x = ((current_x as isize) + dir.0)
                 .max(0)
-                .min(map[0].len() as isize - 1) as usize;
+                .min(map[0].len() as isize - 1) as i16;
             if points.contains(&(x, y)) {
                 continue;
             }
-            if map[y][x] == 34 {
+            if map[y as usize][x as usize] == 34 {
                 current_x = x;
                 current_y = y;
                 points.push((x, y));
@@ -170,7 +175,8 @@ pub fn parse_tilemap_layer(xml: &str, layer_name: &str) -> Result<TileMap, BadMa
         .ok_or(BadMapDataError("layer data corrupted"))?
         .0;
     let mut split = xml.split(',');
-    let mut data: TileMap = [[0; SCREEN_WIDTH / SPRITE_SIZE]; SCREEN_HEIGHT / SPRITE_SIZE];
+    let mut data: TileMap =
+        [[0; SCREEN_WIDTH_USIZE / SPRITE_SIZE_USIZE]; SCREEN_HEIGHT_USIZE / SPRITE_SIZE_USIZE];
     for y in 0..data.len() {
         for x in 0..data[0].len() {
             data[y][x] = split

@@ -40,8 +40,8 @@ pub fn get_towers() -> [Tower; 4] {
 #[derive(Clone, Default)]
 /// A user placed tower
 pub struct Tower {
-    pub x: usize,
-    pub y: usize,
+    pub x: i16,
+    pub y: i16,
     pub sprite: usize,
     pub card_slots: Vec<Option<Card>>,
     pub card_index: usize,
@@ -109,8 +109,8 @@ fn apply_modifiers_to_context(context: &mut FiringContext, deck: &Vec<Card>) {
 }
 
 pub fn fire_deck(
-    origin_x: usize,
-    origin_y: usize,
+    origin_x: i16,
+    origin_y: i16,
     direction: Vec2,
     deck: Vec<Card>,
     context: &mut FiringContext,
