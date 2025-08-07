@@ -33,42 +33,6 @@ pub fn bubble() -> Card {
         ..Default::default()
     }
 }
-
-pub fn rocket() -> Card {
-    let explosion_projectile = Projectile {
-        draw_type: ProjectileDrawType::Particle(particle::EXPLOSION.clone()),
-        modifier_data: CardModifierData {
-            speed: 0.0,
-            lifetime: 0.0,
-            damage: hashmap!(DamageType::Explosion => 13.0),
-            ..Default::default()
-        },
-        ..Default::default()
-    };
-    let explosion = Card {
-        ty: CardType::Projectile(explosion_projectile, false),
-        sprite: 0,
-        ..Default::default()
-    };
-    let projectile = Projectile {
-        draw_type: ProjectileDrawType::Sprite(2, SpriteRotationMode::Direction),
-        modifier_data: CardModifierData {
-            speed: 3.0,
-            lifetime: 40.0,
-            shoot_delay: 0.85,
-            ..Default::default()
-        },
-        inate_payload: vec![explosion],
-        ..Default::default()
-    };
-
-    Card {
-        ty: CardType::Projectile(projectile, false),
-        sprite: 15,
-        ..Default::default()
-    }
-}
-
 pub fn double() -> Card {
     Card {
         ty: CardType::Multidraw(2),
@@ -128,22 +92,27 @@ pub fn magicbolt() -> Card {
     }
 }
 
-pub fn bomb() -> Card {
+fn explosion() -> Card {
     let explosion_projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::EXPLOSION.clone()),
+        extra_size: SPRITE_SIZE,
         modifier_data: CardModifierData {
             speed: 0.0,
-            lifetime: 0.0,
+            lifetime: 1.0,
+            piercing: true,
             damage: hashmap!(DamageType::Explosion => 13.0),
             ..Default::default()
         },
         ..Default::default()
     };
-    let explosion = Card {
+    Card {
         ty: CardType::Projectile(explosion_projectile, false),
         sprite: 0,
         ..Default::default()
-    };
+    }
+}
+
+pub fn bomb() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(1, SpriteRotationMode::Spin),
         modifier_data: CardModifierData {
@@ -152,13 +121,33 @@ pub fn bomb() -> Card {
             shoot_delay: 0.85,
             ..Default::default()
         },
-        death_payload: vec![explosion],
+        death_payload: vec![explosion()],
         ..Default::default()
     };
 
     Card {
         ty: CardType::Projectile(projectile, false),
         sprite: 3,
+        ..Default::default()
+    }
+}
+
+pub fn rocket() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Sprite(2, SpriteRotationMode::Direction),
+        modifier_data: CardModifierData {
+            speed: 3.0,
+            lifetime: 40.0,
+            shoot_delay: 0.85,
+            ..Default::default()
+        },
+        inate_payload: vec![explosion()],
+        ..Default::default()
+    };
+
+    Card {
+        ty: CardType::Projectile(projectile, false),
+        sprite: 15,
         ..Default::default()
     }
 }

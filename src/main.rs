@@ -45,6 +45,17 @@ async fn load_spritesheet(path: &str) -> Spritesheet {
     Spritesheet::new(load_texture(path).await.expect(&error))
 }
 
+fn get_direction_nearest_enemy(enemies: &Vec<Enemy>, x: f32, y: f32) -> Vec2 {
+    let mut nearest: (f32, Vec2) = (f32::MAX, Vec2::new(-1.0, 0.0));
+    for enemy in enemies {
+        let distance = ((enemy.x - x).powi(2) + (enemy.y - y).powi(2)).sqrt();
+        if distance < nearest.0 {
+            nearest = (distance, Vec2::new(enemy.x - x, enemy.y - y).normalize())
+        }
+    }
+    nearest.1
+}
+
 struct Sludge {
     map: Map,
     enemies: Vec<Enemy>,
@@ -274,7 +285,7 @@ impl Sludge {
             if let Some(selected) = self.selected {
                 let tower = &mut self.towers[selected];
                 if tower.can_shoot() {
-                    let mut spawn_queue = tower.shoot();
+                    let mut spawn_queue = tower.shoot(Vec2::new(-1.0, 0.0));
                     self.projectiles.append(&mut spawn_queue);
                 }
             }
@@ -426,12 +437,8 @@ impl Sludge {
                 let distance = ((enemy.x as f32 - projectile.x as f32).powi(2)
                     + (enemy.y as f32 - projectile.y as f32).powi(2))
                 .sqrt();
-                if distance < 8.0 {
+                if distance < 8.0 + projectile.extra_size {
                     // hit!
-                    if !projectile.modifier_data.piercing {
-                        // kil projectile if not piercing
-                        dead = true;
-                    }
                     for (damage_type, mut amount) in projectile.modifier_data.damage.clone() {
                         match &enemy.ty.damage_resistance {
                             DamageResistance::Full(ty) => {
@@ -448,6 +455,8 @@ impl Sludge {
                         }
                         enemy.health -= amount;
                     }
+                    let direction_nearest_enemy =
+                        Vec2::new(enemy.x - projectile.x, enemy.y - projectile.y).normalize();
                     // send trigger payload
                     if !projectile.payload.is_empty() {
                         let mut context = FiringContext::default();
@@ -455,6 +464,7 @@ impl Sludge {
                             projectile.x,
                             projectile.y,
                             projectile.direction,
+                            direction_nearest_enemy,
                             projectile.payload.clone(),
                             &mut context,
                         );
@@ -467,6 +477,7 @@ impl Sludge {
                             projectile.x,
                             projectile.y,
                             projectile.direction,
+                            direction_nearest_enemy,
                             projectile.inate_payload.clone(),
                             &mut context,
                         );
@@ -478,6 +489,11 @@ impl Sludge {
                         projectile.x,
                         projectile.y,
                     ));
+                    if !projectile.modifier_data.piercing {
+                        // kil projectile if not piercing
+                        dead = true;
+                        break;
+                    }
                 }
             }
             if dead {
@@ -487,11 +503,14 @@ impl Sludge {
         for (remove_offset, index) in death_queue.iter().enumerate() {
             let killed = self.projectiles.remove(index - remove_offset);
             if !killed.death_payload.is_empty() {
+                let direction_nearest_enemy =
+                    get_direction_nearest_enemy(&self.enemies, killed.x, killed.y);
                 let mut context = FiringContext::default();
                 fire_deck(
                     killed.x,
                     killed.y,
                     killed.direction,
+                    direction_nearest_enemy,
                     killed.death_payload,
                     &mut context,
                 );
@@ -505,13 +524,16 @@ impl Sludge {
         }
         self.projectiles.append(&mut new_projectiles);
     }
+
     fn update_towers(&mut self, deltatime_ms: u128) {
         for tower in self.towers.iter_mut() {
             if !tower.can_shoot() {
                 tower.delay_counter -= deltatime_ms as f32 / 1000.0;
             } else {
-                if self.round_manager.in_progress {
-                    let mut spawn_queue = tower.shoot();
+                let direction_nearest_enemy =
+                    get_direction_nearest_enemy(&self.enemies, tower.x, tower.y);
+                if self.round_manager.in_progress && !self.enemies.is_empty() {
+                    let mut spawn_queue = tower.shoot(direction_nearest_enemy);
                     self.projectiles.append(&mut spawn_queue);
                 }
             }

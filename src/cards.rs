@@ -88,6 +88,8 @@ impl Default for ProjectileDrawType {
 pub struct Projectile {
     pub x: f32,
     pub y: f32,
+    /// How much larger hitbox the projectile has than usual
+    pub extra_size: f32,
     /// Direction projectile is traveling
     pub direction: Vec2,
     pub draw_type: ProjectileDrawType,
