@@ -1,0 +1,5 @@
+slime-10 
+slime-5 delay-40 slime-1 slime_car-3 delay-30 slime-5
+delay-6 slime-25
+delay-60 slime_car-5
+delay-10 slime-15 delay-30 slime_car-3 delay-10 slime-15 delay-30 slime_car-3

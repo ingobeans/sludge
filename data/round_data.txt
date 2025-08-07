@@ -1,6 +1,15 @@
-delay30 0x5
-delay30 0x10
-delay10 0x5 delay30 1x2
-delay30 1x10 0x10
-delay20 1x30
-delay30 4x1 delay10 1x20
+spider-5
+spider-10
+delay-10 spider-5 delay-30 slime-2
+slime-10 spider-10
+delay-20 slime-30
+fire_cat-10 delay-10 slime-10
+:sublevel a
+big_spider-4
+big_slime-3 delay-10 slime-10
+:sublevel b
+big_slime-10 delay-10 slime-20
+delay-10 slime-30 delay-15 fire_slime-10 delay-20 skeleton-5
+delay-10 spider-20 delay-30 baby_spider-10 delay-10 slime-20
+delay-15 skeleton-20 delay-60 skeleton-1 cultist-3
+:sublevel c

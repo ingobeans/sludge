@@ -1,0 +1,5 @@
+delay-10 spider-20 delay-30 baby_spider-3
+delay-25 spider-5 delay-10 baby_spider-5
+delay-15 spider-35
+delay-15 spider-5 delay-30 baby_spider-5 delay-30 spider-10
+delay-35 baby_spider-10 delay-20 spider-10 delay-30 spider-5

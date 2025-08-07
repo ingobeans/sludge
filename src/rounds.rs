@@ -1,29 +1,71 @@
+use macroquad::rand::{self, RandomRange};
+
 use crate::{
     consts::*,
     enemy::{EnemyType, ENEMY_TYPES},
 };
-use std::fs::read_to_string;
+use std::{
+    collections::HashMap,
+    fs::{read_dir, read_to_string},
+};
 
-pub fn load_round_data() -> RoundManager {
-    let data = read_to_string("data/round_data.txt").expect("data/round_data.txt is missign!!!");
+fn get_index_of_enemy(name: &str) -> usize {
+    ENEMY_TYPES.iter().position(|f| f.name == name).unwrap()
+}
+
+fn decode_rounds(
+    data: &str,
+    mut sublevels: Option<HashMap<String, Vec<Vec<Round>>>>,
+) -> Vec<Round> {
     let mut rounds = Vec::new();
     for line in data.lines() {
         let mut entries = Vec::new();
         let line = line.trim();
+        if line.starts_with(":sublevel ") {
+            if let Some(sublevels) = &mut sublevels {
+                let key = line.trim_start_matches(":sublevel ");
+                let mut sublevels = sublevels.remove(key).expect("sublevel not found!");
+                rand::srand(macroquad::miniquad::date::now() as _);
+                let mut random = sublevels.remove(rand::gen_range(0, sublevels.len()));
+                rounds.append(&mut random);
+            }
+            continue;
+        }
+
         for entry in line.split(' ') {
-            let new_entry = if entry.starts_with("delay") {
-                RoundEntry::SetDelay(entry.trim_start_matches("delay").parse().unwrap())
-            } else if entry.contains("x") {
-                let (target, amount) = entry.split_once("x").unwrap();
-                RoundEntry::Spawn(target.parse().unwrap(), amount.parse().unwrap())
+            let new_entry = if entry.starts_with("delay-") {
+                RoundEntry::SetDelay(entry.trim_start_matches("delay-").parse().unwrap())
+            } else if entry.contains("-") {
+                let (target, amount) = entry.split_once("-").unwrap();
+                RoundEntry::Spawn(get_index_of_enemy(target), amount.parse().unwrap())
             } else {
-                println!("bad round data at {line} ({entry})");
+                println!("bad round entry at '{line}' ({entry})");
                 continue;
             };
             entries.push(new_entry);
         }
         rounds.push(Round { entries });
     }
+    rounds
+}
+
+pub fn load_round_data() -> RoundManager {
+    let mut sublevels: HashMap<String, Vec<Vec<Round>>> = HashMap::new();
+    for sublevel in read_dir("data/sublevels")
+        .expect("no data/sublevels!!!")
+        .flatten()
+    {
+        let name = sublevel.file_name().to_string_lossy().to_string();
+        let mut entries = Vec::new();
+        for entry in read_dir(sublevel.path()).unwrap().flatten() {
+            let data = read_to_string(entry.path()).unwrap();
+            entries.push(decode_rounds(&data, None));
+        }
+        sublevels.insert(name, entries);
+    }
+
+    let data = read_to_string("data/round_data.txt").expect("data/round_data.txt is missign!!!");
+    let rounds = decode_rounds(&data, Some(sublevels));
     RoundManager {
         in_progress: false,
         round: 0,
@@ -86,11 +128,13 @@ impl RoundManager {
     }
 }
 
+#[derive(Clone)]
 pub enum RoundEntry {
     SetDelay(u8),
     Spawn(usize, usize),
 }
 
+#[derive(Clone)]
 pub struct Round {
     pub entries: Vec<RoundEntry>,
 }
