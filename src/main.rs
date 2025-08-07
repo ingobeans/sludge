@@ -114,6 +114,7 @@ impl Sludge {
             ty,
             x: spawn.0 * SPRITE_SIZE,
             y: spawn.1 * SPRITE_SIZE,
+            health: ty.max_health,
             next_path_point: 1,
             score: 0.0,
             moving_left: false,
@@ -334,18 +335,35 @@ impl Sludge {
     fn draw(&self) {
         self.tileset.draw_tilemap(&self.map.background);
         self.tileset.draw_tilemap(&self.map.obstructions);
+        for tower in self.towers.iter() {
+            self.icon_sheet
+                .draw_tile(tower.x, tower.y, tower.sprite, false, 0.0);
+        }
         for enemy in &self.enemies {
-            let anim_frame = (enemy.score / enemy.ty.speed) as usize % enemy.ty.anim_length;
+            let anim_frame = (enemy.score * enemy.ty.speed) as usize % enemy.ty.anim_length;
             let mut flipped = false;
             if enemy.moving_left && enemy.ty.should_flip {
                 flipped = true;
             }
-            self.icon_sheet
-                .draw_tile(enemy.x, enemy.y, enemy.ty.sprite + anim_frame, flipped, 0.0);
-        }
-        for tower in self.towers.iter() {
-            self.icon_sheet
-                .draw_tile(tower.x, tower.y, tower.sprite, false, 0.0);
+            for i in 0..enemy.ty.size {
+                for j in 0..enemy.ty.size {
+                    let mut sprite = enemy.ty.sprite + anim_frame * enemy.ty.size;
+                    if flipped {
+                        sprite += enemy.ty.size - j - 1;
+                    } else {
+                        sprite += j;
+                    }
+                    sprite += i * 32;
+                    let ground_offset = 2.0 + (enemy.ty.size - 1) as f32 * SPRITE_SIZE;
+                    self.icon_sheet.draw_tile(
+                        enemy.x + j as f32 * SPRITE_SIZE,
+                        enemy.y + i as f32 * SPRITE_SIZE - ground_offset,
+                        sprite,
+                        flipped,
+                        0.0,
+                    );
+                }
+            }
         }
         for projectile in self.projectiles.iter() {
             match &projectile.draw_type {
@@ -404,7 +422,7 @@ impl Sludge {
                 dead = true;
             }
             // check if projectile hit any enemy
-            for enemy in self.enemies.iter() {
+            for enemy in self.enemies.iter_mut() {
                 let distance = ((enemy.x as f32 - projectile.x as f32).powi(2)
                     + (enemy.y as f32 - projectile.y as f32).powi(2))
                 .sqrt();
@@ -414,6 +432,22 @@ impl Sludge {
                         // kil projectile if not piercing
                         dead = true;
                     }
+                    for (damage_type, mut amount) in projectile.modifier_data.damage.clone() {
+                        match &enemy.ty.damage_resistance {
+                            DamageResistance::Full(ty) => {
+                                if *ty == damage_type {
+                                    continue;
+                                }
+                            }
+                            DamageResistance::Partial(ty) => {
+                                if *ty == damage_type {
+                                    amount /= 2.0;
+                                }
+                            }
+                            DamageResistance::None => {}
+                        }
+                        enemy.health -= amount;
+                    }
                     // send trigger payload
                     if !projectile.payload.is_empty() {
                         let mut context = FiringContext::default();
@@ -422,6 +456,18 @@ impl Sludge {
                             projectile.y,
                             projectile.direction,
                             projectile.payload.clone(),
+                            &mut context,
+                        );
+                        new_projectiles.append(&mut context.spawn_list);
+                    }
+                    // send inate trigger payload
+                    if !projectile.inate_payload.is_empty() {
+                        let mut context = FiringContext::default();
+                        fire_deck(
+                            projectile.x,
+                            projectile.y,
+                            projectile.direction,
+                            projectile.inate_payload.clone(),
                             &mut context,
                         );
                         new_projectiles.append(&mut context.spawn_list);
@@ -463,6 +509,11 @@ impl Sludge {
         for tower in self.towers.iter_mut() {
             if !tower.can_shoot() {
                 tower.delay_counter -= deltatime_ms as f32 / 1000.0;
+            } else {
+                if self.round_manager.in_progress {
+                    let mut spawn_queue = tower.shoot();
+                    self.projectiles.append(&mut spawn_queue);
+                }
             }
         }
     }
@@ -470,13 +521,18 @@ impl Sludge {
         if !self.round_manager.in_progress {
             return;
         }
-        if let Some(enemy) = self.round_manager.update() {
+        let round_update = self.round_manager.update();
+        if let RoundUpdate::Spawn(enemy) = &round_update {
             self.spawn_enemy(enemy);
         }
 
         let mut death_queue = Vec::new();
 
         for (index, enemy) in self.enemies.iter_mut().enumerate() {
+            if enemy.health <= 0.0 {
+                death_queue.push(index);
+                continue;
+            }
             let next_x = self.map.points[enemy.next_path_point].0 * SPRITE_SIZE;
             let next_y = self.map.points[enemy.next_path_point].1 * SPRITE_SIZE;
             if next_x > enemy.x {
@@ -499,7 +555,7 @@ impl Sludge {
         for (remove_offset, index) in death_queue.iter().enumerate() {
             self.enemies.remove(index - remove_offset);
         }
-        if self.enemies.len() == 0 {
+        if matches!(round_update, RoundUpdate::Finished) && self.enemies.len() == 0 {
             self.round_manager.finish_round();
         }
     }
@@ -576,7 +632,7 @@ async fn main() {
 
         // debug
         if is_key_pressed(KeyCode::E) {
-            game.round_manager.in_progress = true;
+            game.round_manager.in_progress = !game.round_manager.in_progress;
         }
 
         next_frame().await;

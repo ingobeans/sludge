@@ -33,6 +33,14 @@ pub fn load_round_data() -> RoundManager {
     }
 }
 
+pub enum RoundUpdate {
+    /// Nothing can be spawned, still on cooldown
+    Cooldown,
+    /// Spawn new enemy
+    Spawn(&'static EnemyType),
+    /// All enemies of this round have been spawned
+    Finished,
+}
 pub struct RoundManager {
     pub in_progress: bool,
     pub round: usize,
@@ -51,11 +59,10 @@ impl RoundManager {
         self.delay_counter == 0
     }
     /// Gets next enemy to spawn.
-    /// Returns None if not ready to spawn enemies, or all enemies of this round have been spawned.
-    pub fn update(&mut self) -> Option<&'static EnemyType> {
+    pub fn update(&mut self) -> RoundUpdate {
         if !self.next_ready() {
             self.delay_counter -= 1;
-            return None;
+            return RoundUpdate::Cooldown;
         }
         let mut counter = self.spawn_counter;
         self.delay_counter = DEFAULT_SPAWN_DELAY;
@@ -67,7 +74,7 @@ impl RoundManager {
                 }
                 RoundEntry::Spawn(target, amount) => {
                     if counter < *amount {
-                        return Some(&ENEMY_TYPES[*target]);
+                        return RoundUpdate::Spawn(&ENEMY_TYPES[*target]);
                     } else {
                         counter -= amount;
                     }
@@ -75,7 +82,7 @@ impl RoundManager {
                 _ => {}
             }
         }
-        None
+        RoundUpdate::Finished
     }
 }
 

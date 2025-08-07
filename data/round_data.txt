@@ -2,3 +2,5 @@ delay30 0x5
 delay30 0x10
 delay10 0x5 delay30 1x2
 delay30 1x10 0x10
+delay20 1x30
+delay30 4x1 delay10 1x20
