@@ -86,12 +86,12 @@ impl Default for ProjectileDrawType {
 
 #[derive(Default, Clone)]
 pub struct Projectile {
-    pub x: i16,
-    pub y: i16,
+    pub x: f32,
+    pub y: f32,
     /// Direction projectile is traveling
     pub direction: Vec2,
     pub draw_type: ProjectileDrawType,
-    pub life: i16,
+    pub life: f32,
     /// Payload released on hit. Only used on trigger projectiles.
     pub payload: Vec<Card>,
     /// Like payload, except inate to the projectile, like the rocket releasing explosion on hit.
@@ -118,7 +118,7 @@ impl Default for DamageType {
 #[derive(Clone, Default)]
 pub struct FiringContext {
     pub draw_count: usize,
-    pub damage_modifiers: HashMap<DamageType, i16>,
+    pub damage_modifiers: HashMap<DamageType, f32>,
     pub spawn_list: Vec<Projectile>,
     pub origin_x: usize,
     pub origin_y: usize,
@@ -130,10 +130,10 @@ pub struct CardModifierData {
     pub shoot_delay: f32,
     pub recharge_speed: f32,
     pub aim: bool,
-    pub lifetime: i16,
+    pub lifetime: f32,
     pub piercing: bool,
-    pub speed: i16,
-    pub damage: HashMap<DamageType, usize>,
+    pub speed: f32,
+    pub damage: HashMap<DamageType, f32>,
 }
 impl CardModifierData {
     /// Like [CardModifierData::merge] but only merges shoot_delay and recharge_speed fields, which are the only fields that
@@ -167,19 +167,19 @@ pub struct Card {
     pub is_trigger: bool,
 }
 impl Card {
-    pub fn draw(&self, card_sheet: &Spritesheet, x: i16, y: i16) {
+    pub fn draw(&self, card_sheet: &Spritesheet, x: f32, y: f32) {
         draw_rectangle(
-            x.saturating_sub(2) as f32,
-            y.saturating_sub(2) as f32,
-            (SPRITE_SIZE + 4) as f32,
-            (SPRITE_SIZE + 4) as f32,
+            x - 2.0,
+            y - 2.0,
+            SPRITE_SIZE + 4.0,
+            SPRITE_SIZE + 4.0,
             self.ty.get_border_color(),
         );
         draw_rectangle(
-            x.saturating_sub(1) as f32,
-            y.saturating_sub(1) as f32,
-            (SPRITE_SIZE + 2) as f32,
-            (SPRITE_SIZE + 2) as f32,
+            x - 1.0,
+            y - 1.0,
+            SPRITE_SIZE + 2.0,
+            SPRITE_SIZE + 2.0,
             UI_BG_COLOR,
         );
         //draw_rectangle(

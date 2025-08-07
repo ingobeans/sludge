@@ -1,11 +1,14 @@
+use std::f32::consts::PI;
+
 use macroquad::prelude::*;
 
-pub const SCREEN_WIDTH: i16 = 192;
-pub const SCREEN_HEIGHT: i16 = 144;
-pub const SPRITE_SIZE: i16 = 8;
-pub const MENU_WIDTH: i16 = CARD_SIZE * 2 + 4;
-pub const CARD_SIZE: i16 = SPRITE_SIZE + 4;
+pub const SCREEN_WIDTH: f32 = 192.0;
+pub const SCREEN_HEIGHT: f32 = 144.0;
+pub const SPRITE_SIZE: f32 = 8.0;
+pub const MENU_WIDTH: f32 = CARD_SIZE * 2.0 + 4.0;
+pub const CARD_SIZE: f32 = SPRITE_SIZE + 4.0;
 
+pub const SPREAD: f32 = 4.0_f32.to_radians();
 pub const DEFAULT_SPAWN_DELAY: u8 = 30;
 pub const STARTING_LIVES: u8 = 100;
 

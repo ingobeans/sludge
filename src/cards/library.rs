@@ -5,7 +5,7 @@ use crate::{cards::*, particle};
 pub fn acidify() -> Card {
     Card {
         ty: CardType::Modifier(CardModifierData {
-            damage: hashmap!(DamageType::Acid => 10),
+            damage: hashmap!(DamageType::Acid => 10.0),
             shoot_delay: 0.2,
             ..Default::default()
         }),
@@ -18,8 +18,8 @@ pub fn bubble() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::BUBBLE),
         modifier_data: CardModifierData {
-            speed: 0,
-            lifetime: 10,
+            speed: 0.0,
+            lifetime: 10.0,
             piercing: true,
             shoot_delay: 0.05,
             ..Default::default()
@@ -38,9 +38,9 @@ pub fn rocket() -> Card {
     let explosion_projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::EXPLOSION.clone()),
         modifier_data: CardModifierData {
-            speed: 0,
-            lifetime: 0,
-            damage: hashmap!(DamageType::Explosion => 13),
+            speed: 0.0,
+            lifetime: 0.0,
+            damage: hashmap!(DamageType::Explosion => 13.0),
             ..Default::default()
         },
         ..Default::default()
@@ -53,8 +53,8 @@ pub fn rocket() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(2, SpriteRotationMode::Direction),
         modifier_data: CardModifierData {
-            speed: 3,
-            lifetime: 40,
+            speed: 3.0,
+            lifetime: 40.0,
             shoot_delay: 0.85,
             ..Default::default()
         },
@@ -88,7 +88,7 @@ pub fn triple() -> Card {
 pub fn speed() -> Card {
     Card {
         ty: CardType::Modifier(CardModifierData {
-            speed: 2,
+            speed: 2.0,
             ..Default::default()
         }),
         sprite: 7,
@@ -112,10 +112,10 @@ pub fn magicbolt() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(0, SpriteRotationMode::Direction),
         modifier_data: CardModifierData {
-            speed: 7,
-            lifetime: 60,
+            speed: 7.0,
+            lifetime: 60.0,
             shoot_delay: 0.1,
-            damage: hashmap!(DamageType::Magic => 3),
+            damage: hashmap!(DamageType::Magic => 3.0),
             ..Default::default()
         },
         ..Default::default()
@@ -132,9 +132,9 @@ pub fn bomb() -> Card {
     let explosion_projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::EXPLOSION.clone()),
         modifier_data: CardModifierData {
-            speed: 0,
-            lifetime: 0,
-            damage: hashmap!(DamageType::Explosion => 13),
+            speed: 0.0,
+            lifetime: 0.0,
+            damage: hashmap!(DamageType::Explosion => 13.0),
             ..Default::default()
         },
         ..Default::default()
@@ -147,8 +147,8 @@ pub fn bomb() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(1, SpriteRotationMode::Spin),
         modifier_data: CardModifierData {
-            speed: 1,
-            lifetime: 40,
+            speed: 1.0,
+            lifetime: 40.0,
             shoot_delay: 0.85,
             ..Default::default()
         },

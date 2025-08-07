@@ -1,8 +1,14 @@
 use std::collections::VecDeque;
 
-use macroquad::math::Vec2;
+use macroquad::{
+    math::Vec2,
+    rand::{self, rand, RandomRange},
+};
 
-use crate::cards::{Card, CardType, FiringContext, Projectile};
+use crate::{
+    cards::{Card, CardType, FiringContext, Projectile},
+    consts::SPREAD,
+};
 
 // this is kind of dumb but i did it like this okay
 pub fn get_towers() -> [Tower; 4] {
@@ -40,8 +46,8 @@ pub fn get_towers() -> [Tower; 4] {
 #[derive(Clone, Default)]
 /// A user placed tower
 pub struct Tower {
-    pub x: i16,
-    pub y: i16,
+    pub x: f32,
+    pub y: f32,
     pub sprite: usize,
     pub card_slots: Vec<Option<Card>>,
     pub card_index: usize,
@@ -109,8 +115,8 @@ fn apply_modifiers_to_context(context: &mut FiringContext, deck: &Vec<Card>) {
 }
 
 pub fn fire_deck(
-    origin_x: i16,
-    origin_y: i16,
+    origin_x: f32,
+    origin_y: f32,
     direction: Vec2,
     deck: Vec<Card>,
     context: &mut FiringContext,
@@ -120,9 +126,10 @@ pub fn fire_deck(
         if let CardType::Projectile(mut projectile, _) = card.ty {
             projectile.modifier_data.merge(&context.modifier_data);
 
+            let spread = RandomRange::gen_range(-SPREAD, SPREAD);
             projectile.x = origin_x;
             projectile.y = origin_y;
-            projectile.direction = direction;
+            projectile.direction = Vec2::from_angle(direction.to_angle() + spread);
             context.spawn_list.push(projectile);
         }
     }

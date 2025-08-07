@@ -24,7 +24,7 @@ impl Spritesheet {
         let y = id / (self.height / SPRITE_SIZE_USIZE);
         (x, y)
     }
-    pub fn draw_tile(&self, x: i16, y: i16, id: usize, flipped: bool, rotation: f32) {
+    pub fn draw_tile(&self, x: f32, y: f32, id: usize, flipped: bool, rotation: f32) {
         let (texture_x, texture_y) = self.id_to_pos(id);
         let size = SPRITE_SIZE as f32;
         let params = DrawTextureParams {
@@ -46,8 +46,8 @@ impl Spritesheet {
         for y in 0..SCREEN_HEIGHT_USIZE / SPRITE_SIZE_USIZE {
             for x in 0..SCREEN_WIDTH_USIZE / SPRITE_SIZE_USIZE {
                 let tile = map[y][x].checked_sub(1);
-                let x = x as i16;
-                let y = y as i16;
+                let x = x as f32;
+                let y = y as f32;
                 if let Some(tile) = tile {
                     self.draw_tile(x * SPRITE_SIZE, y * SPRITE_SIZE, tile, false, 0.0);
                 }
@@ -67,7 +67,7 @@ pub struct BadMapDataError(&'static str);
 pub struct Map {
     pub background: TileMap,
     pub obstructions: TileMap,
-    pub points: Vec<(i16, i16)>,
+    pub points: Vec<(f32, f32)>,
     pub tower_spawnpoints: [(usize, usize); 4],
 }
 impl Map {
@@ -84,8 +84,8 @@ impl Map {
                 return false;
             }
             if self.points.contains(&(
-                (corner_x / SPRITE_SIZE_USIZE) as i16,
-                (corner_y / SPRITE_SIZE_USIZE) as i16,
+                (corner_x / SPRITE_SIZE_USIZE) as f32,
+                (corner_y / SPRITE_SIZE_USIZE) as f32,
             )) {
                 return false;
             }
@@ -120,17 +120,17 @@ fn parse_spawnpoints_from_tilemap(map: &TileMap) -> [(usize, usize); 4] {
 }
 
 /// Parses an enemy path from a tilemap. Starts at tile with ID=33, and follows neighbouring ID=34 until stop.
-fn parse_points_from_tilemap(map: &TileMap) -> Vec<(i16, i16)> {
+fn parse_points_from_tilemap(map: &TileMap) -> Vec<(f32, f32)> {
     let mut points = Vec::new();
     // find start
-    let mut current_x = 0;
-    let mut current_y = 0;
+    let mut current_x = 0.0;
+    let mut current_y = 0.0;
     'master: for y in 0..map.len() {
         for x in 0..map[0].len() {
             let tile = map[y][x];
             if tile == 33 {
-                let x = x as i16;
-                let y = y as i16;
+                let x = x as f32;
+                let y = y as f32;
                 current_x = x;
                 current_y = y;
                 points.push((x, y));
@@ -144,10 +144,10 @@ fn parse_points_from_tilemap(map: &TileMap) -> Vec<(i16, i16)> {
         for dir in neighbour_directions {
             let y = ((current_y as isize) + dir.1)
                 .max(0)
-                .min(map.len() as isize - 1) as i16;
+                .min(map.len() as isize - 1) as f32;
             let x = ((current_x as isize) + dir.0)
                 .max(0)
-                .min(map[0].len() as isize - 1) as i16;
+                .min(map[0].len() as isize - 1) as f32;
             if points.contains(&(x, y)) {
                 continue;
             }

@@ -21,11 +21,11 @@ mod ui;
 
 /// Move source x and y towards target x and y with speed. Returns if the target was reached/hit.
 fn move_towards(
-    speed: i16,
-    source_x: &mut i16,
-    source_y: &mut i16,
-    target_x: i16,
-    target_y: i16,
+    speed: f32,
+    source_x: &mut f32,
+    source_y: &mut f32,
+    target_x: f32,
+    target_y: f32,
 ) -> bool {
     if *source_x < target_x {
         *source_x += speed;
@@ -50,7 +50,7 @@ struct Sludge {
     enemies: Vec<Enemy>,
     towers: Vec<Tower>,
     projectiles: Vec<Projectile>,
-    orphaned_particles: Vec<(Particle, i16, i16)>,
+    orphaned_particles: Vec<(Particle, f32, f32)>,
     lives: u8,
     round_manager: RoundManager,
     moving: Option<Tower>,
@@ -74,13 +74,13 @@ impl Sludge {
         // add starting towers
         let base_towers = get_towers();
         let mut tower1 = base_towers[0].clone();
-        tower1.x = map.tower_spawnpoints[0].0 as i16;
-        tower1.y = map.tower_spawnpoints[0].1 as i16;
+        tower1.x = map.tower_spawnpoints[0].0 as f32;
+        tower1.y = map.tower_spawnpoints[0].1 as f32;
         tower1.direction = Vec2::new(-1.0, 0.0);
 
         let mut tower2 = base_towers[1].clone();
-        tower2.x = map.tower_spawnpoints[1].0 as i16;
-        tower2.y = map.tower_spawnpoints[1].1 as i16;
+        tower2.x = map.tower_spawnpoints[1].0 as f32;
+        tower2.y = map.tower_spawnpoints[1].1 as f32;
         tower2.direction = Vec2::new(-1.0, 0.0);
 
         let mut inventory = std::array::from_fn(|_| std::array::from_fn(|_| None.clone()).clone());
@@ -115,12 +115,12 @@ impl Sludge {
             x: spawn.0 * SPRITE_SIZE,
             y: spawn.1 * SPRITE_SIZE,
             next_path_point: 1,
-            score: 0,
+            score: 0.0,
             moving_left: false,
         };
         self.enemies.push(enemy);
     }
-    fn is_valid_tower_placement(&self, x: i16, y: i16) -> bool {
+    fn is_valid_tower_placement(&self, x: f32, y: f32) -> bool {
         for tower in &self.towers {
             let distance =
                 ((tower.x as f32 - x as f32).powi(2) + (tower.y as f32 - y as f32).powi(2)).sqrt();
@@ -131,7 +131,7 @@ impl Sludge {
         self.map.is_unobstructed(x as usize, y as usize)
     }
     /// Returns whether a UI element was interacted with
-    fn handle_ui_input(&mut self, local_x: i16, local_y: i16) -> bool {
+    fn handle_ui_input(&mut self, local_x: f32, local_y: f32) -> bool {
         let (handle_x, handle_y, _) = self.get_menu_handle_state();
         if local_x > handle_x
             && local_x < handle_x + SPRITE_SIZE
@@ -143,13 +143,13 @@ impl Sludge {
             return true;
         }
         if self.inventory_open
-            && local_x > SCREEN_WIDTH - MENU_WIDTH + 2
-            && local_x < SCREEN_WIDTH - 3
-            && local_y > 2
+            && local_x > SCREEN_WIDTH - MENU_WIDTH + 2.0
+            && local_x < SCREEN_WIDTH - 3.0
+            && local_y > 2.0
         {
-            let tile_x = (local_x + MENU_WIDTH - SCREEN_WIDTH - 2) / CARD_SIZE;
-            let tile_y = (local_y - 2) / CARD_SIZE;
-            if tile_y < self.inventory.len() as i16 {
+            let tile_x = (local_x + MENU_WIDTH - SCREEN_WIDTH - 2.0) / CARD_SIZE;
+            let tile_y = (local_y - 2.0) / CARD_SIZE;
+            if tile_y < self.inventory.len() as f32 {
                 if is_mouse_button_pressed(MouseButton::Left) {
                     std::mem::swap(
                         &mut self.cursor_card,
@@ -158,11 +158,11 @@ impl Sludge {
                     return true;
                 }
             }
-        } else if local_y > 8 && local_y < 8 + SPRITE_SIZE + 4 {
+        } else if local_y > 8.0 && local_y < 8.0 + SPRITE_SIZE + 4.0 {
             if let Some(selected) = self.selected {
                 let tower = &mut self.towers[selected];
                 let tile_x = local_x / (CARD_SIZE);
-                if tile_x < tower.card_slots.len() as i16
+                if tile_x < tower.card_slots.len() as f32
                     && is_mouse_button_pressed(MouseButton::Left)
                 {
                     std::mem::swap(
@@ -178,32 +178,32 @@ impl Sludge {
         }
         false
     }
-    fn get_menu_handle_state(&self) -> (i16, i16, bool) {
+    fn get_menu_handle_state(&self) -> (f32, f32, bool) {
         if self.inventory_open {
             (
                 (SCREEN_WIDTH - MENU_WIDTH - SPRITE_SIZE),
-                (SCREEN_HEIGHT / 2 - SPRITE_SIZE),
+                (SCREEN_HEIGHT / 2.0 - SPRITE_SIZE),
                 true,
             )
         } else {
             (
                 (SCREEN_WIDTH - SPRITE_SIZE),
-                (SCREEN_HEIGHT / 2 - SPRITE_SIZE),
+                (SCREEN_HEIGHT / 2.0 - SPRITE_SIZE),
                 false,
             )
         }
     }
-    fn handle_input(&mut self, local_x: i16, local_y: i16) {
+    fn handle_input(&mut self, local_x: f32, local_y: f32) {
         // if we're currently dragging a tower
         if self.moving.is_some() {
-            let mut tower_x = 0;
-            let mut tower_y = 0;
+            let mut tower_x = 0.0;
+            let mut tower_y = 0.0;
             if let Some(tower) = &mut self.moving {
                 // set tower x and y to cursor position (offset by 4 so its centered, and clamped to be inside map)
-                tower.x = (local_x - SPRITE_SIZE / 2)
-                    .min(SCREEN_WIDTH - 1 - SPRITE_SIZE)
-                    .max(0);
-                tower.y = local_y.min(SCREEN_HEIGHT - 1 - SPRITE_SIZE);
+                tower.x = (local_x - SPRITE_SIZE / 2.0)
+                    .min(SCREEN_WIDTH - 1.0 - SPRITE_SIZE)
+                    .max(0.0);
+                tower.y = local_y.min(SCREEN_HEIGHT - 1.0 - SPRITE_SIZE);
 
                 // store new pos so we can access it outside of this `if let` scope
                 tower_x = tower.x;
@@ -279,28 +279,28 @@ impl Sludge {
             }
         }
     }
-    fn draw_ui(&self, local_x: i16, local_y: i16) {
+    fn draw_ui(&self, local_x: f32, local_y: f32) {
         if let Some(selected) = self.selected {
             let tower = &self.towers[selected];
             for (index, card_slot) in tower.card_slots.iter().enumerate() {
                 // todo: draw text
-                let tile_x = index as i16 * CARD_SIZE;
-                let tile_y = 8;
+                let tile_x = index as f32 * CARD_SIZE;
+                let tile_y = 8.0;
                 if let Some(card) = card_slot {
-                    card.draw(&self.card_sheet, tile_x as i16 + 2, tile_y + 2);
+                    card.draw(&self.card_sheet, tile_x as f32 + 2.0, tile_y + 2.0);
                 } else {
                     ui::draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
                 }
             }
         }
         if self.inventory_open {
-            ui::draw_square(SCREEN_WIDTH - MENU_WIDTH, 0, MENU_WIDTH, SCREEN_HEIGHT);
-            for y in 0..self.inventory.len() as i16 {
-                for x in 0..self.inventory[0].len() as i16 {
-                    let tile_x = SCREEN_WIDTH - MENU_WIDTH + 2 + x * CARD_SIZE;
-                    let tile_y = 2 + y * CARD_SIZE;
-                    if let Some(card) = &self.inventory[y as usize][x as usize] {
-                        card.draw(&self.card_sheet, tile_x + 2, tile_y + 2);
+            ui::draw_square(SCREEN_WIDTH - MENU_WIDTH, 0.0, MENU_WIDTH, SCREEN_HEIGHT);
+            for y in 0..self.inventory.len() {
+                for x in 0..self.inventory[0].len() {
+                    let tile_x = SCREEN_WIDTH - MENU_WIDTH + 2.0 + x as f32 * CARD_SIZE;
+                    let tile_y = 2.0 + y as f32 * CARD_SIZE;
+                    if let Some(card) = &self.inventory[y][x] {
+                        card.draw(&self.card_sheet, tile_x + 2.0, tile_y + 2.0);
                     } else {
                         ui::draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
                     }
@@ -317,16 +317,16 @@ impl Sludge {
         }
         if let Some(tower) = &self.moving {
             self.icon_sheet
-                .draw_tile(tower.x, tower.y.saturating_sub(4), tower.sprite, false, 0.0);
+                .draw_tile(tower.x, tower.y - 4.0, tower.sprite, false, 0.0);
             self.icon_sheet.draw_tile(tower.x, tower.y, 33, false, 0.0);
             if !self.is_valid_tower_placement(tower.x, tower.y) {
                 self.icon_sheet
-                    .draw_tile(tower.x, tower.y.saturating_sub(4), 34, false, 0.0);
+                    .draw_tile(tower.x, tower.y - 4.0, 34, false, 0.0);
             }
         }
         if let Some(card) = &self.cursor_card {
-            let x = local_x.saturating_sub(SPRITE_SIZE / 2);
-            let y = local_y.saturating_sub(SPRITE_SIZE / 2);
+            let x = local_x - SPRITE_SIZE / 2.0;
+            let y = local_y - SPRITE_SIZE / 2.0;
 
             card.draw(&self.card_sheet, x, y);
         }
@@ -352,7 +352,9 @@ impl Sludge {
                 ProjectileDrawType::Sprite(index, rotation_mode) => {
                     let rotation = match rotation_mode {
                         SpriteRotationMode::Direction => projectile.direction.to_angle(),
-                        SpriteRotationMode::Spin => (15 - projectile.life % 30) as f32 / 15.0 * PI,
+                        SpriteRotationMode::Spin => {
+                            (15.0 - projectile.life % 30.0) as f32 / 15.0 * PI
+                        }
                         SpriteRotationMode::None => 0.0,
                     };
                     self.particle_sheet.draw_tile(
@@ -391,10 +393,9 @@ impl Sludge {
         let mut new_projectiles = Vec::new();
 
         for (index, projectile) in self.projectiles.iter_mut().enumerate() {
-            let (move_x, move_y) = (projectile.direction.x as i16, projectile.direction.y as i16);
-            projectile.x += move_x * projectile.modifier_data.speed;
-            projectile.y += move_y * projectile.modifier_data.speed;
-            projectile.life += 1;
+            projectile.x += (projectile.direction.x * projectile.modifier_data.speed as f32) as f32;
+            projectile.y += (projectile.direction.y * projectile.modifier_data.speed as f32) as f32;
+            projectile.life += 1.0;
             if let ProjectileDrawType::Particle(particle) = &mut projectile.draw_type {
                 particle.life += 1;
             }
@@ -529,7 +530,7 @@ async fn main() {
         // update scale factor
         let (screen_width, screen_height) = screen_size();
         scale_factor =
-            (screen_width as i16 / SCREEN_WIDTH).min(screen_height as i16 / SCREEN_HEIGHT);
+            (screen_width as f32 / SCREEN_WIDTH).min(screen_height as f32 / SCREEN_HEIGHT);
         clear_background(BLACK);
         set_camera(&low_res_camera);
 
@@ -537,8 +538,8 @@ async fn main() {
         let deltatime_ms = (now - last).as_millis();
 
         let (mouse_x, mouse_y) = mouse_position();
-        let local_x = mouse_x as i16 / scale_factor;
-        let local_y = mouse_y as i16 / scale_factor;
+        let local_x = mouse_x as f32 / scale_factor;
+        let local_y = mouse_y as f32 / scale_factor;
 
         game.handle_input(local_x, local_y);
 
