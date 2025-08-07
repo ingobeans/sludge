@@ -142,7 +142,11 @@ impl Sludge {
             self.inventory_open = !self.inventory_open;
             return true;
         }
-        if local_x > SCREEN_WIDTH - MENU_WIDTH + 2 && local_x < SCREEN_WIDTH - 3 && local_y > 2 {
+        if self.inventory_open
+            && local_x > SCREEN_WIDTH - MENU_WIDTH + 2
+            && local_x < SCREEN_WIDTH - 3
+            && local_y > 2
+        {
             let tile_x = (local_x + MENU_WIDTH - SCREEN_WIDTH - 2) / CARD_SIZE;
             let tile_y = (local_y - 2) / CARD_SIZE;
             if tile_y < self.inventory.len() as i16 {
