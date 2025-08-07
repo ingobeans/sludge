@@ -11,6 +11,7 @@ pub fn get_cards() -> Vec<Card> {
     let mut cards = vec![
         // modifiers
         library::aiming(),
+        library::homing(),
         library::speed(),
         library::acidify(),
         // multidraw
@@ -21,6 +22,12 @@ pub fn get_cards() -> Vec<Card> {
         library::bomb(),
         library::magicbolt(),
         library::bubble(),
+        library::explosion(),
+        library::fireball(),
+        library::thorn_dart(),
+        library::dart(),
+        library::acid_bottle(),
+        library::razor(),
     ];
 
     let mut triggers = Vec::new();
@@ -92,13 +99,12 @@ pub struct Projectile {
     pub extra_size: f32,
     /// Direction projectile is traveling
     pub direction: Vec2,
+    /// Drag makes projectile slow down as it travels. 0.0 - 1.0, 1.0 makes it stop immediately after first frame
+    pub drag: f32,
     pub draw_type: ProjectileDrawType,
     pub life: f32,
     /// Payload released on hit. Only used on trigger projectiles.
     pub payload: Vec<Card>,
-    /// Like payload, except inate to the projectile, like the rocket releasing explosion on hit.
-    /// The reason for the seperation is so that modifiers from the main payload don't affect the inate payload.
-    pub inate_payload: Vec<Card>,
     /// Released on death. Used by ex. the bomb exploding when its lifetime runs out.
     pub death_payload: Vec<Card>,
     pub modifier_data: CardModifierData,
@@ -132,6 +138,7 @@ pub struct CardModifierData {
     pub shoot_delay: f32,
     pub recharge_speed: f32,
     pub aim: bool,
+    pub homing: bool,
     pub lifetime: f32,
     pub piercing: bool,
     pub speed: f32,
@@ -148,6 +155,7 @@ impl CardModifierData {
         self.shoot_delay += other.shoot_delay;
         self.recharge_speed += other.recharge_speed;
         self.aim |= other.aim;
+        self.homing |= other.homing;
         self.lifetime += other.lifetime;
         self.piercing |= other.piercing;
         self.speed += other.speed;
@@ -164,6 +172,8 @@ impl CardModifierData {
 #[derive(Clone, Default)]
 /// A card used by towers
 pub struct Card {
+    pub name: &'static str,
+    pub desc: &'static str,
     pub ty: CardType,
     pub sprite: usize,
     pub is_trigger: bool,

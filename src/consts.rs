@@ -8,6 +8,7 @@ pub const SPRITE_SIZE: f32 = 8.0;
 pub const MENU_WIDTH: f32 = CARD_SIZE * 2.0 + 4.0;
 pub const CARD_SIZE: f32 = SPRITE_SIZE + 4.0;
 
+pub const LEFT: Vec2 = Vec2::new(-1.0, 0.0);
 pub const SPREAD: f32 = 4.0_f32.to_radians();
 pub const DEFAULT_SPAWN_DELAY: u8 = 30;
 pub const STARTING_LIVES: u8 = 100;

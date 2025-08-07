@@ -45,15 +45,18 @@ async fn load_spritesheet(path: &str) -> Spritesheet {
     Spritesheet::new(load_texture(path).await.expect(&error))
 }
 
-fn get_direction_nearest_enemy(enemies: &Vec<Enemy>, x: f32, y: f32) -> Vec2 {
-    let mut nearest: (f32, Vec2) = (f32::MAX, Vec2::new(-1.0, 0.0));
+fn get_direction_nearest_enemy(enemies: &Vec<Enemy>, x: f32, y: f32) -> Option<Vec2> {
+    if enemies.is_empty() {
+        return None;
+    }
+    let mut nearest: (f32, Vec2) = (f32::MAX, Vec2::ZERO);
     for enemy in enemies {
         let distance = ((enemy.x - x).powi(2) + (enemy.y - y).powi(2)).sqrt();
         if distance < nearest.0 {
             nearest = (distance, Vec2::new(enemy.x - x, enemy.y - y).normalize())
         }
     }
-    nearest.1
+    Some(nearest.1)
 }
 
 struct Sludge {
@@ -87,12 +90,12 @@ impl Sludge {
         let mut tower1 = base_towers[0].clone();
         tower1.x = map.tower_spawnpoints[0].0 as f32;
         tower1.y = map.tower_spawnpoints[0].1 as f32;
-        tower1.direction = Vec2::new(-1.0, 0.0);
+        tower1.direction = LEFT;
 
         let mut tower2 = base_towers[1].clone();
         tower2.x = map.tower_spawnpoints[1].0 as f32;
         tower2.y = map.tower_spawnpoints[1].1 as f32;
-        tower2.direction = Vec2::new(-1.0, 0.0);
+        tower2.direction = LEFT;
 
         let mut inventory = std::array::from_fn(|_| std::array::from_fn(|_| None.clone()).clone());
         let all_cards = get_cards();
@@ -284,8 +287,8 @@ impl Sludge {
         if is_key_down(KeyCode::Space) {
             if let Some(selected) = self.selected {
                 let tower = &mut self.towers[selected];
-                if tower.can_shoot() {
-                    let mut spawn_queue = tower.shoot(Vec2::new(-1.0, 0.0));
+                if tower.can_shoot() && !self.round_manager.in_progress {
+                    let mut spawn_queue = tower.shoot(LEFT);
                     self.projectiles.append(&mut spawn_queue);
                 }
             }
@@ -395,13 +398,19 @@ impl Sludge {
                     );
                 }
                 ProjectileDrawType::Particle(particle) => {
-                    (particle.function)(particle, projectile.x, projectile.y, &self.particle_sheet);
+                    (particle.function)(
+                        particle,
+                        projectile.x,
+                        projectile.y,
+                        projectile.direction,
+                        &self.particle_sheet,
+                    );
                 }
                 _ => {}
             }
         }
         for (particle, x, y) in self.orphaned_particles.iter() {
-            (particle.function)(particle, *x, *y, &self.particle_sheet);
+            (particle.function)(particle, *x, *y, LEFT, &self.particle_sheet);
         }
     }
     fn update_particles(&mut self) {
@@ -425,12 +434,23 @@ impl Sludge {
             projectile.x += (projectile.direction.x * projectile.modifier_data.speed as f32) as f32;
             projectile.y += (projectile.direction.y * projectile.modifier_data.speed as f32) as f32;
             projectile.life += 1.0;
+
+            projectile.modifier_data.speed =
+                projectile.modifier_data.speed.lerp(0.0, projectile.drag);
+
             if let ProjectileDrawType::Particle(particle) = &mut projectile.draw_type {
                 particle.life += 1;
             }
             let mut dead = false;
             if projectile.life >= projectile.modifier_data.lifetime {
                 dead = true;
+            }
+            if projectile.modifier_data.homing {
+                let target_dir =
+                    get_direction_nearest_enemy(&self.enemies, projectile.x, projectile.y);
+                if let Some(target_dir) = target_dir {
+                    projectile.direction = target_dir;
+                }
             }
             // check if projectile hit any enemy
             for enemy in self.enemies.iter_mut() {
@@ -470,19 +490,6 @@ impl Sludge {
                         );
                         new_projectiles.append(&mut context.spawn_list);
                     }
-                    // send inate trigger payload
-                    if !projectile.inate_payload.is_empty() {
-                        let mut context = FiringContext::default();
-                        fire_deck(
-                            projectile.x,
-                            projectile.y,
-                            projectile.direction,
-                            direction_nearest_enemy,
-                            projectile.inate_payload.clone(),
-                            &mut context,
-                        );
-                        new_projectiles.append(&mut context.spawn_list);
-                    }
                     // spawn hitmarker particle
                     self.orphaned_particles.push((
                         particle::HIT_MARKER,
@@ -510,7 +517,7 @@ impl Sludge {
                     killed.x,
                     killed.y,
                     killed.direction,
-                    direction_nearest_enemy,
+                    direction_nearest_enemy.unwrap_or(LEFT),
                     killed.death_payload,
                     &mut context,
                 );
@@ -533,7 +540,8 @@ impl Sludge {
                 let direction_nearest_enemy =
                     get_direction_nearest_enemy(&self.enemies, tower.x, tower.y);
                 if self.round_manager.in_progress && !self.enemies.is_empty() {
-                    let mut spawn_queue = tower.shoot(direction_nearest_enemy);
+                    let mut spawn_queue =
+                        tower.shoot(direction_nearest_enemy.unwrap_or(tower.direction));
                     self.projectiles.append(&mut spawn_queue);
                 }
             }
