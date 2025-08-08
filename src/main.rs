@@ -323,6 +323,23 @@ impl Sludge {
                     .draw_tile(tower.x, tower.y - 4.0, 34, false, 0.0);
             }
         }
+
+        self.icon_sheet.draw_tile(0.0, 0.0, 36, false, 0.0);
+        self.ui_manager
+            .draw_text(6.0, 2.0, &self.lives.to_string(), 0);
+        let round_icon = if self.round_manager.in_progress {
+            38
+        } else {
+            37
+        };
+        self.icon_sheet
+            .draw_tile(4.0 * 4.0 + 6.0, 0.0, round_icon, false, 0.0);
+        self.ui_manager.draw_text(
+            4.0 * 4.0 + 6.0 * 2.0,
+            2.0,
+            &self.round_manager.round.to_string(),
+            0,
+        );
     }
     fn update_particles(&mut self) {
         let mut death_queue = Vec::new();
@@ -486,6 +503,7 @@ impl Sludge {
                 enemy.next_path_point += 1;
                 // if at last path point, kill this enemy
                 if enemy.next_path_point >= self.map.points.len() {
+                    self.lives -= 1;
                     death_queue.push(index);
                 }
             }

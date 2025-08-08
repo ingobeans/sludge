@@ -1,5 +1,3 @@
-use std::{fmt::Debug, sync::LazyLock};
-
 use macroquad::prelude::*;
 
 use crate::{
@@ -48,13 +46,20 @@ impl UIManager {
                 continue;
             }
             let mut index = char as usize;
+
+            // hardcoded index of '.'
+            if char == '.' {
+                index = 'z' as usize - 'a' as usize + 12;
+            }
+
+            // for characters in range a-z
             if index >= 'a' as usize {
                 index -= 'a' as usize
-            } else if index >= '0' as usize {
+            }
+            // for characters 0-9
+            else if index >= '0' as usize {
                 index -= '0' as usize;
                 index += 'z' as usize - 'a' as usize + 1;
-            } else if index == '.' as usize {
-                index = 'z' as usize - 'a' as usize + 12;
             }
             index += color_offset * self.font.width / 4;
             self.font
