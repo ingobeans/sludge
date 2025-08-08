@@ -41,7 +41,7 @@ fn move_towards(
         *source_x -= speed;
     }
     if *source_y < target_y {
-        if *source_y - speed < target_y {
+        if *source_y + speed > target_y {
             *source_y = target_y;
         }
         *source_y += speed;
@@ -93,10 +93,10 @@ struct Sludge {
 }
 impl Sludge {
     async fn new(map: Map) -> Self {
-        let tileset = load_spritesheet("spritesheet.png", SPRITE_SIZE_USIZE).await;
-        let icon_sheet = load_spritesheet("icons.png", SPRITE_SIZE_USIZE).await;
-        let card_sheet = load_spritesheet("cards.png", SPRITE_SIZE_USIZE).await;
-        let particle_sheet = load_spritesheet("particles.png", SPRITE_SIZE_USIZE).await;
+        let tileset = load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE).await;
+        let icon_sheet = load_spritesheet("data/assets/icons.png", SPRITE_SIZE_USIZE).await;
+        let card_sheet = load_spritesheet("data/assets/cards.png", SPRITE_SIZE_USIZE).await;
+        let particle_sheet = load_spritesheet("data/assets/particles.png", SPRITE_SIZE_USIZE).await;
 
         // add starting towers
         let base_towers = get_towers();
@@ -509,6 +509,7 @@ impl Sludge {
         for (index, enemy) in self.enemies.iter_mut().enumerate() {
             if enemy.health <= 0.0 {
                 death_queue.push(index);
+                self.gold += enemy.ty.damage as u16;
                 if let EnemyPayload::Some(enemy_type, amount) = enemy.ty.payload {
                     for _ in 0..amount {
                         self.enemy_spawn_queue.push_back((
@@ -534,7 +535,7 @@ impl Sludge {
                 enemy.next_path_point += 1;
                 // if at last path point, kill this enemy
                 if enemy.next_path_point >= self.map.points.len() {
-                    self.lives -= 1;
+                    self.lives -= enemy.ty.calc_damage();
                     death_queue.push(index);
                 }
             }

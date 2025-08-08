@@ -6,24 +6,21 @@ use macroquad::prelude::*;
 pub struct Spritesheet {
     texture: Texture2D,
     pub width: usize,
-    pub height: usize,
     pub sprite_size: usize,
 }
 impl Spritesheet {
     pub fn new(texture: Texture2D, sprite_size: usize) -> Self {
         texture.set_filter(FilterMode::Nearest);
         let width = texture.width() as usize;
-        let height = texture.height() as usize;
         Self {
             texture,
             width,
-            height,
             sprite_size,
         }
     }
     fn id_to_pos(&self, id: usize) -> (usize, usize) {
         let x = id % (self.width / self.sprite_size);
-        let y = id / (self.height / self.sprite_size);
+        let y = id / (self.width / self.sprite_size);
         (x, y)
     }
     pub fn draw_tile(&self, x: f32, y: f32, id: usize, flipped: bool, rotation: f32) {

@@ -183,7 +183,7 @@ impl CardModifierData {
             if let Some(amt) = self.damage.get_mut(k) {
                 *amt += v;
             } else {
-                self.damage.insert(k.clone(), *v);
+                self.damage.insert(*k, *v);
             }
         }
     }
@@ -214,16 +214,9 @@ impl Card {
             SPRITE_SIZE + 2.0,
             UI_BG_COLOR,
         );
-        //draw_rectangle(
-        //    x as f32,
-        //    y as f32,
-        //    SPRITE_SIZE as f32,
-        //    SPRITE_SIZE as f32,
-        //    UI_BG_COLOR,
-        //);
         card_sheet.draw_tile(x, y, self.sprite, false, 0.0);
         if self.is_trigger {
-            card_sheet.draw_tile(x, y, 32, false, 0.0);
+            card_sheet.draw_tile(x - 1.0, y - 1.0, 32, false, 0.0);
         }
     }
 }

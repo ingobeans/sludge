@@ -36,7 +36,17 @@ pub struct EnemyType {
     /// If enemy should flip its sprite when moving to the left
     pub should_flip: bool,
 }
-impl EnemyType {}
+impl EnemyType {
+    /// Recursively calculates damage sum of self and children
+    pub fn calc_damage(&self) -> u8 {
+        let mut damage = self.damage;
+        if let EnemyPayload::Some(enemy_type, amount) = self.payload {
+            let child_damage = enemy_type.calc_damage();
+            damage += child_damage * amount;
+        }
+        damage
+    }
+}
 /// A live instance of an enemy
 pub struct Enemy {
     pub ty: &'static EnemyType,
@@ -67,7 +77,7 @@ impl Enemy {
 pub enum EnemyPayload {
     None,
     /// Type, amount
-    Some(&'static EnemyType, usize),
+    Some(&'static EnemyType, u8),
 }
 
 static BABY_SPIDER: EnemyType = EnemyType {

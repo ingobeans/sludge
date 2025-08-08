@@ -30,7 +30,7 @@ impl UIManager {
             inventory,
             inventory_open: false,
             cursor_card: None,
-            font: load_spritesheet("font.png", 4).await,
+            font: load_spritesheet("data/assets/font.png", 4).await,
         }
     }
     pub fn draw_text(&self, local_x: f32, mut local_y: f32, text: &str, color_offset: usize) {

@@ -5,7 +5,7 @@ use crate::{cards::*, particle};
 pub fn acidify() -> Card {
     Card {
         name: "acidify",
-        desc: "adds acid dmg",
+        desc: "adds acid damage",
         ty: CardType::Modifier(CardModifierData {
             damage: hashmap!(DamageType::Acid => 6.0),
             shoot_delay: 0.2,
