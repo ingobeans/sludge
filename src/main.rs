@@ -72,8 +72,13 @@ fn get_direction_nearest_enemy(enemies: &Vec<Enemy>, x: f32, y: f32) -> Option<V
     }
     Some(nearest.1)
 }
-
+enum GameState {
+    Running,
+    Win,
+    Lose,
+}
 struct Sludge {
+    state: GameState,
     map: Map,
     enemies: Vec<Enemy>,
     enemy_spawn_queue: VecDeque<(&'static EnemyType, f32, f32, usize)>,
@@ -111,6 +116,7 @@ impl Sludge {
         tower2.direction = LEFT;
 
         Self {
+            state: GameState::Running,
             map,
             enemies: Vec::with_capacity(100),
             enemy_spawn_queue: VecDeque::with_capacity(10),
@@ -241,7 +247,59 @@ impl Sludge {
         }
     }
 
-    fn draw(&self, local_x: f32, local_y: f32) {
+    fn draw_ui(&self, local_x: f32, local_y: f32) {
+        let selected_tower = self.selected.map(|index| &self.towers[index]);
+        if let Some(tower) = selected_tower {
+            self.icon_sheet.draw_tile(tower.x, tower.y, 32, false, 0.0);
+        }
+        if let Some(tower) = &self.moving {
+            self.icon_sheet
+                .draw_tile(tower.x, tower.y - 4.0, tower.sprite, false, 0.0);
+            self.icon_sheet.draw_tile(tower.x, tower.y, 33, false, 0.0);
+            if !self.is_valid_tower_placement(tower.x, tower.y) {
+                self.icon_sheet
+                    .draw_tile(tower.x, tower.y - 4.0, 34, false, 0.0);
+            }
+        }
+        self.ui_manager.draw_ui(
+            local_x,
+            local_y,
+            &self.card_sheet,
+            &self.icon_sheet,
+            selected_tower,
+        );
+        // display topbar
+        let mut cursor_x = 0.0;
+
+        // show lives
+        self.icon_sheet.draw_tile(cursor_x, 0.0, 40, false, 0.0);
+        cursor_x += 6.0;
+        self.ui_manager
+            .draw_text(cursor_x, 2.0, &self.lives.to_string(), 0);
+        cursor_x += 4.0 * 4.0;
+
+        // show gold counter
+        self.icon_sheet.draw_tile(cursor_x, 0.0, 39, false, 0.0);
+        cursor_x += 6.0;
+        let gold_text = self.gold.to_string();
+        self.ui_manager.draw_text(cursor_x, 2.0, &gold_text, 0);
+        cursor_x += 4.0 * (gold_text.len() as f32 + 1.0);
+
+        // show round counter
+
+        // change icon for the round counter if a round is in progress
+        let round_icon = if self.round_manager.in_progress {
+            38
+        } else {
+            37
+        };
+        self.icon_sheet
+            .draw_tile(cursor_x, 0.0, round_icon, false, 0.0);
+        cursor_x += 6.0;
+        self.ui_manager
+            .draw_text(cursor_x, 2.0, &self.round_manager.round.to_string(), 0);
+    }
+    fn draw(&self) {
         self.tileset.draw_tilemap(&self.map.background);
         self.tileset.draw_tilemap(&self.map.obstructions);
         for tower in self.towers.iter() {
@@ -305,57 +363,6 @@ impl Sludge {
         for (particle, x, y) in self.orphaned_particles.iter() {
             (particle.function)(particle, *x, *y, LEFT, &self.particle_sheet);
         }
-        let selected_tower = self.selected.map(|index| &self.towers[index]);
-        if let Some(tower) = selected_tower {
-            self.icon_sheet.draw_tile(tower.x, tower.y, 32, false, 0.0);
-        }
-        self.ui_manager.draw_ui(
-            local_x,
-            local_y,
-            &self.card_sheet,
-            &self.icon_sheet,
-            selected_tower,
-        );
-        if let Some(tower) = &self.moving {
-            self.icon_sheet
-                .draw_tile(tower.x, tower.y - 4.0, tower.sprite, false, 0.0);
-            self.icon_sheet.draw_tile(tower.x, tower.y, 33, false, 0.0);
-            if !self.is_valid_tower_placement(tower.x, tower.y) {
-                self.icon_sheet
-                    .draw_tile(tower.x, tower.y - 4.0, 34, false, 0.0);
-            }
-        }
-
-        // display topbar
-        let mut cursor_x = 0.0;
-
-        // show lives
-        self.icon_sheet.draw_tile(cursor_x, 0.0, 36, false, 0.0);
-        cursor_x += 6.0;
-        self.ui_manager
-            .draw_text(cursor_x, 2.0, &self.lives.to_string(), 0);
-        cursor_x += 4.0 * 4.0;
-
-        // show gold counter
-        self.icon_sheet.draw_tile(cursor_x, 0.0, 39, false, 0.0);
-        cursor_x += 6.0;
-        let gold_text = self.gold.to_string();
-        self.ui_manager.draw_text(cursor_x, 2.0, &gold_text, 0);
-        cursor_x += 4.0 * (gold_text.len() as f32 + 1.0);
-
-        // show round counter
-
-        // change icon for the round counter if a round is in progress
-        let round_icon = if self.round_manager.in_progress {
-            38
-        } else {
-            37
-        };
-        self.icon_sheet
-            .draw_tile(cursor_x, 0.0, round_icon, false, 0.0);
-        cursor_x += 6.0;
-        self.ui_manager
-            .draw_text(cursor_x, 2.0, &self.round_manager.round.to_string(), 0);
     }
     fn update_particles(&mut self) {
         let mut death_queue = Vec::new();
@@ -489,6 +496,16 @@ impl Sludge {
             }
         }
     }
+    fn update_state(&mut self) {
+        if self.lives == 0 {
+            // lose
+            self.state = GameState::Lose;
+        }
+        if self.round_manager.round >= self.round_manager.rounds.len() {
+            // win
+            self.state = GameState::Win;
+        }
+    }
     fn update_enemies(&mut self) {
         if !self.round_manager.in_progress {
             return;
@@ -535,7 +552,7 @@ impl Sludge {
                 enemy.next_path_point += 1;
                 // if at last path point, kill this enemy
                 if enemy.next_path_point >= self.map.points.len() {
-                    self.lives -= enemy.ty.calc_damage();
+                    self.lives = self.lives.saturating_sub(enemy.ty.calc_damage());
                     death_queue.push(index);
                 }
             }
@@ -569,6 +586,8 @@ async fn main() {
 
         ..Default::default()
     };
+    let mut gameover_anim_frame: u8 = 0;
+
     loop {
         // update scale factor
         let (screen_width, screen_height) = screen_size();
@@ -576,26 +595,80 @@ async fn main() {
         clear_background(BLACK);
         set_camera(&low_res_camera);
 
-        let now = Instant::now();
-        let deltatime_ms = (now - last).as_millis();
-
         let (mouse_x, mouse_y) = mouse_position();
         let local_x = mouse_x / scale_factor;
         let local_y = mouse_y / scale_factor;
 
-        game.handle_input(local_x, local_y);
+        // run update loops if game is not over
 
-        // run update loops at fixed FPS
-        if deltatime_ms >= 1000 / 30 {
-            last = now;
-            game.update_enemies();
-            game.update_projectiles();
-            game.update_particles();
-            game.update_towers(deltatime_ms);
+        if let GameState::Running = game.state {
+            game.handle_input(local_x, local_y);
+            let now = Instant::now();
+            let deltatime_ms = (now - last).as_millis();
+            // run update loops at fixed FPS
+            if deltatime_ms >= 1000 / 30 {
+                last = now;
+                game.update_enemies();
+                game.update_projectiles();
+                game.update_particles();
+                game.update_towers(1000 / 30);
+                game.update_state();
+            }
         }
 
         // always draw
-        game.draw(local_x, local_y);
+        game.draw();
+
+        match game.state {
+            GameState::Running => {
+                // only draw ui if game is not over
+                game.draw_ui(local_x, local_y);
+            }
+            _ => {
+                let header = if let GameState::Win = game.state {
+                    "    you win"
+                } else {
+                    "   you lose"
+                };
+                let width = 64.0;
+                let height = 64.0;
+                let y = gameover_anim_frame as f32 / 30.0 * (SCREEN_HEIGHT / 2.0 + height / 2.0)
+                    - height
+                    - 1.0;
+                let x = SCREEN_WIDTH / 2.0 - width / 2.0;
+                ui::draw_square(x, y, width, height);
+                if gameover_anim_frame < 30 {
+                    gameover_anim_frame += 1;
+                }
+                game.ui_manager.draw_text(x + 2.0, y + 4.0, header, 1);
+                let text = format!(
+                    "lives: {}\ngold: {}\nround: {}",
+                    game.lives, game.gold, game.round_manager.round
+                );
+                game.ui_manager.draw_text(x + 2.0, y + 4.0 + 8.0, &text, 2);
+
+                let button_width = 60.0;
+                let button_height = 8.0;
+                let button_x = x + width / 2.0 - button_width / 2.0;
+                let button_y = y + height - 4.0 - button_height;
+
+                let hovered = local_x.clamp(button_x, button_x + button_width) == local_x
+                    && local_y.clamp(button_y, button_y + button_height) == local_y;
+                let color_offset = if hovered { 0 } else { 2 };
+
+                ui::draw_button(button_x, button_y, button_width, button_height);
+                game.ui_manager.draw_text(
+                    button_x + 2.0,
+                    button_y + 2.0,
+                    "return to menu",
+                    color_offset,
+                );
+
+                if hovered && is_mouse_button_pressed(MouseButton::Left) {
+                    std::process::exit(0);
+                }
+            }
+        }
 
         // draw low res render to screen
         set_default_camera();

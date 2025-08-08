@@ -13,10 +13,7 @@ fn get_index_of_enemy(name: &str) -> usize {
     ENEMY_TYPES.iter().position(|f| f.name == name).unwrap()
 }
 
-fn decode_rounds(
-    data: &str,
-    mut sublevels: Option<HashMap<String, Vec<Vec<Round>>>>,
-) -> Vec<Round> {
+fn decode_rounds(data: &str, mut sublevels: Option<SublevelHashmap>) -> Vec<Round> {
     let mut rounds = Vec::new();
     for line in data.lines() {
         let mut entries = Vec::new();
@@ -49,8 +46,10 @@ fn decode_rounds(
     rounds
 }
 
+type SublevelHashmap = HashMap<String, Vec<Vec<Round>>>;
+
 pub fn load_round_data() -> RoundManager {
-    let mut sublevels: HashMap<String, Vec<Vec<Round>>> = HashMap::new();
+    let mut sublevels: SublevelHashmap = HashMap::new();
     for sublevel in read_dir("data/sublevels")
         .expect("no data/sublevels!!!")
         .flatten()

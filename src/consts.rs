@@ -17,6 +17,7 @@ pub const STARTING_GOLD: u16 = 0;
 
 pub const UI_BG_COLOR: Color = Color::from_hex(0xb86f50);
 pub const UI_BORDER_COLOR: Color = Color::from_hex(0x743f39);
+pub const UI_BUTTON_BG_COLOR: Color = Color::from_hex(0xffe762);
 
 // define usize variants
 pub const SCREEN_WIDTH_USIZE: usize = SCREEN_WIDTH as usize;

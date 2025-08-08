@@ -172,7 +172,16 @@ impl UIManager {
             }
         }
         let (handle_x, handle_y, flipped) = self.get_menu_handle_state();
-        icon_sheet.draw_tile(handle_x, handle_y, 35, flipped, 0.0);
+        let handle_sprite = if local_x > handle_x
+            && local_x < handle_x + SPRITE_SIZE
+            && local_y > handle_y
+            && local_y < handle_y + SPRITE_SIZE
+        {
+            36
+        } else {
+            35
+        };
+        icon_sheet.draw_tile(handle_x, handle_y, handle_sprite, flipped, 0.0);
 
         if let Some(card) = &self.cursor_card {
             let x = local_x - SPRITE_SIZE / 2.0;
@@ -263,4 +272,8 @@ impl UIManager {
 pub fn draw_square(x: f32, y: f32, w: f32, h: f32) {
     draw_rectangle(x, y, w, h, UI_BORDER_COLOR);
     draw_rectangle(x + 1.0, y + 1.0, w - 2.0, h - 2.0, UI_BG_COLOR);
+}
+pub fn draw_button(x: f32, y: f32, w: f32, h: f32) {
+    draw_rectangle(x, y, w, h, UI_BORDER_COLOR);
+    draw_rectangle(x + 1.0, y + 1.0, w - 2.0, h - 2.0, UI_BUTTON_BG_COLOR);
 }
