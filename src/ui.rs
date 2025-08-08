@@ -220,8 +220,12 @@ impl UIManager {
             if tile_y < INV_SLOTS_VERTICAL {
                 return Some(InventorySlot::Inventory(tile_x, tile_y));
             }
-        } else if local_y > 8.0 && local_y < 8.0 + SPRITE_SIZE + 4.0 && slots_amt > 0 {
-            let tile_x = local_x as usize / CARD_SIZE_USIZE;
+        } else if local_x > 2.0
+            && local_y > 8.0
+            && local_y < 8.0 + SPRITE_SIZE + 4.0
+            && slots_amt > 0
+        {
+            let tile_x = (local_x as usize - 2) / CARD_SIZE_USIZE;
             if tile_x < slots_amt {
                 return Some(InventorySlot::Tower(tile_x));
             }
