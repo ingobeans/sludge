@@ -8,6 +8,9 @@ pub const SPRITE_SIZE: f32 = 8.0;
 pub const MENU_WIDTH: f32 = CARD_SIZE * 2.0 + 4.0;
 pub const CARD_SIZE: f32 = SPRITE_SIZE + 4.0;
 
+pub const INV_SLOTS_HORIZONTAL: usize = (MENU_WIDTH_USIZE - 4) / CARD_SIZE_USIZE;
+pub const INV_SLOTS_VERTICAL: usize = (SCREEN_HEIGHT_USIZE - 4) / CARD_SIZE_USIZE;
+
 pub const LEFT: Vec2 = Vec2::new(-1.0, 0.0);
 pub const SPREAD: f32 = 4.0_f32.to_radians();
 pub const DEFAULT_SPAWN_DELAY: u8 = 30;
