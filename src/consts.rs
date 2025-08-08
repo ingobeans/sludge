@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use macroquad::prelude::*;
 
 pub const SCREEN_WIDTH: f32 = 192.0;
@@ -17,8 +15,7 @@ pub const DEFAULT_SPAWN_DELAY: u8 = 30;
 pub const STARTING_LIVES: u8 = 100;
 
 pub const UI_BG_COLOR: Color = Color::from_hex(0xb86f50);
-pub const UI_INNER_BORDER_COLOR: Color = Color::from_hex(0xffe762);
-pub const UI_OUTER_BORDER_COLOR: Color = Color::from_hex(0x743f39);
+pub const UI_BORDER_COLOR: Color = Color::from_hex(0x743f39);
 
 // define usize variants
 pub const SCREEN_WIDTH_USIZE: usize = SCREEN_WIDTH as usize;

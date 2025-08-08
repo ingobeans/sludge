@@ -1,9 +1,6 @@
 use std::collections::VecDeque;
 
-use macroquad::{
-    math::Vec2,
-    rand::{self, rand, RandomRange},
-};
+use macroquad::{math::Vec2, rand::RandomRange};
 
 use crate::{
     cards::{Card, CardType, FiringContext, Projectile},
@@ -93,7 +90,7 @@ fn apply_modifiers_to_context(context: &mut FiringContext, deck: &Vec<Card>) {
     for card in deck {
         match &card.ty {
             CardType::Modifier(modifier_data) => {
-                context.modifier_data.merge(&modifier_data);
+                context.modifier_data.merge(modifier_data);
             }
             CardType::Projectile(projectile, _) => {
                 context
@@ -144,9 +141,6 @@ pub fn fire_deck(
 impl Tower {
     pub fn can_shoot(&self) -> bool {
         self.delay_counter <= 0.0
-    }
-    pub fn recharge(&mut self) {
-        self.delay_counter = self.delay_counter.max(self.recharge_speed)
     }
     pub fn shoot(&mut self, direction_nearest_enemy: Vec2) -> Vec<Projectile> {
         let (drawn, should_recharge) = self.draw_next();

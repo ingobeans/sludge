@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Debug, ops::Deref};
+use std::{collections::HashMap, fmt::Debug};
 
 use macroquad::{color::Color, math::Vec2, shapes::draw_rectangle};
 
@@ -69,6 +69,7 @@ impl Default for CardType {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Clone)]
 pub enum SpriteRotationMode {
     /// Fixed/no rotation
@@ -125,11 +126,7 @@ impl Default for DamageType {
 }
 #[derive(Clone, Default)]
 pub struct FiringContext {
-    pub draw_count: usize,
-    pub damage_modifiers: HashMap<DamageType, f32>,
     pub spawn_list: Vec<Projectile>,
-    pub origin_x: usize,
-    pub origin_y: usize,
     pub modifier_data: CardModifierData,
 }
 

@@ -127,9 +127,8 @@ impl Sludge {
     }
     fn is_valid_tower_placement(&self, x: f32, y: f32) -> bool {
         for tower in &self.towers {
-            let distance =
-                ((tower.x as f32 - x as f32).powi(2) + (tower.y as f32 - y as f32).powi(2)).sqrt();
-            if distance < SPRITE_SIZE as f32 {
+            let distance = ((tower.x - x).powi(2) + (tower.y - y).powi(2)).sqrt();
+            if distance < SPRITE_SIZE {
                 return false;
             }
         }
@@ -147,10 +146,10 @@ impl Sludge {
     fn get_tower_near(&self, local_x: f32, local_y: f32) -> Option<(usize, f32)> {
         let mut clicked = None;
         for (index, tower) in self.towers.iter().enumerate() {
-            let distance = ((tower.x as f32 + SPRITE_SIZE as f32 / 2.0 - local_x as f32).powi(2)
-                + (tower.y as f32 + SPRITE_SIZE as f32 / 2.0 - local_y as f32).powi(2))
+            let distance = ((tower.x + SPRITE_SIZE / 2.0 - local_x).powi(2)
+                + (tower.y + SPRITE_SIZE / 2.0 - local_y).powi(2))
             .sqrt();
-            if distance <= SPRITE_SIZE as f32 {
+            if distance <= SPRITE_SIZE {
                 if clicked.is_none() {
                     clicked = Some((index, distance))
                 } else {
@@ -170,9 +169,8 @@ impl Sludge {
             let mut tower_y = 0.0;
             if let Some(tower) = &mut self.moving {
                 // set tower x and y to cursor position (offset by 4 so its centered, and clamped to be inside map)
-                tower.x = (local_x - SPRITE_SIZE / 2.0)
-                    .min(SCREEN_WIDTH - 1.0 - SPRITE_SIZE)
-                    .max(0.0);
+                tower.x =
+                    (local_x - SPRITE_SIZE / 2.0).clamp(0.0, SCREEN_WIDTH - 1.0 - SPRITE_SIZE);
                 tower.y = local_y.min(SCREEN_HEIGHT - 1.0 - SPRITE_SIZE);
 
                 // store new pos so we can access it outside of this `if let` scope
@@ -272,9 +270,7 @@ impl Sludge {
                 ProjectileDrawType::Sprite(index, rotation_mode) => {
                     let rotation = match rotation_mode {
                         SpriteRotationMode::Direction => projectile.direction.to_angle(),
-                        SpriteRotationMode::Spin => {
-                            (15.0 - projectile.life % 30.0) as f32 / 15.0 * PI
-                        }
+                        SpriteRotationMode::Spin => (15.0 - projectile.life % 30.0) / 15.0 * PI,
                         SpriteRotationMode::None => 0.0,
                     };
                     self.particle_sheet.draw_tile(
@@ -300,10 +296,7 @@ impl Sludge {
         for (particle, x, y) in self.orphaned_particles.iter() {
             (particle.function)(particle, *x, *y, LEFT, &self.particle_sheet);
         }
-        let selected_tower = match self.selected {
-            Some(index) => Some(&self.towers[index]),
-            None => None,
-        };
+        let selected_tower = self.selected.map(|index| &self.towers[index]);
         if let Some(tower) = selected_tower {
             self.icon_sheet.draw_tile(tower.x, tower.y, 32, false, 0.0);
         }
@@ -359,8 +352,8 @@ impl Sludge {
         let mut new_projectiles = Vec::new();
 
         for (index, projectile) in self.projectiles.iter_mut().enumerate() {
-            projectile.x += (projectile.direction.x * projectile.modifier_data.speed as f32) as f32;
-            projectile.y += (projectile.direction.y * projectile.modifier_data.speed as f32) as f32;
+            projectile.x += projectile.direction.x * projectile.modifier_data.speed;
+            projectile.y += projectile.direction.y * projectile.modifier_data.speed;
             projectile.life += 1.0;
 
             projectile.modifier_data.speed =
@@ -382,9 +375,8 @@ impl Sludge {
             }
             // check if projectile hit any enemy
             for enemy in self.enemies.iter_mut() {
-                let distance = ((enemy.x as f32 - projectile.x as f32).powi(2)
-                    + (enemy.y as f32 - projectile.y as f32).powi(2))
-                .sqrt();
+                let distance =
+                    ((enemy.x - projectile.x).powi(2) + (enemy.y - projectile.y).powi(2)).sqrt();
                 if distance < 8.0 + projectile.extra_size {
                     // hit!
                     for (damage_type, mut amount) in projectile.modifier_data.damage.clone() {
@@ -513,7 +505,7 @@ impl Sludge {
         for (remove_offset, index) in death_queue.iter().enumerate() {
             self.enemies.remove(index - remove_offset);
         }
-        if matches!(round_update, RoundUpdate::Finished) && self.enemies.len() == 0 {
+        if matches!(round_update, RoundUpdate::Finished) && self.enemies.is_empty() {
             self.round_manager.finish_round();
         }
     }
@@ -532,19 +524,15 @@ async fn main() {
 
     let low_res_camera = Camera2D {
         render_target: Some(render_target),
-        zoom: Vec2::new(
-            1.0 / SCREEN_WIDTH as f32 * 2.0,
-            1.0 / SCREEN_HEIGHT as f32 * 2.0,
-        ),
-        target: Vec2::new(SCREEN_WIDTH as f32 / 2.0, SCREEN_HEIGHT as f32 / 2.0),
+        zoom: Vec2::new(1.0 / SCREEN_WIDTH * 2.0, 1.0 / SCREEN_HEIGHT * 2.0),
+        target: Vec2::new(SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0),
 
         ..Default::default()
     };
     loop {
         // update scale factor
         let (screen_width, screen_height) = screen_size();
-        scale_factor =
-            (screen_width as f32 / SCREEN_WIDTH).min(screen_height as f32 / SCREEN_HEIGHT);
+        scale_factor = (screen_width / SCREEN_WIDTH).min(screen_height / SCREEN_HEIGHT);
         clear_background(BLACK);
         set_camera(&low_res_camera);
 
@@ -552,8 +540,8 @@ async fn main() {
         let deltatime_ms = (now - last).as_millis();
 
         let (mouse_x, mouse_y) = mouse_position();
-        let local_x = mouse_x as f32 / scale_factor;
-        let local_y = mouse_y as f32 / scale_factor;
+        let local_x = mouse_x / scale_factor;
+        let local_y = mouse_y / scale_factor;
 
         game.handle_input(local_x, local_y);
 
@@ -580,8 +568,8 @@ async fn main() {
             WHITE,
             DrawTextureParams {
                 dest_size: Some(Vec2::new(
-                    (SCREEN_WIDTH * scale_factor) as f32,
-                    (SCREEN_HEIGHT * scale_factor) as f32,
+                    SCREEN_WIDTH * scale_factor,
+                    SCREEN_HEIGHT * scale_factor,
                 )),
                 ..Default::default()
             },

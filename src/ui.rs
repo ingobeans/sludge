@@ -151,7 +151,7 @@ impl UIManager {
                 // todo: draw text
                 let tile_x = index as f32 * CARD_SIZE + 2.0;
                 if let Some(card) = card_slot {
-                    card.draw(card_sheet, tile_x as f32 + 2.0, tile_y + 2.0);
+                    card.draw(card_sheet, tile_x + 2.0, tile_y + 2.0);
                 } else {
                     draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
                 }
@@ -261,10 +261,6 @@ impl UIManager {
 }
 
 pub fn draw_square(x: f32, y: f32, w: f32, h: f32) {
-    let x = x as f32;
-    let y = y as f32;
-    let w = w as f32;
-    let h = h as f32;
-    draw_rectangle(x, y, w, h, UI_OUTER_BORDER_COLOR);
+    draw_rectangle(x, y, w, h, UI_BORDER_COLOR);
     draw_rectangle(x + 1.0, y + 1.0, w - 2.0, h - 2.0, UI_BG_COLOR);
 }

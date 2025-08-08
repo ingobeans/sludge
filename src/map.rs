@@ -42,12 +42,12 @@ impl Spritesheet {
             flip_y: false,
             pivot: None,
         };
-        draw_texture_ex(&self.texture, x as f32, y as f32, WHITE, params);
+        draw_texture_ex(&self.texture, x, y, WHITE, params);
     }
     pub fn draw_tilemap(&self, map: &TileMap) {
-        for y in 0..SCREEN_HEIGHT_USIZE / self.sprite_size {
-            for x in 0..SCREEN_WIDTH_USIZE / self.sprite_size {
-                let tile = map[y][x].checked_sub(1);
+        for (y, row) in map.iter().enumerate() {
+            for (x, value) in row.iter().enumerate() {
+                let tile = value.checked_sub(1);
                 let x = x as f32;
                 let y = y as f32;
                 if let Some(tile) = tile {

@@ -1,4 +1,4 @@
-use macroquad::rand::{self, RandomRange};
+use macroquad::rand;
 
 use crate::{
     consts::*,
@@ -121,7 +121,6 @@ impl RoundManager {
                         counter -= amount;
                     }
                 }
-                _ => {}
             }
         }
         RoundUpdate::Finished
