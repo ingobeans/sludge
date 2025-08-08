@@ -119,7 +119,7 @@ pub static ENEMY_TYPES: LazyLock<Vec<EnemyType>> = LazyLock::new(|| {
             anim_length: 3,
             speed: 0.5,
             max_health: 20.0,
-            damage_resistance: DamageResistance::Partial(DamageType::Explosion),
+            damage_resistance: DamageResistance::Partial(DamageType::Burn),
             ..Default::default()
         },
         EnemyType {
@@ -137,7 +137,7 @@ pub static ENEMY_TYPES: LazyLock<Vec<EnemyType>> = LazyLock::new(|| {
             anim_length: 2,
             speed: 1.0,
             max_health: 6.0,
-            damage_resistance: DamageResistance::Full(DamageType::Explosion),
+            damage_resistance: DamageResistance::Full(DamageType::Burn),
             ..Default::default()
         },
         EnemyType {
@@ -147,7 +147,7 @@ pub static ENEMY_TYPES: LazyLock<Vec<EnemyType>> = LazyLock::new(|| {
             speed: 1.0 / 4.0,
             size: 2,
             max_health: 40.0,
-            damage_resistance: DamageResistance::Partial(DamageType::Explosion),
+            damage_resistance: DamageResistance::Partial(DamageType::Burn),
             ..Default::default()
         },
         EnemyType {

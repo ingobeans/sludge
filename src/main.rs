@@ -41,9 +41,9 @@ fn move_towards(
     *source_x == target_x && *source_y == target_y
 }
 
-async fn load_spritesheet(path: &str) -> Spritesheet {
+async fn load_spritesheet(path: &str, size: usize) -> Spritesheet {
     let error = format!("{} is missing!!", path);
-    Spritesheet::new(load_texture(path).await.expect(&error))
+    Spritesheet::new(load_texture(path).await.expect(&error), size)
 }
 
 fn get_direction_nearest_enemy(enemies: &Vec<Enemy>, x: f32, y: f32) -> Option<Vec2> {
@@ -78,10 +78,10 @@ struct Sludge {
 }
 impl Sludge {
     async fn new(map: Map) -> Self {
-        let tileset = load_spritesheet("spritesheet.png").await;
-        let icon_sheet = load_spritesheet("icons.png").await;
-        let card_sheet = load_spritesheet("cards.png").await;
-        let particle_sheet = load_spritesheet("particles.png").await;
+        let tileset = load_spritesheet("spritesheet.png", SPRITE_SIZE_USIZE).await;
+        let icon_sheet = load_spritesheet("icons.png", SPRITE_SIZE_USIZE).await;
+        let card_sheet = load_spritesheet("cards.png", SPRITE_SIZE_USIZE).await;
+        let particle_sheet = load_spritesheet("particles.png", SPRITE_SIZE_USIZE).await;
 
         // add starting towers
         let base_towers = get_towers();
@@ -105,7 +105,7 @@ impl Sludge {
             round_manager: load_round_data(),
             moving: None,
             selected: None,
-            ui_manager: UIManager::new(true),
+            ui_manager: UIManager::new(true).await,
             tileset,
             icon_sheet,
             card_sheet,
@@ -304,6 +304,9 @@ impl Sludge {
             Some(index) => Some(&self.towers[index]),
             None => None,
         };
+        if let Some(tower) = selected_tower {
+            self.icon_sheet.draw_tile(tower.x, tower.y, 32, false, 0.0);
+        }
         self.ui_manager.draw_ui(
             local_x,
             local_y,
@@ -311,9 +314,6 @@ impl Sludge {
             &self.icon_sheet,
             selected_tower,
         );
-        if let Some(tower) = selected_tower {
-            self.icon_sheet.draw_tile(tower.x, tower.y, 32, false, 0.0);
-        }
         if let Some(tower) = &self.moving {
             self.icon_sheet
                 .draw_tile(tower.x, tower.y - 4.0, tower.sprite, false, 0.0);

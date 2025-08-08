@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug, ops::Deref};
 
 use macroquad::{color::Color, math::Vec2, shapes::draw_rectangle};
 
@@ -26,7 +26,7 @@ pub fn get_cards() -> Vec<Card> {
         library::fireball(),
         library::thorn_dart(),
         library::dart(),
-        library::acid_bottle(),
+        library::acid_flask(),
         library::razor(),
     ];
 
@@ -114,7 +114,7 @@ pub struct Projectile {
 pub enum DamageType {
     Magic,
     Pierce,
-    Explosion,
+    Burn,
     Cold,
     Acid,
 }
@@ -145,6 +145,29 @@ pub struct CardModifierData {
     pub damage: HashMap<DamageType, f32>,
 }
 impl CardModifierData {
+    pub fn iter(&self) -> Vec<(&'static str, String)> {
+        let mut fields = Vec::new();
+        for (k, v) in &self.damage {
+            let k = match k {
+                DamageType::Acid => "damage acid",
+                DamageType::Cold => "damage cold",
+                DamageType::Burn => "damage burn",
+                DamageType::Magic => "damage magic",
+                DamageType::Pierce => "damage pierce",
+            };
+            fields.push((k, v.to_string()));
+        }
+        for (k, field) in [
+            ("shoot delay", self.shoot_delay),
+            ("reload time", self.recharge_speed),
+            ("speed", self.speed),
+        ] {
+            if field != 0.0 {
+                fields.push((k, field.to_string()));
+            }
+        }
+        fields
+    }
     /// Like [CardModifierData::merge] but only merges shoot_delay and recharge_speed fields, which are the only fields that
     /// projectile type cards modify
     pub fn merge_projectile(&mut self, other: &CardModifierData) {

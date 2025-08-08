@@ -43,7 +43,7 @@ pub const HIT_MARKER: Particle = Particle {
 
 pub const BUBBLE: Particle = Particle {
     life: 0,
-    lifetime: 20,
+    lifetime: 19,
     function: &|this, x, y, _, particles| {
         let stage_1_end = 10;
         let frame_amt = 3;

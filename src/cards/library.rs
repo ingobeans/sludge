@@ -5,7 +5,7 @@ use crate::{cards::*, particle};
 pub fn acidify() -> Card {
     Card {
         name: "acidify",
-        desc: "makes a projctile deal additional acid damage",
+        desc: "adds acid dmg",
         ty: CardType::Modifier(CardModifierData {
             damage: hashmap!(DamageType::Acid => 6.0),
             shoot_delay: 0.2,
@@ -31,7 +31,7 @@ pub fn bubble() -> Card {
 
     Card {
         name: "bubble",
-        desc: "a harmless bubble",
+        desc: "harmless bubble",
         ty: CardType::Projectile(projectile, false),
         sprite: 9,
         ..Default::default()
@@ -40,7 +40,7 @@ pub fn bubble() -> Card {
 pub fn double() -> Card {
     Card {
         name: "double draw",
-        desc: "fires both next two projectiles as the same group",
+        desc: "fires next two\nprojectiles",
         ty: CardType::Multidraw(2),
         sprite: 5,
         ..Default::default()
@@ -50,7 +50,7 @@ pub fn double() -> Card {
 pub fn triple() -> Card {
     Card {
         name: "triple draw",
-        desc: "fires the next three projectiles as the same group",
+        desc: "fires next three\nprojectiles",
         ty: CardType::Multidraw(3),
         sprite: 6,
         ..Default::default()
@@ -60,7 +60,7 @@ pub fn triple() -> Card {
 pub fn speed() -> Card {
     Card {
         name: "speedify",
-        desc: "speed up a projectile",
+        desc: "speeds a proj up",
         ty: CardType::Modifier(CardModifierData {
             speed: 2.0,
             ..Default::default()
@@ -74,7 +74,7 @@ pub fn speed() -> Card {
 pub fn aiming() -> Card {
     Card {
         name: "aiming",
-        desc: "makes the projectile fire towards the nearest enemy",
+        desc: "aim towards nearest",
         ty: CardType::Modifier(CardModifierData {
             aim: true,
             ..Default::default()
@@ -87,7 +87,7 @@ pub fn aiming() -> Card {
 pub fn homing() -> Card {
     Card {
         name: "homing",
-        desc: "makes the projectile home towards the nearest enemy",
+        desc: "home towards nearest",
         ty: CardType::Modifier(CardModifierData {
             homing: true,
             ..Default::default()
@@ -112,7 +112,7 @@ pub fn magicbolt() -> Card {
 
     Card {
         name: "magicbolt",
-        desc: "the most basic projectile",
+        desc: "basic projectile",
         ty: CardType::Projectile(projectile, true),
         sprite: 1,
         ..Default::default()
@@ -133,7 +133,7 @@ pub fn thorn_dart() -> Card {
     };
     let main = Card {
         name: "thorn dart",
-        desc: "a sharp thorn that can cut through two enemies",
+        desc: "pierces first enemy",
         ty: CardType::Projectile(projectile, false),
         sprite: 4,
         ..Default::default()
@@ -161,7 +161,7 @@ pub fn dart() -> Card {
 
     Card {
         name: "dart",
-        desc: "a regular throwing dart",
+        desc: "regular dart",
         ty: CardType::Projectile(projectile, true),
         sprite: 10,
         ..Default::default()
@@ -182,7 +182,7 @@ pub fn razor() -> Card {
 
     Card {
         name: "razor",
-        desc: "a sharp razor disc",
+        desc: "sharp razor disc",
         ty: CardType::Projectile(projectile, false),
         sprite: 16,
         ..Default::default()
@@ -196,7 +196,7 @@ fn fire_explosion() -> Card {
             speed: 0.0,
             lifetime: 1.0,
             piercing: true,
-            damage: hashmap!(DamageType::Explosion => 6.0),
+            damage: hashmap!(DamageType::Burn => 6.0),
             ..Default::default()
         },
         ..Default::default()
@@ -214,7 +214,7 @@ pub fn fireball() -> Card {
             speed: 3.0,
             lifetime: 120.0,
             shoot_delay: 1.1,
-            damage: hashmap!(DamageType::Explosion => 1.0),
+            damage: hashmap!(DamageType::Burn => 1.0),
             ..Default::default()
         },
         payload: vec![fire_explosion()],
@@ -223,7 +223,7 @@ pub fn fireball() -> Card {
 
     Card {
         name: "fireball",
-        desc: "a burning ball of fire",
+        desc: "burning fire",
         ty: CardType::Projectile(projectile, false),
         sprite: 11,
         ..Default::default()
@@ -239,14 +239,14 @@ pub fn explosion() -> Card {
             lifetime: 0.0,
             shoot_delay: 1.0,
             piercing: true,
-            damage: hashmap!(DamageType::Explosion => 13.0),
+            damage: hashmap!(DamageType::Burn => 13.0),
             ..Default::default()
         },
         ..Default::default()
     };
     Card {
         name: "explosion",
-        desc: "an immediate explosion",
+        desc: "instant explosion",
         ty: CardType::Projectile(explosion_projectile, false),
         sprite: 13,
         ..Default::default()
@@ -270,7 +270,7 @@ pub fn bomb() -> Card {
 
     Card {
         name: "bomb",
-        desc: "a bomb that blows up after a few seconds",
+        desc: "goes boom",
         ty: CardType::Projectile(projectile, false),
         sprite: 3,
         ..Default::default()
@@ -292,7 +292,7 @@ pub fn rocket() -> Card {
 
     Card {
         name: "rocket",
-        desc: "a rocket that detonates on impact",
+        desc: "boom on impact",
         ty: CardType::Projectile(projectile, false),
         sprite: 15,
         ..Default::default()
@@ -319,7 +319,7 @@ fn acid_puddle() -> Card {
     }
 }
 
-pub fn acid_bottle() -> Card {
+pub fn acid_flask() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(8, SpriteRotationMode::Spin),
         modifier_data: CardModifierData {
@@ -333,8 +333,8 @@ pub fn acid_bottle() -> Card {
     };
 
     Card {
-        name: "bottle of acid",
-        desc: "conjures a bottle of acid to hurl at your foes",
+        name: "acid flask",
+        desc: "hurl at your foes",
         ty: CardType::Projectile(projectile, false),
         sprite: 12,
         ..Default::default()

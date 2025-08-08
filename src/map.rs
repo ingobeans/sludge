@@ -5,11 +5,12 @@ use macroquad::prelude::*;
 
 pub struct Spritesheet {
     texture: Texture2D,
-    width: usize,
-    height: usize,
+    pub width: usize,
+    pub height: usize,
+    pub sprite_size: usize,
 }
 impl Spritesheet {
-    pub fn new(texture: Texture2D) -> Self {
+    pub fn new(texture: Texture2D, sprite_size: usize) -> Self {
         texture.set_filter(FilterMode::Nearest);
         let width = texture.width() as usize;
         let height = texture.height() as usize;
@@ -17,23 +18,24 @@ impl Spritesheet {
             texture,
             width,
             height,
+            sprite_size,
         }
     }
     fn id_to_pos(&self, id: usize) -> (usize, usize) {
-        let x = id % (self.width / SPRITE_SIZE_USIZE);
-        let y = id / (self.height / SPRITE_SIZE_USIZE);
+        let x = id % (self.width / self.sprite_size);
+        let y = id / (self.height / self.sprite_size);
         (x, y)
     }
     pub fn draw_tile(&self, x: f32, y: f32, id: usize, flipped: bool, rotation: f32) {
         let (texture_x, texture_y) = self.id_to_pos(id);
-        let size = SPRITE_SIZE as f32;
+        let size = self.sprite_size as f32;
         let params = DrawTextureParams {
             dest_size: Some(Vec2 { x: size, y: size }),
             source: Some(Rect {
-                x: (texture_x * SPRITE_SIZE_USIZE) as f32,
-                y: (texture_y * SPRITE_SIZE_USIZE) as f32,
-                w: SPRITE_SIZE as f32,
-                h: SPRITE_SIZE as f32,
+                x: (texture_x * self.sprite_size) as f32,
+                y: (texture_y * self.sprite_size) as f32,
+                w: self.sprite_size as f32,
+                h: self.sprite_size as f32,
             }),
             rotation,
             flip_x: flipped,
@@ -43,13 +45,19 @@ impl Spritesheet {
         draw_texture_ex(&self.texture, x as f32, y as f32, WHITE, params);
     }
     pub fn draw_tilemap(&self, map: &TileMap) {
-        for y in 0..SCREEN_HEIGHT_USIZE / SPRITE_SIZE_USIZE {
-            for x in 0..SCREEN_WIDTH_USIZE / SPRITE_SIZE_USIZE {
+        for y in 0..SCREEN_HEIGHT_USIZE / self.sprite_size {
+            for x in 0..SCREEN_WIDTH_USIZE / self.sprite_size {
                 let tile = map[y][x].checked_sub(1);
                 let x = x as f32;
                 let y = y as f32;
                 if let Some(tile) = tile {
-                    self.draw_tile(x * SPRITE_SIZE, y * SPRITE_SIZE, tile, false, 0.0);
+                    self.draw_tile(
+                        x * self.sprite_size as f32,
+                        y * self.sprite_size as f32,
+                        tile,
+                        false,
+                        0.0,
+                    );
                 }
             }
         }
