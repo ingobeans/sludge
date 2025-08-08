@@ -15,21 +15,15 @@ pub struct UIManager {
     inventory: [[Option<Card>; INV_SLOTS_HORIZONTAL]; INV_SLOTS_VERTICAL],
     pub inventory_open: bool,
     cursor_card: Option<Card>,
+    pub text_engine: TextEngine,
+}
+#[derive(Clone)]
+pub struct TextEngine {
     font: Spritesheet,
 }
-impl UIManager {
-    pub fn new(grant_all_cards: bool) -> Self {
-        let mut inventory = std::array::from_fn(|_| std::array::from_fn(|_| None.clone()).clone());
-        if grant_all_cards {
-            let all_cards = get_cards();
-            for (index, card) in all_cards.into_iter().enumerate() {
-                inventory[index / inventory[0].len()][index % inventory[0].len()] = Some(card);
-            }
-        }
+impl TextEngine {
+    pub fn new() -> Self {
         Self {
-            inventory,
-            inventory_open: false,
-            cursor_card: None,
             font: load_spritesheet("data/assets/font.png", 4),
         }
     }
@@ -67,6 +61,24 @@ impl UIManager {
             i += 1;
         }
     }
+}
+
+impl UIManager {
+    pub fn new(grant_all_cards: bool, text_engine: TextEngine) -> Self {
+        let mut inventory = std::array::from_fn(|_| std::array::from_fn(|_| None.clone()).clone());
+        if grant_all_cards {
+            let all_cards = get_cards();
+            for (index, card) in all_cards.into_iter().enumerate() {
+                inventory[index / inventory[0].len()][index % inventory[0].len()] = Some(card);
+            }
+        }
+        Self {
+            inventory,
+            inventory_open: false,
+            cursor_card: None,
+            text_engine,
+        }
+    }
     fn draw_card_info(
         &self,
         mut local_x: f32,
@@ -84,8 +96,10 @@ impl UIManager {
         if card.is_trigger {
             name += " trigger"
         }
-        self.draw_text(local_x + 4.0 + CARD_SIZE, local_y + 3.0, &name, 1);
-        self.draw_text(local_x + 4.0 + CARD_SIZE, local_y + 8.0, card.desc, 0);
+        self.text_engine
+            .draw_text(local_x + 4.0 + CARD_SIZE, local_y + 3.0, &name, 1);
+        self.text_engine
+            .draw_text(local_x + 4.0 + CARD_SIZE, local_y + 8.0, card.desc, 0);
         let modifier_data = match &card.ty {
             CardType::Modifier(modifier_data) => modifier_data,
             CardType::Projectile(proj, _) => &proj.modifier_data,
@@ -96,7 +110,7 @@ impl UIManager {
 
         let mut index = 0.0;
         for (k, v) in modifier_data.iter() {
-            self.draw_text(
+            self.text_engine.draw_text(
                 local_x + 2.0,
                 local_y + index * 5.0 + CARD_SIZE + 4.0,
                 &format!("{k}:{v}"),
@@ -140,7 +154,7 @@ impl UIManager {
             .iter()
             .enumerate()
             {
-                self.draw_text(
+                self.text_engine.draw_text(
                     2.0,
                     tile_y + CARD_SIZE + 5.0 + 5.0 * index as f32,
                     &format!("{k}:{v}"),
@@ -277,7 +291,27 @@ pub fn draw_square(x: f32, y: f32, w: f32, h: f32) {
     draw_rectangle(x, y, w, h, UI_BORDER_COLOR);
     draw_rectangle(x + 1.0, y + 1.0, w - 2.0, h - 2.0, UI_BG_COLOR);
 }
-pub fn draw_button(x: f32, y: f32, w: f32, h: f32) {
+pub fn draw_button(
+    text_engine: &TextEngine,
+    x: f32,
+    y: f32,
+    w: f32,
+    h: f32,
+    local_x: f32,
+    local_y: f32,
+    text: &str,
+) -> bool {
+    let hovered = local_x.clamp(x, x + w) == local_x && local_y.clamp(y, y + h) == local_y;
+    let color_offset = if hovered { 0 } else { 2 };
+
     draw_rectangle(x, y, w, h, UI_BORDER_COLOR);
     draw_rectangle(x + 1.0, y + 1.0, w - 2.0, h - 2.0, UI_BUTTON_BG_COLOR);
+    text_engine.draw_text(x + 2.0, y + 2.0, text, color_offset);
+    hovered && is_mouse_button_pressed(MouseButton::Left)
+}
+
+pub fn draw_button_disabled(text_engine: &TextEngine, x: f32, y: f32, w: f32, h: f32, text: &str) {
+    draw_rectangle(x, y, w, h, UI_BORDER_COLOR);
+    draw_rectangle(x + 1.0, y + 1.0, w - 2.0, h - 2.0, UI_BG_COLOR);
+    text_engine.draw_text(x + 2.0, y + 2.0, text, 2);
 }

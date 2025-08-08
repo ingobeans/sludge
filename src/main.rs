@@ -99,7 +99,7 @@ struct Sludge {
     particle_sheet: Spritesheet,
 }
 impl Sludge {
-    async fn new(map: Map) -> Self {
+    fn new(map: Map, text_engine: TextEngine) -> Self {
         let tileset = load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE);
         let icon_sheet = load_spritesheet("data/assets/icons.png", SPRITE_SIZE_USIZE);
         let card_sheet = load_spritesheet("data/assets/cards.png", SPRITE_SIZE_USIZE);
@@ -130,7 +130,7 @@ impl Sludge {
             round_manager: load_round_data(),
             moving: None,
             selected: None,
-            ui_manager: UIManager::new(true),
+            ui_manager: UIManager::new(true, text_engine),
             tileset,
             icon_sheet,
             card_sheet,
@@ -277,6 +277,7 @@ impl Sludge {
         self.icon_sheet.draw_tile(cursor_x, 0.0, 40, false, 0.0);
         cursor_x += 6.0;
         self.ui_manager
+            .text_engine
             .draw_text(cursor_x, 2.0, &self.lives.to_string(), 0);
         cursor_x += 4.0 * 4.0;
 
@@ -284,7 +285,9 @@ impl Sludge {
         self.icon_sheet.draw_tile(cursor_x, 0.0, 39, false, 0.0);
         cursor_x += 6.0;
         let gold_text = self.gold.to_string();
-        self.ui_manager.draw_text(cursor_x, 2.0, &gold_text, 0);
+        self.ui_manager
+            .text_engine
+            .draw_text(cursor_x, 2.0, &gold_text, 0);
         cursor_x += 4.0 * (gold_text.len() as f32 + 1.0);
 
         // show round counter
@@ -298,8 +301,12 @@ impl Sludge {
         self.icon_sheet
             .draw_tile(cursor_x, 0.0, round_icon, false, 0.0);
         cursor_x += 6.0;
-        self.ui_manager
-            .draw_text(cursor_x, 2.0, &self.round_manager.round.to_string(), 0);
+        self.ui_manager.text_engine.draw_text(
+            cursor_x,
+            2.0,
+            &self.round_manager.round.to_string(),
+            0,
+        );
     }
     fn draw(&self) {
         self.tileset.draw_tilemap(&self.map.background);
@@ -570,46 +577,142 @@ impl Sludge {
     }
 }
 
-#[macroquad::main("sludge")]
-async fn main() {
-    let mut scale_factor;
-    let maps = load_maps();
-    let mut game = Sludge::new(maps[0].clone()).await;
+struct GameManager {
+    sludge: Option<Sludge>,
+    maps: Vec<Map>,
+    last: Instant,
+    pixel_camera: Camera2D,
+    gameover_anim_frame: u8,
+    menu_texture: Texture2D,
+    text_engine: TextEngine,
+}
+impl GameManager {
+    fn new() -> Self {
+        let render_target = render_target(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32);
+        render_target.texture.set_filter(FilterMode::Nearest);
+        let menu_texture = assets::load_texture("data/assets/menu.png");
+        Self {
+            sludge: None,
+            maps: load_maps(),
+            last: Instant::now(),
+            pixel_camera: Camera2D {
+                render_target: Some(render_target),
+                zoom: Vec2::new(1.0 / SCREEN_WIDTH * 2.0, 1.0 / SCREEN_HEIGHT * 2.0),
+                target: Vec2::new(SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0),
 
-    let mut last = Instant::now();
+                ..Default::default()
+            },
+            gameover_anim_frame: 0,
+            menu_texture,
+            text_engine: TextEngine::new(),
+        }
+    }
+    async fn run(&mut self) {
+        loop {
+            let (screen_width, screen_height) = screen_size();
+            let scale_factor = (screen_width / SCREEN_WIDTH).min(screen_height / SCREEN_HEIGHT);
 
-    let render_target = render_target(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32);
-    render_target.texture.set_filter(FilterMode::Nearest);
+            let (mouse_x, mouse_y) = mouse_position();
+            let local_x = mouse_x / scale_factor;
+            let local_y = mouse_y / scale_factor;
 
-    let low_res_camera = Camera2D {
-        render_target: Some(render_target),
-        zoom: Vec2::new(1.0 / SCREEN_WIDTH * 2.0, 1.0 / SCREEN_HEIGHT * 2.0),
-        target: Vec2::new(SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0),
+            clear_background(BLACK);
+            set_camera(&self.pixel_camera);
 
-        ..Default::default()
-    };
-    let mut gameover_anim_frame: u8 = 0;
+            if self.sludge.is_some() {
+                self.run_game(local_x, local_y);
+            } else {
+                self.run_main_menu(local_x, local_y);
+            }
 
-    loop {
-        // update scale factor
-        let (screen_width, screen_height) = screen_size();
-        scale_factor = (screen_width / SCREEN_WIDTH).min(screen_height / SCREEN_HEIGHT);
-        clear_background(BLACK);
-        set_camera(&low_res_camera);
+            // draw low res render to screen
+            set_default_camera();
+            let render_target = &self.pixel_camera.render_target;
+            let texture = render_target.clone().unwrap();
+            draw_texture_ex(
+                &texture.texture,
+                0.0,
+                0.0,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(Vec2::new(
+                        SCREEN_WIDTH * scale_factor,
+                        SCREEN_HEIGHT * scale_factor,
+                    )),
+                    ..Default::default()
+                },
+            );
+            next_frame().await;
+        }
+    }
+    fn run_main_menu(&mut self, local_x: f32, local_y: f32) {
+        draw_texture(&self.menu_texture, 0.0, 0.0, WHITE);
 
-        let (mouse_x, mouse_y) = mouse_position();
-        let local_x = mouse_x / scale_factor;
-        let local_y = mouse_y / scale_factor;
+        let left_padding = 12.0;
+        let top_padding = 26.0;
+
+        let button_width = 60.0;
+        let button_height = 8.0;
+
+        draw_button_disabled(
+            &self.text_engine,
+            left_padding,
+            top_padding,
+            button_width,
+            button_height,
+            "load save",
+        );
+        if draw_button(
+            &self.text_engine,
+            left_padding - 2.0,
+            top_padding + button_height + 2.0,
+            button_width,
+            button_height,
+            local_x,
+            local_y,
+            "play",
+        ) {
+            self.sludge = Some(Sludge::new(self.maps[0].clone(), self.text_engine.clone()))
+        }
+        if draw_button(
+            &self.text_engine,
+            left_padding - 4.0,
+            top_padding + (button_height + 2.0) * 2.0,
+            button_width,
+            button_height,
+            local_x,
+            local_y,
+            "open lab",
+        ) {
+            self.sludge = Some(Sludge::new(self.maps[0].clone(), self.text_engine.clone()))
+        }
+        if draw_button(
+            &self.text_engine,
+            left_padding - 6.0,
+            top_padding + (button_height + 2.0) * 3.0,
+            button_width,
+            button_height,
+            local_x,
+            local_y,
+            "exit",
+        ) {
+            std::process::exit(0);
+        }
+    }
+    fn run_game(&mut self, local_x: f32, local_y: f32) {
+        let Some(game) = &mut self.sludge else {
+            panic!()
+        };
 
         // run update loops if game is not over
 
         if let GameState::Running = game.state {
             game.handle_input(local_x, local_y);
             let now = Instant::now();
-            let deltatime_ms = (now - last).as_millis();
+            let deltatime_ms = (now - self.last).as_millis();
             // run update loops at fixed FPS
             if deltatime_ms >= 1000 / 30 {
-                last = now;
+                self.last = now;
                 game.update_enemies();
                 game.update_projectiles();
                 game.update_particles();
@@ -620,6 +723,11 @@ async fn main() {
 
         // always draw
         game.draw();
+
+        // debug
+        if is_key_pressed(KeyCode::E) {
+            game.round_manager.in_progress = !game.round_manager.in_progress;
+        }
 
         match game.state {
             GameState::Running => {
@@ -634,67 +742,52 @@ async fn main() {
                 };
                 let width = 64.0;
                 let height = 64.0;
-                let y = gameover_anim_frame as f32 / 30.0 * (SCREEN_HEIGHT / 2.0 + height / 2.0)
+                let y = self.gameover_anim_frame as f32 / 30.0
+                    * (SCREEN_HEIGHT / 2.0 + height / 2.0)
                     - height
                     - 1.0;
                 let x = SCREEN_WIDTH / 2.0 - width / 2.0;
                 ui::draw_square(x, y, width, height);
-                if gameover_anim_frame < 30 {
-                    gameover_anim_frame += 1;
+                if self.gameover_anim_frame < 30 {
+                    self.gameover_anim_frame += 1;
                 }
-                game.ui_manager.draw_text(x + 2.0, y + 4.0, header, 1);
+                game.ui_manager
+                    .text_engine
+                    .draw_text(x + 2.0, y + 4.0, header, 1);
                 let text = format!(
                     "lives: {}\ngold: {}\nround: {}",
                     game.lives, game.gold, game.round_manager.round
                 );
-                game.ui_manager.draw_text(x + 2.0, y + 4.0 + 8.0, &text, 2);
+                game.ui_manager
+                    .text_engine
+                    .draw_text(x + 2.0, y + 4.0 + 8.0, &text, 2);
 
                 let button_width = 60.0;
                 let button_height = 8.0;
                 let button_x = x + width / 2.0 - button_width / 2.0;
                 let button_y = y + height - 4.0 - button_height;
 
-                let hovered = local_x.clamp(button_x, button_x + button_width) == local_x
-                    && local_y.clamp(button_y, button_y + button_height) == local_y;
-                let color_offset = if hovered { 0 } else { 2 };
-
-                ui::draw_button(button_x, button_y, button_width, button_height);
-                game.ui_manager.draw_text(
-                    button_x + 2.0,
-                    button_y + 2.0,
+                let clicked = draw_button(
+                    &game.ui_manager.text_engine,
+                    button_x,
+                    button_y,
+                    button_width,
+                    button_height,
+                    local_x,
+                    local_y,
                     "return to menu",
-                    color_offset,
                 );
 
-                if hovered && is_mouse_button_pressed(MouseButton::Left) {
-                    std::process::exit(0);
+                if clicked {
+                    self.sludge = None;
                 }
             }
         }
-
-        // draw low res render to screen
-        set_default_camera();
-        let render_target = &low_res_camera.render_target;
-        let texture = render_target.clone().unwrap();
-        draw_texture_ex(
-            &texture.texture,
-            0.0,
-            0.0,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(Vec2::new(
-                    SCREEN_WIDTH * scale_factor,
-                    SCREEN_HEIGHT * scale_factor,
-                )),
-                ..Default::default()
-            },
-        );
-
-        // debug
-        if is_key_pressed(KeyCode::E) {
-            game.round_manager.in_progress = !game.round_manager.in_progress;
-        }
-
-        next_frame().await;
     }
+}
+
+#[macroquad::main("sludge")]
+async fn main() {
+    let mut game_manager = GameManager::new();
+    game_manager.run().await;
 }

@@ -18,6 +18,24 @@ use include_directory::{include_directory, Dir};
 #[cfg(feature = "bundled")]
 static DATA: Dir<'_> = include_directory!("data");
 
+pub fn load_texture(path: &str) -> Texture2D {
+    #[cfg(feature = "bundled")]
+    {
+        let bytes = DATA.get_file(&path[5..]).unwrap().contents();
+        let texture = Texture2D::from_file_with_format(bytes, None);
+        texture
+    }
+    #[cfg(not(feature = "bundled"))]
+    {
+        let error = format!("{} is missing!!", path);
+        use std::fs::read;
+
+        let bytes = read(path).expect(&error);
+        let texture = Texture2D::from_file_with_format(&bytes, None);
+        texture
+    }
+}
+
 pub type SublevelHashmap = HashMap<String, Vec<Vec<Round>>>;
 
 pub fn load_maps() -> Vec<Map> {
@@ -125,19 +143,6 @@ pub fn get_sublevels_hashmap() -> SublevelHashmap {
 }
 
 pub fn load_spritesheet(path: &str, size: usize) -> Spritesheet {
-    #[cfg(feature = "bundled")]
-    {
-        let bytes = DATA.get_file(&path[5..]).unwrap().contents();
-        let texture = Texture2D::from_file_with_format(bytes, None);
-        Spritesheet::new(texture, size)
-    }
-    #[cfg(not(feature = "bundled"))]
-    {
-        let error = format!("{} is missing!!", path);
-        use std::fs::read;
-
-        let bytes = read(path).expect(&error);
-        let texture = Texture2D::from_file_with_format(&bytes, None);
-        Spritesheet::new(texture, size)
-    }
+    let texture = load_texture(path);
+    Spritesheet::new(texture, size)
 }

@@ -40,18 +40,6 @@ pub const HIT_MARKER: Particle = Particle {
         particles.draw_tile(x, y, 6, false, 0.0);
     },
 };
-pub const SCREEN_TRANSITION: Particle = Particle {
-    life: 0,
-    lifetime: 30,
-    function: &|this, _, _, _, particles| {
-        let y =
-            this.life as f32 / this.lifetime as f32 * (SCREEN_HEIGHT + SPRITE_SIZE) - SPRITE_SIZE;
-        draw_rectangle(0.0, 0.0, SCREEN_WIDTH, y, WHITE);
-        for x in 0..SCREEN_WIDTH_USIZE {
-            particles.draw_tile(x as f32 * 8.0, y, 11, false, 0.0);
-        }
-    },
-};
 
 pub const BUBBLE: Particle = Particle {
     life: 0,

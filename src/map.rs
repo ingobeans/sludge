@@ -1,8 +1,7 @@
-use std::fs::{read_dir, read_to_string};
-
 use crate::consts::*;
 use macroquad::prelude::*;
 
+#[derive(Clone)]
 pub struct Spritesheet {
     texture: Texture2D,
     pub width: usize,

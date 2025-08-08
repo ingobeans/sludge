@@ -1,11 +1,10 @@
 use macroquad::rand;
 
 use crate::{
-    assets::{get_sublevels_hashmap, SublevelHashmap},
+    assets::SublevelHashmap,
     consts::*,
     enemy::{EnemyType, ENEMY_TYPES},
 };
-use std::fs::read_to_string;
 
 fn get_index_of_enemy(name: &str) -> usize {
     ENEMY_TYPES.iter().position(|f| f.name == name).unwrap()

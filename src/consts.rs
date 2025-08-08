@@ -12,7 +12,7 @@ pub const INV_SLOTS_VERTICAL: usize = (SCREEN_HEIGHT_USIZE - 4) / CARD_SIZE_USIZ
 pub const LEFT: Vec2 = Vec2::new(-1.0, 0.0);
 pub const SPREAD: f32 = 4.0_f32.to_radians();
 pub const DEFAULT_SPAWN_DELAY: u8 = 30;
-pub const STARTING_LIVES: u8 = 100;
+pub const STARTING_LIVES: u8 = 20;
 pub const STARTING_GOLD: u16 = 0;
 
 pub const UI_BG_COLOR: Color = Color::from_hex(0xb86f50);
