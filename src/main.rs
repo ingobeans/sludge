@@ -99,30 +99,21 @@ struct Sludge {
     particle_sheet: Spritesheet,
 }
 impl Sludge {
-    fn new(map: Map, text_engine: TextEngine) -> Self {
+    fn new(map: Map, text_engine: TextEngine, lab: bool) -> Self {
         let tileset = load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE);
         let icon_sheet = load_spritesheet("data/assets/icons.png", SPRITE_SIZE_USIZE);
         let card_sheet = load_spritesheet("data/assets/cards.png", SPRITE_SIZE_USIZE);
         let particle_sheet = load_spritesheet("data/assets/particles.png", SPRITE_SIZE_USIZE);
 
         // add starting towers
-        let base_towers = get_towers();
-        let mut tower1 = base_towers[0].clone();
-        tower1.x = map.tower_spawnpoints[0].0 as f32;
-        tower1.y = map.tower_spawnpoints[0].1 as f32;
-        tower1.direction = LEFT;
-
-        let mut tower2 = base_towers[1].clone();
-        tower2.x = map.tower_spawnpoints[1].0 as f32;
-        tower2.y = map.tower_spawnpoints[1].1 as f32;
-        tower2.direction = LEFT;
+        let base_towers = get_towers(map.tower_spawnpoints);
 
         Self {
             state: GameState::Running,
             map,
             enemies: Vec::with_capacity(100),
             enemy_spawn_queue: VecDeque::with_capacity(10),
-            towers: vec![tower1, tower2],
+            towers: base_towers[..2].into(),
             projectiles: Vec::with_capacity(100),
             orphaned_particles: Vec::with_capacity(100),
             lives: STARTING_LIVES,
@@ -130,7 +121,7 @@ impl Sludge {
             round_manager: load_round_data(),
             moving: None,
             selected: None,
-            ui_manager: UIManager::new(true, text_engine),
+            ui_manager: UIManager::new(lab, text_engine),
             tileset,
             icon_sheet,
             card_sheet,
@@ -672,7 +663,11 @@ impl GameManager {
             local_y,
             "play",
         ) {
-            self.sludge = Some(Sludge::new(self.maps[0].clone(), self.text_engine.clone()))
+            self.sludge = Some(Sludge::new(
+                self.maps[1].clone(),
+                self.text_engine.clone(),
+                false,
+            ))
         }
         if draw_button(
             &self.text_engine,
@@ -684,7 +679,11 @@ impl GameManager {
             local_y,
             "open lab",
         ) {
-            self.sludge = Some(Sludge::new(self.maps[0].clone(), self.text_engine.clone()))
+            self.sludge = Some(Sludge::new(
+                self.maps[0].clone(),
+                self.text_engine.clone(),
+                true,
+            ))
         }
         if draw_button(
             &self.text_engine,

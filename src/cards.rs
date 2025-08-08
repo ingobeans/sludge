@@ -4,7 +4,7 @@ use macroquad::{color::Color, math::Vec2, shapes::draw_rectangle};
 
 use crate::{consts::*, map::Spritesheet, particle::Particle};
 
-mod library;
+pub mod library;
 
 /// Returns all player-achievable cards
 pub fn get_cards() -> Vec<Card> {

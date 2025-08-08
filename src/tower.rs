@@ -4,38 +4,51 @@ use macroquad::{math::Vec2, rand::RandomRange};
 
 use crate::{
     cards::{Card, CardType, FiringContext, Projectile},
-    consts::SPREAD,
+    consts::*,
 };
 
 // this is kind of dumb but i did it like this okay
-pub fn get_towers() -> [Tower; 4] {
+pub fn get_towers(spawnpoints: [(usize, usize); 4]) -> [Tower; 4] {
+    let default = Tower {
+        direction: LEFT,
+        ..Default::default()
+    };
+
     let tower1 = Tower {
+        x: spawnpoints[0].0 as f32,
+        y: spawnpoints[0].1 as f32,
         sprite: 0,
         card_slots: vec![None; 6],
         shoot_delay: 0.1,
         recharge_speed: 0.50,
-        ..Default::default()
+        ..default
     };
     let tower2 = Tower {
+        x: spawnpoints[1].0 as f32,
+        y: spawnpoints[1].1 as f32,
         sprite: 3,
         card_slots: vec![None; 3],
         shoot_delay: 0.12,
         recharge_speed: 0.07,
-        ..Default::default()
+        ..default
     };
     let tower3 = Tower {
+        x: spawnpoints[2].0 as f32,
+        y: spawnpoints[2].1 as f32,
         sprite: 6,
         card_slots: vec![None; 11],
         shoot_delay: 0.65,
         recharge_speed: 0.65,
-        ..Default::default()
+        ..default
     };
     let tower4 = Tower {
+        x: spawnpoints[3].0 as f32,
+        y: spawnpoints[3].1 as f32,
         sprite: 9,
         card_slots: vec![None; 8],
         shoot_delay: 0.25,
         recharge_speed: 0.65,
-        ..Default::default()
+        ..default
     };
     [tower1, tower2, tower3, tower4]
 }
