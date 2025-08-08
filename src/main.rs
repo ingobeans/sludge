@@ -78,6 +78,7 @@ enum GameState {
     Running,
     Win,
     Lose,
+    Paused,
 }
 struct Sludge {
     state: GameState,
@@ -704,7 +705,6 @@ impl GameManager {
         };
 
         // run update loops if game is not over
-
         if let GameState::Running = game.state {
             game.handle_input(local_x, local_y);
             let now = Instant::now();
@@ -723,6 +723,14 @@ impl GameManager {
         // always draw
         game.draw();
 
+        if is_key_pressed(KeyCode::Escape) {
+            match game.state {
+                GameState::Running => game.state = GameState::Paused,
+                GameState::Paused => game.state = GameState::Running,
+                _ => {}
+            }
+        }
+
         // debug
         if is_key_pressed(KeyCode::E) {
             game.round_manager.in_progress = !game.round_manager.in_progress;
@@ -734,21 +742,26 @@ impl GameManager {
                 game.draw_ui(local_x, local_y);
             }
             _ => {
-                let header = if let GameState::Win = game.state {
-                    "    you win"
-                } else {
-                    "   you lose"
+                let mut anim_frame = self.gameover_anim_frame;
+                let header = match game.state {
+                    GameState::Win => "    you win",
+                    GameState::Lose => "   you lose",
+                    GameState::Paused => {
+                        anim_frame = 30;
+                        "paused"
+                    }
+                    _ => {
+                        panic!()
+                    }
                 };
                 let width = 64.0;
                 let height = 64.0;
-                let y = self.gameover_anim_frame as f32 / 30.0
-                    * (SCREEN_HEIGHT / 2.0 + height / 2.0)
-                    - height
-                    - 1.0;
+                let y =
+                    anim_frame as f32 / 30.0 * (SCREEN_HEIGHT / 2.0 + height / 2.0) - height - 1.0;
                 let x = SCREEN_WIDTH / 2.0 - width / 2.0;
                 ui::draw_square(x, y, width, height);
-                if self.gameover_anim_frame < 30 {
-                    self.gameover_anim_frame += 1;
+                if anim_frame < 30 {
+                    anim_frame += 1;
                 }
                 game.ui_manager
                     .text_engine

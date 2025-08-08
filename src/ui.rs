@@ -303,9 +303,10 @@ pub fn draw_button(
 ) -> bool {
     let hovered = local_x.clamp(x, x + w) == local_x && local_y.clamp(y, y + h) == local_y;
     let color_offset = if hovered { 0 } else { 2 };
+    let bg = if hovered { WHITE } else { UI_BUTTON_BG_COLOR };
 
     draw_rectangle(x, y, w, h, UI_BORDER_COLOR);
-    draw_rectangle(x + 1.0, y + 1.0, w - 2.0, h - 2.0, UI_BUTTON_BG_COLOR);
+    draw_rectangle(x + 1.0, y + 1.0, w - 2.0, h - 2.0, bg);
     text_engine.draw_text(x + 2.0, y + 2.0, text, color_offset);
     hovered && is_mouse_button_pressed(MouseButton::Left)
 }
