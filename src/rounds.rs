@@ -1,19 +1,17 @@
 use macroquad::rand;
 
 use crate::{
+    assets::{get_sublevels_hashmap, SublevelHashmap},
     consts::*,
     enemy::{EnemyType, ENEMY_TYPES},
 };
-use std::{
-    collections::HashMap,
-    fs::{read_dir, read_to_string},
-};
+use std::fs::read_to_string;
 
 fn get_index_of_enemy(name: &str) -> usize {
     ENEMY_TYPES.iter().position(|f| f.name == name).unwrap()
 }
 
-fn decode_rounds(data: &str, mut sublevels: Option<SublevelHashmap>) -> Vec<Round> {
+pub fn decode_rounds(data: &str, mut sublevels: Option<SublevelHashmap>) -> Vec<Round> {
     let mut rounds = Vec::new();
     for line in data.lines() {
         let mut entries = Vec::new();
@@ -44,34 +42,6 @@ fn decode_rounds(data: &str, mut sublevels: Option<SublevelHashmap>) -> Vec<Roun
         rounds.push(Round { entries });
     }
     rounds
-}
-
-type SublevelHashmap = HashMap<String, Vec<Vec<Round>>>;
-
-pub fn load_round_data() -> RoundManager {
-    let mut sublevels: SublevelHashmap = HashMap::new();
-    for sublevel in read_dir("data/sublevels")
-        .expect("no data/sublevels!!!")
-        .flatten()
-    {
-        let name = sublevel.file_name().to_string_lossy().to_string();
-        let mut entries = Vec::new();
-        for entry in read_dir(sublevel.path()).unwrap().flatten() {
-            let data = read_to_string(entry.path()).unwrap();
-            entries.push(decode_rounds(&data, None));
-        }
-        sublevels.insert(name, entries);
-    }
-
-    let data = read_to_string("data/round_data.txt").expect("data/round_data.txt is missign!!!");
-    let rounds = decode_rounds(&data, Some(sublevels));
-    RoundManager {
-        in_progress: false,
-        round: 0,
-        rounds,
-        delay_counter: 0,
-        spawn_counter: 0,
-    }
 }
 
 pub enum RoundUpdate {

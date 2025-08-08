@@ -1,7 +1,13 @@
+#![cfg_attr(
+    all(target_os = "windows", not(debug_assertions),),
+    windows_subsystem = "windows"
+)]
+
 use std::collections::VecDeque;
 use std::f32::consts::PI;
 use std::time::Instant;
 
+use crate::assets::*;
 use crate::cards::*;
 use crate::consts::*;
 use crate::enemy::*;
@@ -12,6 +18,7 @@ use crate::tower::*;
 use crate::ui::*;
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
+mod assets;
 mod cards;
 mod consts;
 mod enemy;
@@ -54,11 +61,6 @@ fn move_towards(
     *source_x == target_x && *source_y == target_y
 }
 
-async fn load_spritesheet(path: &str, size: usize) -> Spritesheet {
-    let error = format!("{} is missing!!", path);
-    Spritesheet::new(load_texture(path).await.expect(&error), size)
-}
-
 fn get_direction_nearest_enemy(enemies: &Vec<Enemy>, x: f32, y: f32) -> Option<Vec2> {
     if enemies.is_empty() {
         return None;
@@ -98,10 +100,10 @@ struct Sludge {
 }
 impl Sludge {
     async fn new(map: Map) -> Self {
-        let tileset = load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE).await;
-        let icon_sheet = load_spritesheet("data/assets/icons.png", SPRITE_SIZE_USIZE).await;
-        let card_sheet = load_spritesheet("data/assets/cards.png", SPRITE_SIZE_USIZE).await;
-        let particle_sheet = load_spritesheet("data/assets/particles.png", SPRITE_SIZE_USIZE).await;
+        let tileset = load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE);
+        let icon_sheet = load_spritesheet("data/assets/icons.png", SPRITE_SIZE_USIZE);
+        let card_sheet = load_spritesheet("data/assets/cards.png", SPRITE_SIZE_USIZE);
+        let particle_sheet = load_spritesheet("data/assets/particles.png", SPRITE_SIZE_USIZE);
 
         // add starting towers
         let base_towers = get_towers();
@@ -128,7 +130,7 @@ impl Sludge {
             round_manager: load_round_data(),
             moving: None,
             selected: None,
-            ui_manager: UIManager::new(true).await,
+            ui_manager: UIManager::new(true),
             tileset,
             icon_sheet,
             card_sheet,

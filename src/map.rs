@@ -100,7 +100,7 @@ impl Map {
     }
 }
 
-fn parse_spawnpoints_from_tilemap(map: &TileMap) -> [(usize, usize); 4] {
+pub fn parse_spawnpoints_from_tilemap(map: &TileMap) -> [(usize, usize); 4] {
     let mut points = [(0, 0); 4];
     let mut found = 0;
     for y in 0..map.len() {
@@ -125,7 +125,7 @@ fn parse_spawnpoints_from_tilemap(map: &TileMap) -> [(usize, usize); 4] {
 }
 
 /// Parses an enemy path from a tilemap. Starts at tile with ID=33, and follows neighbouring ID=34 until stop.
-fn parse_points_from_tilemap(map: &TileMap) -> Vec<(f32, f32)> {
+pub fn parse_points_from_tilemap(map: &TileMap) -> Vec<(f32, f32)> {
     let mut points = Vec::new();
     // find start
     let mut current_x = 0.0;
@@ -194,27 +194,4 @@ pub fn parse_tilemap_layer(xml: &str, layer_name: &str) -> Result<TileMap, BadMa
         }
     }
     Ok(data)
-}
-
-pub fn load_maps() -> Vec<Map> {
-    let mut maps = Vec::new();
-    for item in read_dir("data/maps")
-        .expect("data/maps is missing!!")
-        .flatten()
-    {
-        let data = read_to_string(item.path()).expect("failed to read map data :(");
-        let background = parse_tilemap_layer(&data, "Background").expect("bad map data");
-        let obstructions = parse_tilemap_layer(&data, "Obstructions").expect("bad map data");
-        let path = parse_tilemap_layer(&data, "Path").expect("bad map data");
-
-        let map = Map {
-            background,
-            obstructions,
-            points: parse_points_from_tilemap(&path),
-            tower_spawnpoints: parse_spawnpoints_from_tilemap(&path),
-        };
-        maps.push(map);
-    }
-
-    maps
 }
