@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::f32::consts::PI;
 use std::time::Instant;
 
@@ -29,13 +30,25 @@ fn move_towards(
     target_y: f32,
 ) -> bool {
     if *source_x < target_x {
+        if *source_x + speed > target_x {
+            *source_x = target_x;
+        }
         *source_x += speed;
     } else if *source_x > target_x {
+        if *source_x - speed < target_x {
+            *source_x = target_x;
+        }
         *source_x -= speed;
     }
     if *source_y < target_y {
+        if *source_y - speed < target_y {
+            *source_y = target_y;
+        }
         *source_y += speed;
     } else if *source_y > target_y {
+        if *source_y - speed < target_y {
+            *source_y = target_y;
+        }
         *source_y -= speed;
     }
     *source_x == target_x && *source_y == target_y
@@ -63,10 +76,12 @@ fn get_direction_nearest_enemy(enemies: &Vec<Enemy>, x: f32, y: f32) -> Option<V
 struct Sludge {
     map: Map,
     enemies: Vec<Enemy>,
+    enemy_spawn_queue: VecDeque<(&'static EnemyType, f32, f32, usize)>,
     towers: Vec<Tower>,
     projectiles: Vec<Projectile>,
     orphaned_particles: Vec<(Particle, f32, f32)>,
     lives: u8,
+    gold: u16,
     ui_manager: UIManager,
     round_manager: RoundManager,
     moving: Option<Tower>,
@@ -98,10 +113,12 @@ impl Sludge {
         Self {
             map,
             enemies: Vec::with_capacity(100),
+            enemy_spawn_queue: VecDeque::with_capacity(10),
             towers: vec![tower1, tower2],
             projectiles: Vec::with_capacity(100),
             orphaned_particles: Vec::with_capacity(100),
             lives: STARTING_LIVES,
+            gold: STARTING_GOLD,
             round_manager: load_round_data(),
             moving: None,
             selected: None,
@@ -114,15 +131,7 @@ impl Sludge {
     }
     fn spawn_enemy(&mut self, ty: &'static EnemyType) {
         let spawn = self.map.points[0];
-        let enemy = Enemy {
-            ty,
-            x: spawn.0 * SPRITE_SIZE,
-            y: spawn.1 * SPRITE_SIZE,
-            health: ty.max_health,
-            next_path_point: 1,
-            score: 0.0,
-            moving_left: false,
-        };
+        let enemy = Enemy::new(ty, spawn.0 * SPRITE_SIZE, spawn.1 * SPRITE_SIZE, 1);
         self.enemies.push(enemy);
     }
     fn is_valid_tower_placement(&self, x: f32, y: f32) -> bool {
@@ -317,22 +326,36 @@ impl Sludge {
             }
         }
 
-        self.icon_sheet.draw_tile(0.0, 0.0, 36, false, 0.0);
+        // display topbar
+        let mut cursor_x = 0.0;
+
+        // show lives
+        self.icon_sheet.draw_tile(cursor_x, 0.0, 36, false, 0.0);
+        cursor_x += 6.0;
         self.ui_manager
-            .draw_text(6.0, 2.0, &self.lives.to_string(), 0);
+            .draw_text(cursor_x, 2.0, &self.lives.to_string(), 0);
+        cursor_x += 4.0 * 4.0;
+
+        // show gold counter
+        self.icon_sheet.draw_tile(cursor_x, 0.0, 39, false, 0.0);
+        cursor_x += 6.0;
+        let gold_text = self.gold.to_string();
+        self.ui_manager.draw_text(cursor_x, 2.0, &gold_text, 0);
+        cursor_x += 4.0 * (gold_text.len() as f32 + 1.0);
+
+        // show round counter
+
+        // change icon for the round counter if a round is in progress
         let round_icon = if self.round_manager.in_progress {
             38
         } else {
             37
         };
         self.icon_sheet
-            .draw_tile(4.0 * 4.0 + 6.0, 0.0, round_icon, false, 0.0);
-        self.ui_manager.draw_text(
-            4.0 * 4.0 + 6.0 * 2.0,
-            2.0,
-            &self.round_manager.round.to_string(),
-            0,
-        );
+            .draw_tile(cursor_x, 0.0, round_icon, false, 0.0);
+        cursor_x += 6.0;
+        self.ui_manager
+            .draw_text(cursor_x, 2.0, &self.round_manager.round.to_string(), 0);
     }
     fn update_particles(&mut self) {
         let mut death_queue = Vec::new();
@@ -470,6 +493,12 @@ impl Sludge {
         if !self.round_manager.in_progress {
             return;
         }
+
+        if let Some((ty, x, y, next_path_point)) = self.enemy_spawn_queue.pop_front() {
+            let enemy = Enemy::new(ty, x, y, next_path_point);
+            self.enemies.push(enemy);
+        }
+
         let round_update = self.round_manager.update();
         if let RoundUpdate::Spawn(enemy) = &round_update {
             self.spawn_enemy(enemy);
@@ -480,6 +509,16 @@ impl Sludge {
         for (index, enemy) in self.enemies.iter_mut().enumerate() {
             if enemy.health <= 0.0 {
                 death_queue.push(index);
+                if let EnemyPayload::Some(enemy_type, amount) = enemy.ty.payload {
+                    for _ in 0..amount {
+                        self.enemy_spawn_queue.push_back((
+                            enemy_type,
+                            enemy.x,
+                            enemy.y,
+                            enemy.next_path_point,
+                        ));
+                    }
+                }
                 continue;
             }
             let next_x = self.map.points[enemy.next_path_point].0 * SPRITE_SIZE;

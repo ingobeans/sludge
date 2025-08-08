@@ -13,6 +13,7 @@ pub const LEFT: Vec2 = Vec2::new(-1.0, 0.0);
 pub const SPREAD: f32 = 4.0_f32.to_radians();
 pub const DEFAULT_SPAWN_DELAY: u8 = 30;
 pub const STARTING_LIVES: u8 = 100;
+pub const STARTING_GOLD: u16 = 0;
 
 pub const UI_BG_COLOR: Color = Color::from_hex(0xb86f50);
 pub const UI_BORDER_COLOR: Color = Color::from_hex(0x743f39);

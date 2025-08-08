@@ -111,7 +111,7 @@ pub struct Projectile {
     pub modifier_data: CardModifierData,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum DamageType {
     Magic,
     Pierce,
