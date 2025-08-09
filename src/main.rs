@@ -344,23 +344,15 @@ impl Sludge {
         }
     }
     fn update_particles(&mut self) {
-        let mut death_queue = Vec::new();
-        for (index, (particle, _, _)) in self.orphaned_particles.iter_mut().enumerate() {
-            particle.life += 1;
-            if particle.life >= particle.lifetime {
-                // kill the orhpan
-                death_queue.push(index);
-            }
-        }
-        for (remove_offset, index) in death_queue.iter().enumerate() {
-            self.orphaned_particles.remove(index - remove_offset);
-        }
+        self.orphaned_particles.retain_mut(|(projectile, _, _)| {
+            projectile.life += 1;
+            projectile.life < projectile.lifetime
+        });
     }
     fn update_projectiles(&mut self) {
-        let mut death_queue = Vec::new();
         let mut new_projectiles = Vec::new();
 
-        for (index, projectile) in self.projectiles.iter_mut().enumerate() {
+        let death_queue = self.projectiles.extract_if(.., |projectile| {
             projectile.x += projectile.direction.x * projectile.modifier_data.speed;
             projectile.y += projectile.direction.y * projectile.modifier_data.speed;
             projectile.life += 1.0;
@@ -371,10 +363,7 @@ impl Sludge {
             if let ProjectileDrawType::Particle(particle) = &mut projectile.draw_type {
                 particle.life += 1;
             }
-            let mut dead = false;
-            if projectile.life >= projectile.modifier_data.lifetime {
-                dead = true;
-            }
+
             if projectile.modifier_data.homing {
                 let target_dir =
                     get_direction_nearest_enemy(&self.enemies, projectile.x, projectile.y);
@@ -390,11 +379,13 @@ impl Sludge {
                     // hit!
                     for (damage_type, mut amount) in projectile.modifier_data.damage.clone() {
                         match &enemy.ty.damage_resistance {
+                            // skip damage of enemy if fully resistant
                             DamageResistance::Full(ty) => {
                                 if *ty == damage_type {
                                     continue;
                                 }
                             }
+                            // halve damage if enemy partially resistant
                             DamageResistance::Partial(ty) => {
                                 if *ty == damage_type {
                                     amount /= 2.0;
@@ -427,17 +418,21 @@ impl Sludge {
                     ));
                     if !projectile.modifier_data.piercing {
                         // kil projectile if not piercing
-                        dead = true;
-                        break;
+                        return true;
                     }
                 }
             }
-            if dead {
-                death_queue.push(index);
+
+            // lifetime of -1.0 means projectile just doesnt despawn
+            if projectile.modifier_data.lifetime != -1.0 {
+                // if projectile is too old, kill it
+                if projectile.life >= projectile.modifier_data.lifetime {
+                    return true;
+                }
             }
-        }
-        for (remove_offset, index) in death_queue.iter().enumerate() {
-            let killed = self.projectiles.remove(index - remove_offset);
+            false
+        });
+        for killed in death_queue.collect::<Vec<Projectile>>() {
             if !killed.death_payload.is_empty() {
                 let direction_nearest_enemy =
                     get_direction_nearest_enemy(&self.enemies, killed.x, killed.y);
@@ -500,12 +495,9 @@ impl Sludge {
             self.spawn_enemy(enemy);
         }
 
-        let mut death_queue = Vec::new();
-
-        for (index, enemy) in self.enemies.iter_mut().enumerate() {
+        self.enemies.retain_mut(|enemy| {
             if enemy.health <= 0.0 {
-                death_queue.push(index);
-                self.ui_manager.gold += enemy.ty.damage as u16;
+                self.ui_manager.gold += enemy.ty.damage as u16 * 4;
                 if let EnemyPayload::Some(enemy_type, amount) = enemy.ty.payload {
                     for _ in 0..amount {
                         self.enemy_spawn_queue.push_back((
@@ -516,7 +508,7 @@ impl Sludge {
                         ));
                     }
                 }
-                continue;
+                return false;
             }
             if let Some((x, y)) = self.map.get_pos_along_path(enemy.score) {
                 if x * SPRITE_SIZE > enemy.x {
@@ -527,20 +519,23 @@ impl Sludge {
                 enemy.x = x * SPRITE_SIZE;
                 enemy.y = y * SPRITE_SIZE;
             } else {
-                self.lives -= enemy.ty.calc_damage();
-                death_queue.push(index);
+                self.lives = self.lives.saturating_sub(enemy.ty.calc_damage());
+                return false;
             }
             enemy.score += enemy.ty.speed;
-        }
+            true
+        });
 
-        for (remove_offset, index) in death_queue.iter().enumerate() {
-            self.enemies.remove(index - remove_offset);
-        }
         if matches!(round_update, RoundUpdate::Finished) && self.enemies.is_empty() {
             self.ui_manager.gold += GOLD_ROUND_REWARD;
             if self.round_manager.finish_round() {
                 self.ui_manager.open_shop(self.round_manager.round - 1);
             }
+            // despawn all immortal projectiles because otherwise they would never despawn.
+            // we still let mortal projectiles live out their full lifes before killing them,
+            // so that projectiles flying in the air dont just randomly pop out of existence on round end.
+            self.projectiles
+                .retain(|f| f.modifier_data.lifetime != -1.0);
         }
     }
 }
