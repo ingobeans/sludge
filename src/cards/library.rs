@@ -153,7 +153,7 @@ pub fn speed() -> Card {
 pub fn aiming() -> Card {
     Card {
         name: "aiming",
-        desc: "aim towards nearest",
+        desc: "makes projectile\naim towards nearest\nenemy",
         ty: CardType::Modifier(CardModifierData {
             aim: true,
             ..Default::default()
@@ -166,7 +166,7 @@ pub fn aiming() -> Card {
 pub fn homing() -> Card {
     Card {
         name: "homing",
-        desc: "home towards nearest",
+        desc: "makes projectile\nhome towards nearest\nenemy",
         ty: CardType::Modifier(CardModifierData {
             homing: true,
             ..Default::default()
