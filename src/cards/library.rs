@@ -72,7 +72,7 @@ pub fn freezeify() -> Card {
         name: "freezeify",
         desc: "adds extra cold dmg",
         ty: CardType::Modifier(CardModifierData {
-            damage: hashmap!(DamageType::Cold => 4.0),
+            damage: hashmap!(DamageType::Cold => 2.0),
             shoot_delay: 0.4,
             ..Default::default()
         }),

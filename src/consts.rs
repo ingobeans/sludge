@@ -25,6 +25,8 @@ pub const STARTING_LIVES: u8 = 40;
 pub const STARTING_GOLD: u16 = 100;
 pub const GOLD_ROUND_REWARD: u16 = 45;
 
+pub const FREEZE_TIME: u8 = 90;
+
 pub const CARD_INFO_WIDTH: f32 = 64.0 + 32.0;
 pub const CARD_INFO_HEIGHT: f32 = 32.0;
 

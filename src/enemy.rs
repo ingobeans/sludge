@@ -49,25 +49,32 @@ impl EnemyType {
         damage
     }
 }
+#[derive(Clone, Default)]
+/// Stores the state of an enemy. Is passed to its children on death
+pub struct EnemyState {
+    /// Tracks how far along the path this enemy has moved
+    pub score: f32,
+    /// When an enemy is frozen, this value > 0, and ticks down
+    pub freeze_frames: u8,
+}
 /// A live instance of an enemy
 pub struct Enemy {
     pub ty: &'static EnemyType,
     pub x: f32,
     pub y: f32,
     pub health: f32,
-    /// Tracks how far along the path this enemy has moved
-    pub score: f32,
+    pub state: EnemyState,
     /// Is enemy moving left?
     pub moving_left: bool,
 }
 impl Enemy {
-    pub fn new(ty: &'static EnemyType, x: f32, y: f32, score: f32) -> Self {
+    pub fn new(ty: &'static EnemyType, x: f32, y: f32, state: EnemyState) -> Self {
         Self {
             ty,
             x,
             y,
             health: ty.max_health,
-            score,
+            state,
             moving_left: false,
         }
     }

@@ -51,7 +51,7 @@ struct Sludge {
     state: GameState,
     map: Map,
     enemies: Vec<Enemy>,
-    enemy_spawn_queue: VecDeque<(&'static EnemyType, f32, f32, f32)>,
+    enemy_spawn_queue: VecDeque<(&'static EnemyType, f32, f32, EnemyState)>,
     towers: Vec<Tower>,
     projectiles: Vec<Projectile>,
     orphaned_particles: Vec<(Particle, f32, f32)>,
@@ -114,7 +114,12 @@ impl Sludge {
     }
     fn spawn_enemy(&mut self, ty: &'static EnemyType) {
         let spawn = self.map.points[0];
-        let enemy = Enemy::new(ty, spawn.0 * SPRITE_SIZE, spawn.1 * SPRITE_SIZE, 0.0);
+        let enemy = Enemy::new(
+            ty,
+            spawn.0 * SPRITE_SIZE,
+            spawn.1 * SPRITE_SIZE,
+            EnemyState::default(),
+        );
         self.enemies.push(enemy);
     }
     fn is_valid_tower_placement(&self, x: f32, y: f32) -> bool {
@@ -286,7 +291,7 @@ impl Sludge {
                 .draw_tile(tower.x, tower.y, tower.sprite, false, 0.0);
         }
         for enemy in &self.enemies {
-            let anim_frame = (enemy.score * enemy.ty.speed * enemy.ty.anim_speed) as usize
+            let anim_frame = (enemy.state.score * enemy.ty.speed * enemy.ty.anim_speed) as usize
                 % enemy.ty.anim_length;
             let mut flipped = false;
             if enemy.moving_left && enemy.ty.should_flip {
@@ -310,6 +315,17 @@ impl Sludge {
                         0.0,
                     );
                 }
+            }
+            if enemy.state.freeze_frames > 0 {
+                let extra_size = enemy.ty.size - 1;
+                let ground_offset = 2.0 + extra_size as f32 * SPRITE_SIZE;
+                self.particle_sheet.draw_tile(
+                    enemy.x + extra_size as f32 * SPRITE_SIZE,
+                    enemy.y + extra_size as f32 * SPRITE_SIZE - ground_offset,
+                    32 + 9,
+                    false,
+                    0.0,
+                );
             }
         }
         for projectile in self.projectiles.iter() {
@@ -400,6 +416,25 @@ impl Sludge {
                             DamageResistance::None => {}
                         }
                         enemy.health -= amount;
+                        // also check whether enemy should be frozen
+                        // if projectile deals cold damage
+                        if *projectile
+                            .modifier_data
+                            .damage
+                            .get(&DamageType::Cold)
+                            .unwrap_or(&0.0)
+                            > 0.0
+                        {
+                            let is_cold_resistant = match enemy.ty.damage_resistance {
+                                DamageResistance::None => false,
+                                DamageResistance::Full(ty) => matches!(ty, DamageType::Cold),
+                                DamageResistance::Partial(ty) => matches!(ty, DamageType::Cold),
+                            };
+                            // if enemy isnt cold resistant
+                            if !is_cold_resistant {
+                                enemy.state.freeze_frames = FREEZE_TIME;
+                            }
+                        }
                     }
                     let direction_nearest_enemy =
                         Vec2::new(enemy.x - projectile.x, enemy.y - projectile.y).normalize();
@@ -491,8 +526,8 @@ impl Sludge {
             return;
         }
 
-        if let Some((ty, x, y, score)) = self.enemy_spawn_queue.pop_front() {
-            let enemy = Enemy::new(ty, x, y, score);
+        if let Some((ty, x, y, state)) = self.enemy_spawn_queue.pop_front() {
+            let enemy = Enemy::new(ty, x, y, state);
             self.enemies.push(enemy);
         }
 
@@ -510,13 +545,13 @@ impl Sludge {
                             enemy_type,
                             enemy.x,
                             enemy.y,
-                            enemy.score,
+                            enemy.state.clone(),
                         ));
                     }
                 }
                 return false;
             }
-            if let Some((x, y)) = self.map.get_pos_along_path(enemy.score) {
+            if let Some((x, y)) = self.map.get_pos_along_path(enemy.state.score) {
                 if x * SPRITE_SIZE > enemy.x {
                     enemy.moving_left = false;
                 } else if x * SPRITE_SIZE < enemy.x {
@@ -528,7 +563,12 @@ impl Sludge {
                 self.lives = self.lives.saturating_sub(enemy.ty.calc_damage());
                 return false;
             }
-            enemy.score += enemy.ty.speed;
+            let speed_factor = if enemy.state.freeze_frames > 0 {
+                0.25
+            } else {
+                1.0
+            };
+            enemy.state.score += enemy.ty.speed * speed_factor;
             true
         });
 
