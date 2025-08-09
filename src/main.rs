@@ -778,6 +778,7 @@ impl GameManager {
 
 #[macroquad::main("sludge")]
 async fn main() {
+    rand::srand(macroquad::miniquad::date::now() as _);
     let mut game_manager = GameManager::new();
     game_manager.run().await;
 }
