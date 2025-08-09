@@ -381,6 +381,8 @@ pub fn rocket() -> Card {
 
 pub fn piercing() -> Card {
     Card {
+        name: "piercing",
+        desc: "proj pierces enemies",
         sprite: 24,
         ty: CardType::Modifier(CardModifierData {
             piercing: true,

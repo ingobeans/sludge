@@ -14,7 +14,7 @@ pub fn get_cards() -> Vec<Card> {
         library::homing(),
         library::speed(),
         library::acidify(),
-        library::piercing(),
+        //library::piercing(), // piercing is disabled because its wayyyy to OP and im not sure how i want to nerf it
         library::freezeify(),
         // multidraw
         library::double(),

@@ -159,6 +159,7 @@ impl UIManager {
                             self.cursor_card = Some(card);
                             self.inventory_open = true;
                         }
+                        return true;
                     }
                 }
             }
