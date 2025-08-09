@@ -12,7 +12,12 @@ fn get_index_of_enemy(name: &str) -> usize {
 
 pub fn decode_rounds(data: &str, mut sublevels: Option<SublevelHashmap>) -> Vec<Round> {
     let mut rounds = Vec::new();
-    for line in data.lines() {
+    for mut line in data.lines() {
+        let mut shop = false;
+        if line.starts_with("!") {
+            shop = true;
+            line = line.trim_start_matches("!");
+        }
         let mut entries = Vec::new();
         let line = line.trim();
         if line.starts_with(":sublevel ") {
@@ -38,7 +43,7 @@ pub fn decode_rounds(data: &str, mut sublevels: Option<SublevelHashmap>) -> Vec<
             };
             entries.push(new_entry);
         }
-        rounds.push(Round { entries });
+        rounds.push(Round { entries, shop });
     }
     rounds
 }
@@ -59,11 +64,13 @@ pub struct RoundManager {
     pub spawn_counter: usize,
 }
 impl RoundManager {
-    pub fn finish_round(&mut self) {
+    /// Returns whether shop should be opened
+    pub fn finish_round(&mut self) -> bool {
         self.in_progress = false;
         self.round += 1;
         self.delay_counter = 0;
         self.spawn_counter = 0;
+        self.rounds[self.round - 1].shop
     }
     fn next_ready(&self) -> bool {
         self.delay_counter == 0
@@ -104,4 +111,5 @@ pub enum RoundEntry {
 #[derive(Clone)]
 pub struct Round {
     pub entries: Vec<RoundEntry>,
+    pub shop: bool,
 }

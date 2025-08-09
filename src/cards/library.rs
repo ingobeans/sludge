@@ -170,6 +170,7 @@ pub fn dart() -> Card {
 pub fn razor() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(10, SpriteRotationMode::Spin),
+        drag: 0.01,
         modifier_data: CardModifierData {
             speed: 3.0,
             lifetime: 70.0,

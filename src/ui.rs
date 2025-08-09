@@ -11,12 +11,6 @@ enum InventorySlot {
     Inventory(usize, usize),
     Tower(usize),
 }
-pub struct UIManager {
-    inventory: [[Option<Card>; INV_SLOTS_HORIZONTAL]; INV_SLOTS_VERTICAL],
-    pub inventory_open: bool,
-    cursor_card: Option<Card>,
-    pub text_engine: TextEngine,
-}
 #[derive(Clone)]
 pub struct TextEngine {
     font: Spritesheet,
@@ -27,7 +21,7 @@ impl TextEngine {
             font: load_spritesheet("data/assets/font.png", 4),
         }
     }
-    pub fn draw_text(&self, local_x: f32, mut local_y: f32, text: &str, color_offset: usize) {
+    pub fn draw_text(&self, x: f32, mut y: f32, text: &str, color_offset: usize) {
         let mut i = 0;
         for char in text.chars() {
             if char == ' ' {
@@ -35,7 +29,7 @@ impl TextEngine {
                 continue;
             }
             if char == '\n' {
-                local_y += 5.0;
+                y += 5.0;
                 i = 0;
                 continue;
             }
@@ -57,12 +51,21 @@ impl TextEngine {
             }
             index += color_offset * self.font.width / 4;
             self.font
-                .draw_tile(local_x + 4.0 * i as f32, local_y, index, false, 0.0);
+                .draw_tile(x + 4.0 * i as f32, y, index, false, 0.0);
             i += 1;
         }
     }
 }
 
+pub struct UIManager {
+    inventory: [[Option<Card>; INV_SLOTS_HORIZONTAL]; INV_SLOTS_VERTICAL],
+    pub inventory_open: bool,
+    cursor_card: Option<Card>,
+    pub shop: Option<[Option<(Card, u16)>; SHOP_SLOTS_HORIZONTAL]>,
+    pub shop_open: bool,
+    pub gold: u16,
+    pub text_engine: TextEngine,
+}
 impl UIManager {
     pub fn new(grant_all_cards: bool, text_engine: TextEngine) -> Self {
         let mut inventory = std::array::from_fn(|_| std::array::from_fn(|_| None.clone()).clone());
@@ -76,21 +79,147 @@ impl UIManager {
             inventory,
             inventory_open: false,
             cursor_card: None,
+            shop: None,
+            gold: STARTING_GOLD,
+            shop_open: false,
             text_engine,
         }
     }
+    pub fn open_shop(&mut self, round: usize) {
+        self.shop_open = true;
+        let price_modifier = 1.0 + round as f32 / 10.0;
+        let projectile_penalty = 1.2 + round as f32 / 10.0;
+        let cards = get_cards();
+        self.shop = Some(std::array::from_fn(|_| {
+            let mut price = rand::gen_range(70.0, 160.0);
+            let card = cards[rand::gen_range(0, cards.len())].clone();
+            if let CardType::Projectile(_, _) = &card.ty {
+                price *= projectile_penalty;
+            }
+            let big_rand = rand::gen_range(-2, 4);
+            price += big_rand as f32 * 10.0;
+            price *= price_modifier;
+
+            // round to nearest 5 and convert to u16
+            let price = ((price + 2.5) / 5.0) as u16 * 5;
+            Some((card, price))
+        }));
+    }
+    fn draw_inventory(&self, local_x: f32, local_y: f32, card_sheet: &Spritesheet) {
+        if self.inventory_open {
+            draw_square(SCREEN_WIDTH - INV_WIDTH, 0.0, INV_WIDTH, SCREEN_HEIGHT);
+            for y in 0..self.inventory.len() {
+                for x in 0..self.inventory[0].len() {
+                    let tile_x = SCREEN_WIDTH - INV_WIDTH + 2.0 + x as f32 * CARD_SIZE;
+                    let tile_y = 2.0 + y as f32 * CARD_SIZE;
+                    if let Some(card) = &self.inventory[y][x] {
+                        card.draw(card_sheet, tile_x + 2.0, tile_y + 2.0);
+                    } else {
+                        draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
+                    }
+                }
+            }
+        }
+        let (handle_x, handle_y, flipped) = self.get_inv_handle_state();
+        draw_img_button(
+            card_sheet, handle_x, handle_y, local_x, local_y, 35, flipped,
+        );
+    }
+    fn handle_shop_input(&mut self, local_x: f32, local_y: f32) -> bool {
+        let (handle_x, handle_y, _) = self.get_shop_handle_state();
+        let Some(shop) = &mut self.shop else {
+            return false;
+        };
+
+        if local_x > handle_x
+            && local_x < handle_x + SPRITE_SIZE
+            && local_y > handle_y
+            && local_y < handle_y + SPRITE_SIZE
+        {
+            self.shop_open = !self.shop_open;
+            return true;
+        }
+        if !self.shop_open {
+            return false;
+        }
+
+        let shop_y = SCREEN_HEIGHT - SHOP_HEIGHT;
+        let tile_y = SHOP_PADDING + shop_y + 2.0;
+        for x in 0..shop.len() {
+            let tile_x = 2.0 + x as f32 * SHOP_CARD_SIZE;
+            if local_x == local_x.clamp(tile_x, tile_x + CARD_SIZE)
+                && local_y == local_y.clamp(tile_y, tile_y + CARD_SIZE)
+            {
+                if shop[x].is_some() {
+                    if self.cursor_card.is_none() {
+                        let price = (shop[x].as_ref()).map(|f| f.1.clone()).unwrap();
+                        if self.gold >= price {
+                            self.gold -= price;
+                            let (card, _) = shop[x].take().unwrap();
+                            self.cursor_card = Some(card);
+                            self.inventory_open = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        false
+    }
+    fn draw_shop(&self, local_x: f32, local_y: f32, card_sheet: &Spritesheet) {
+        let Some(shop) = &self.shop else {
+            return;
+        };
+        let (handle_x, handle_y, flipped) = self.get_shop_handle_state();
+        draw_img_button(
+            card_sheet, handle_x, handle_y, local_x, local_y, 35, flipped,
+        );
+        if !self.shop_open {
+            return;
+        }
+        let shop_x = 0.0;
+        let shop_y = SCREEN_HEIGHT - SHOP_HEIGHT;
+        draw_square(shop_x, shop_y, SHOP_WIDTH, SHOP_HEIGHT);
+        self.text_engine
+            .draw_text(shop_x + 2.0, shop_y + 2.0, "shop", 1);
+        self.text_engine
+            .draw_text(shop_x + 2.0, shop_y + 2.0 + 5.0, "closes next round", 2);
+        let tile_y = SHOP_PADDING + shop_y + 2.0;
+        for x in 0..shop.len() {
+            let tile_x = 2.0 + x as f32 * SHOP_CARD_SIZE;
+            draw_square(tile_x, tile_y - 7.0, CARD_SIZE, CARD_SIZE + 7.0);
+            if let Some((card, price)) = &shop[x] {
+                self.text_engine
+                    .draw_text(tile_x, tile_y - 5.0, &price.to_string(), 0);
+                card.draw(card_sheet, tile_x + 2.0, tile_y + 2.0);
+            }
+        }
+        for x in 0..shop.len() {
+            let tile_x = 2.0 + x as f32 * SHOP_CARD_SIZE;
+            if let Some((card, _)) = &shop[x] {
+                if local_x == local_x.clamp(tile_x, tile_x + CARD_SIZE)
+                    && local_y == local_y.clamp(tile_y, tile_y + CARD_SIZE)
+                {
+                    self.draw_card_info(local_x, local_y, card, card_sheet);
+                }
+            }
+        }
+    }
+    /// Draws hover information of a card
     fn draw_card_info(
         &self,
         mut local_x: f32,
-        local_y: f32,
+        mut local_y: f32,
         card: &Card,
         card_sheet: &Spritesheet,
     ) {
-        let width = 64.0 + 32.0;
         if local_x > SCREEN_WIDTH / 2.0 {
-            local_x -= width;
+            local_x -= CARD_INFO_WIDTH;
         }
-        draw_square(local_x, local_y, width, 32.0);
+        if local_y + CARD_INFO_HEIGHT > SCREEN_HEIGHT {
+            local_y -= CARD_INFO_HEIGHT;
+        }
+        draw_square(local_x, local_y, CARD_INFO_WIDTH, CARD_INFO_HEIGHT);
         card.draw(card_sheet, local_x + 4.0, local_y + 4.0);
         let mut name = card.name.to_string();
         if card.is_trigger {
@@ -119,10 +248,10 @@ impl UIManager {
             index += 1.0;
         }
     }
-    pub fn get_menu_handle_state(&self) -> (f32, f32, bool) {
+    fn get_inv_handle_state(&self) -> (f32, f32, bool) {
         if self.inventory_open {
             (
-                (SCREEN_WIDTH - MENU_WIDTH - SPRITE_SIZE),
+                (SCREEN_WIDTH - INV_WIDTH - SPRITE_SIZE),
                 (SCREEN_HEIGHT / 2.0 - SPRITE_SIZE),
                 true,
             )
@@ -134,13 +263,27 @@ impl UIManager {
             )
         }
     }
+    fn get_shop_handle_state(&self) -> (f32, f32, bool) {
+        if self.shop_open {
+            (
+                (SHOP_WIDTH),
+                (SCREEN_HEIGHT - SHOP_HEIGHT + (SHOP_HEIGHT / 2.0 - SPRITE_SIZE / 2.0)),
+                false,
+            )
+        } else {
+            (
+                (0.0),
+                (SCREEN_HEIGHT - SHOP_HEIGHT + (SHOP_HEIGHT / 2.0 - SPRITE_SIZE / 2.0)),
+                true,
+            )
+        }
+    }
 
     pub fn draw_ui(
         &self,
         local_x: f32,
         local_y: f32,
         card_sheet: &Spritesheet,
-        icon_sheet: &Spritesheet,
         selected_tower: Option<&Tower>,
     ) {
         if let Some(tower) = selected_tower {
@@ -171,31 +314,8 @@ impl UIManager {
                 }
             }
         }
-        if self.inventory_open {
-            draw_square(SCREEN_WIDTH - MENU_WIDTH, 0.0, MENU_WIDTH, SCREEN_HEIGHT);
-            for y in 0..self.inventory.len() {
-                for x in 0..self.inventory[0].len() {
-                    let tile_x = SCREEN_WIDTH - MENU_WIDTH + 2.0 + x as f32 * CARD_SIZE;
-                    let tile_y = 2.0 + y as f32 * CARD_SIZE;
-                    if let Some(card) = &self.inventory[y][x] {
-                        card.draw(card_sheet, tile_x + 2.0, tile_y + 2.0);
-                    } else {
-                        draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
-                    }
-                }
-            }
-        }
-        let (handle_x, handle_y, flipped) = self.get_menu_handle_state();
-        let handle_sprite = if local_x > handle_x
-            && local_x < handle_x + SPRITE_SIZE
-            && local_y > handle_y
-            && local_y < handle_y + SPRITE_SIZE
-        {
-            36
-        } else {
-            35
-        };
-        icon_sheet.draw_tile(handle_x, handle_y, handle_sprite, flipped, 0.0);
+        self.draw_inventory(local_x, local_y, card_sheet);
+        self.draw_shop(local_x, local_y, card_sheet);
 
         if let Some(card) = &self.cursor_card {
             let x = local_x - SPRITE_SIZE / 2.0;
@@ -223,12 +343,12 @@ impl UIManager {
         slots_amt: usize,
     ) -> Option<InventorySlot> {
         if self.inventory_open
-            && local_x > SCREEN_WIDTH - MENU_WIDTH + 2.0
+            && local_x > SCREEN_WIDTH - INV_WIDTH + 2.0
             && local_x < SCREEN_WIDTH - 3.0
             && local_y > 2.0
         {
             let tile_x =
-                (local_x as usize + MENU_WIDTH_USIZE - SCREEN_WIDTH_USIZE - 2) / CARD_SIZE_USIZE;
+                (local_x as usize + INV_WIDTH_USIZE - SCREEN_WIDTH_USIZE - 2) / CARD_SIZE_USIZE;
             let tile_y = (local_y as usize - 2) / CARD_SIZE_USIZE;
 
             if tile_y < INV_SLOTS_VERTICAL {
@@ -255,7 +375,7 @@ impl UIManager {
         if !is_mouse_button_pressed(MouseButton::Left) {
             return false;
         }
-        let (handle_x, handle_y, _) = self.get_menu_handle_state();
+        let (handle_x, handle_y, _) = self.get_inv_handle_state();
         if local_x > handle_x
             && local_x < handle_x + SPRITE_SIZE
             && local_y > handle_y
@@ -283,7 +403,7 @@ impl UIManager {
             }
             return true;
         }
-        false
+        self.handle_shop_input(local_x, local_y)
     }
 }
 
@@ -308,6 +428,22 @@ pub fn draw_button(
     draw_rectangle(x, y, w, h, UI_BORDER_COLOR);
     draw_rectangle(x + 1.0, y + 1.0, w - 2.0, h - 2.0, bg);
     text_engine.draw_text(x + 2.0, y + 2.0, text, color_offset);
+    hovered && is_mouse_button_pressed(MouseButton::Left)
+}
+pub fn draw_img_button(
+    spritesheet: &Spritesheet,
+    x: f32,
+    y: f32,
+    local_x: f32,
+    local_y: f32,
+    index: usize,
+    flipped: bool,
+) -> bool {
+    let hovered = local_x.clamp(x, x + SPRITE_SIZE) == local_x
+        && local_y.clamp(y, y + SPRITE_SIZE) == local_y;
+    let sprite_offset = if hovered { 1 } else { 0 };
+
+    spritesheet.draw_tile(x, y, index + sprite_offset, flipped, 0.0);
     hovered && is_mouse_button_pressed(MouseButton::Left)
 }
 

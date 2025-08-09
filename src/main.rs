@@ -56,7 +56,6 @@ struct Sludge {
     projectiles: Vec<Projectile>,
     orphaned_particles: Vec<(Particle, f32, f32)>,
     lives: u8,
-    gold: u16,
     ui_manager: UIManager,
     round_manager: RoundManager,
     moving: Option<Tower>,
@@ -76,6 +75,15 @@ impl Sludge {
         // add starting towers
         let base_towers = get_towers(map.tower_spawnpoints);
 
+        let mut round_manager = load_round_data();
+
+        // disable shop in lab
+        if lab {
+            for round in &mut round_manager.rounds {
+                round.shop = false;
+            }
+        }
+
         Self {
             state: GameState::Running,
             map,
@@ -85,8 +93,7 @@ impl Sludge {
             projectiles: Vec::with_capacity(100),
             orphaned_particles: Vec::with_capacity(100),
             lives: STARTING_LIVES,
-            gold: STARTING_GOLD,
-            round_manager: load_round_data(),
+            round_manager,
             moving: None,
             selected: None,
             ui_manager: UIManager::new(lab, text_engine),
@@ -95,6 +102,14 @@ impl Sludge {
             card_sheet,
             particle_sheet,
         }
+    }
+    fn start_round(&mut self) {
+        if self.ui_manager.shop.is_some() {
+            self.ui_manager.shop = None;
+            self.ui_manager.shop_open = false;
+        }
+
+        self.round_manager.in_progress = true;
     }
     fn spawn_enemy(&mut self, ty: &'static EnemyType) {
         let spawn = self.map.points[0];
@@ -222,13 +237,8 @@ impl Sludge {
                     .draw_tile(tower.x, tower.y - 4.0, 34, false, 0.0);
             }
         }
-        self.ui_manager.draw_ui(
-            local_x,
-            local_y,
-            &self.card_sheet,
-            &self.icon_sheet,
-            selected_tower,
-        );
+        self.ui_manager
+            .draw_ui(local_x, local_y, &self.card_sheet, selected_tower);
         // display topbar
         let mut cursor_x = 0.0;
 
@@ -243,7 +253,7 @@ impl Sludge {
         // show gold counter
         self.icon_sheet.draw_tile(cursor_x, 0.0, 39, false, 0.0);
         cursor_x += 6.0;
-        let gold_text = self.gold.to_string();
+        let gold_text = self.ui_manager.gold.to_string();
         self.ui_manager
             .text_engine
             .draw_text(cursor_x, 2.0, &gold_text, 0);
@@ -495,7 +505,7 @@ impl Sludge {
         for (index, enemy) in self.enemies.iter_mut().enumerate() {
             if enemy.health <= 0.0 {
                 death_queue.push(index);
-                self.gold += enemy.ty.damage as u16;
+                self.ui_manager.gold += enemy.ty.damage as u16;
                 if let EnemyPayload::Some(enemy_type, amount) = enemy.ty.payload {
                     for _ in 0..amount {
                         self.enemy_spawn_queue.push_back((
@@ -527,7 +537,10 @@ impl Sludge {
             self.enemies.remove(index - remove_offset);
         }
         if matches!(round_update, RoundUpdate::Finished) && self.enemies.is_empty() {
-            self.round_manager.finish_round();
+            self.ui_manager.gold += GOLD_ROUND_REWARD;
+            if self.round_manager.finish_round() {
+                self.ui_manager.open_shop(self.round_manager.round - 1);
+            }
         }
     }
 }
@@ -631,7 +644,7 @@ impl GameManager {
                 self.maps[1].clone(),
                 self.text_engine.clone(),
                 false,
-            ))
+            ));
         }
         if draw_button(
             &self.text_engine,
@@ -696,7 +709,7 @@ impl GameManager {
 
         // debug
         if is_key_pressed(KeyCode::E) {
-            game.round_manager.in_progress = !game.round_manager.in_progress;
+            game.start_round();
         }
 
         match game.state {
@@ -733,7 +746,7 @@ impl GameManager {
                     .draw_text(x + 2.0, y + 4.0, header, 1);
                 let text = format!(
                     "lives: {}\ngold: {}\nround: {}",
-                    game.lives, game.gold, game.round_manager.round
+                    game.lives, game.ui_manager.gold, game.round_manager.round
                 );
                 game.ui_manager
                     .text_engine
