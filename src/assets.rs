@@ -1,7 +1,6 @@
-use std::{
-    collections::HashMap,
-    fs::{read_dir, read_to_string},
-};
+use std::collections::HashMap;
+#[cfg(not(feature = "bundled"))]
+use std::fs::{read_dir, read_to_string};
 
 use macroquad::texture::Texture2D;
 
