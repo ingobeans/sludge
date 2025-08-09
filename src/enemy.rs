@@ -14,6 +14,7 @@ const DEFAULT_ENEMY_TYPE: EnemyType = EnemyType {
     size: 1,
     speed: 1.0,
     max_health: 5.0,
+    anim_speed: 1.0,
     damage: 1,
     payload: EnemyPayload::None,
     damage_resistance: DamageResistance::None,
@@ -31,6 +32,7 @@ pub struct EnemyType {
     pub max_health: f32,
     /// How many lives are lost when it finishes path
     pub damage: u8,
+    pub anim_speed: f32,
     pub payload: EnemyPayload,
     pub damage_resistance: DamageResistance,
     /// If enemy should flip its sprite when moving to the left
@@ -53,21 +55,19 @@ pub struct Enemy {
     pub x: f32,
     pub y: f32,
     pub health: f32,
-    pub next_path_point: usize,
     /// Tracks how far along the path this enemy has moved
     pub score: f32,
     /// Is enemy moving left?
     pub moving_left: bool,
 }
 impl Enemy {
-    pub fn new(ty: &'static EnemyType, x: f32, y: f32, next_path_point: usize) -> Self {
+    pub fn new(ty: &'static EnemyType, x: f32, y: f32, score: f32) -> Self {
         Self {
             ty,
             x,
             y,
             health: ty.max_health,
-            next_path_point,
-            score: 0.0,
+            score,
             moving_left: false,
         }
     }
@@ -90,7 +90,32 @@ static BABY_SPIDER: EnemyType = EnemyType {
     ..DEFAULT_ENEMY_TYPE
 };
 
+static HORSEY: EnemyType = EnemyType {
+    name: "horsey",
+    sprite: 6 * 32 + 8,
+    anim_length: 2,
+    speed: 1.2,
+    anim_speed: 0.25,
+    size: 2,
+    damage: 1,
+    max_health: 2.0,
+    damage_resistance: DamageResistance::None,
+    ..DEFAULT_ENEMY_TYPE
+};
+
 pub static ENEMY_TYPES: &[EnemyType] = &[
+    HORSEY,
+    EnemyType {
+        name: "horsey_rider",
+        sprite: 6 * 32 + 4,
+        speed: 1.0,
+        damage: 5,
+        max_health: 15.0,
+        anim_length: 2,
+        payload: EnemyPayload::Some(&HORSEY, 1),
+        damage_resistance: DamageResistance::Full(DamageType::Pierce),
+        ..HORSEY
+    },
     EnemyType {
         name: "spider",
         sprite: 2 * 32,

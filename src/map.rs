@@ -97,6 +97,39 @@ impl Map {
 
         true
     }
+    pub fn get_pos_along_path(&self, score: f32) -> Option<(f32, f32)> {
+        let tiled = score / SPRITE_SIZE;
+        let lower = (score / SPRITE_SIZE).floor();
+        let max = self.points.len() as f32;
+        if lower >= max {
+            return None;
+        }
+
+        let lower_pos = self.points[lower as usize];
+        if lower == tiled {
+            return Some(lower_pos);
+        }
+        let upper = lower + 1.0;
+        if upper >= max {
+            return None;
+        }
+        let factor = tiled - lower;
+        let upper_pos = self.points[upper as usize];
+        let mut new_pos = lower_pos;
+        let move_amount = factor;
+        if new_pos.0 < upper_pos.0 {
+            new_pos.0 += move_amount;
+        } else if new_pos.0 > upper_pos.0 {
+            new_pos.0 -= move_amount;
+        }
+        if new_pos.1 < upper_pos.1 {
+            new_pos.1 += move_amount;
+        } else if new_pos.1 > upper_pos.1 {
+            new_pos.1 -= move_amount;
+        }
+
+        Some(new_pos)
+    }
 }
 
 pub fn parse_spawnpoints_from_tilemap(map: &TileMap) -> [(usize, usize); 4] {

@@ -28,39 +28,6 @@ mod rounds;
 mod tower;
 mod ui;
 
-/// Move source x and y towards target x and y with speed. Returns if the target was reached/hit.
-fn move_towards(
-    speed: f32,
-    source_x: &mut f32,
-    source_y: &mut f32,
-    target_x: f32,
-    target_y: f32,
-) -> bool {
-    if *source_x < target_x {
-        if *source_x + speed > target_x {
-            *source_x = target_x;
-        }
-        *source_x += speed;
-    } else if *source_x > target_x {
-        if *source_x - speed < target_x {
-            *source_x = target_x;
-        }
-        *source_x -= speed;
-    }
-    if *source_y < target_y {
-        if *source_y + speed > target_y {
-            *source_y = target_y;
-        }
-        *source_y += speed;
-    } else if *source_y > target_y {
-        if *source_y - speed < target_y {
-            *source_y = target_y;
-        }
-        *source_y -= speed;
-    }
-    *source_x == target_x && *source_y == target_y
-}
-
 fn get_direction_nearest_enemy(enemies: &Vec<Enemy>, x: f32, y: f32) -> Option<Vec2> {
     if enemies.is_empty() {
         return None;
@@ -84,7 +51,7 @@ struct Sludge {
     state: GameState,
     map: Map,
     enemies: Vec<Enemy>,
-    enemy_spawn_queue: VecDeque<(&'static EnemyType, f32, f32, usize)>,
+    enemy_spawn_queue: VecDeque<(&'static EnemyType, f32, f32, f32)>,
     towers: Vec<Tower>,
     projectiles: Vec<Projectile>,
     orphaned_particles: Vec<(Particle, f32, f32)>,
@@ -131,7 +98,7 @@ impl Sludge {
     }
     fn spawn_enemy(&mut self, ty: &'static EnemyType) {
         let spawn = self.map.points[0];
-        let enemy = Enemy::new(ty, spawn.0 * SPRITE_SIZE, spawn.1 * SPRITE_SIZE, 1);
+        let enemy = Enemy::new(ty, spawn.0 * SPRITE_SIZE, spawn.1 * SPRITE_SIZE, 0.0);
         self.enemies.push(enemy);
     }
     fn is_valid_tower_placement(&self, x: f32, y: f32) -> bool {
@@ -308,7 +275,8 @@ impl Sludge {
                 .draw_tile(tower.x, tower.y, tower.sprite, false, 0.0);
         }
         for enemy in &self.enemies {
-            let anim_frame = (enemy.score * enemy.ty.speed) as usize % enemy.ty.anim_length;
+            let anim_frame = (enemy.score * enemy.ty.speed * enemy.ty.anim_speed) as usize
+                % enemy.ty.anim_length;
             let mut flipped = false;
             if enemy.moving_left && enemy.ty.should_flip {
                 flipped = true;
@@ -512,8 +480,8 @@ impl Sludge {
             return;
         }
 
-        if let Some((ty, x, y, next_path_point)) = self.enemy_spawn_queue.pop_front() {
-            let enemy = Enemy::new(ty, x, y, next_path_point);
+        if let Some((ty, x, y, score)) = self.enemy_spawn_queue.pop_front() {
+            let enemy = Enemy::new(ty, x, y, score);
             self.enemies.push(enemy);
         }
 
@@ -534,28 +502,23 @@ impl Sludge {
                             enemy_type,
                             enemy.x,
                             enemy.y,
-                            enemy.next_path_point,
+                            enemy.score,
                         ));
                     }
                 }
                 continue;
             }
-            let next_x = self.map.points[enemy.next_path_point].0 * SPRITE_SIZE;
-            let next_y = self.map.points[enemy.next_path_point].1 * SPRITE_SIZE;
-            if next_x > enemy.x {
-                enemy.moving_left = false;
-            } else if next_x < enemy.x {
-                enemy.moving_left = true;
-            }
-
-            // move enemy towards next path point. if point is reached, increment next path point index
-            if move_towards(enemy.ty.speed, &mut enemy.x, &mut enemy.y, next_x, next_y) {
-                enemy.next_path_point += 1;
-                // if at last path point, kill this enemy
-                if enemy.next_path_point >= self.map.points.len() {
-                    self.lives = self.lives.saturating_sub(enemy.ty.calc_damage());
-                    death_queue.push(index);
+            if let Some((x, y)) = self.map.get_pos_along_path(enemy.score) {
+                if x * SPRITE_SIZE > enemy.x {
+                    enemy.moving_left = false;
+                } else if x * SPRITE_SIZE < enemy.x {
+                    enemy.moving_left = true;
                 }
+                enemy.x = x * SPRITE_SIZE;
+                enemy.y = y * SPRITE_SIZE;
+            } else {
+                self.lives -= enemy.ty.calc_damage();
+                death_queue.push(index);
             }
             enemy.score += enemy.ty.speed;
         }
