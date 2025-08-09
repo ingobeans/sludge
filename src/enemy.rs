@@ -89,6 +89,15 @@ static BABY_SPIDER: EnemyType = EnemyType {
     damage_resistance: DamageResistance::None,
     ..DEFAULT_ENEMY_TYPE
 };
+static FIRE_MITE: EnemyType = EnemyType {
+    name: "fire_mite",
+    sprite: 4 * 32 + 12,
+    anim_length: 2,
+    speed: 2.0,
+    max_health: 5.0,
+    damage_resistance: DamageResistance::Full(DamageType::Burn),
+    ..DEFAULT_ENEMY_TYPE
+};
 
 static HORSEY: EnemyType = EnemyType {
     name: "horsey",
@@ -98,11 +107,29 @@ static HORSEY: EnemyType = EnemyType {
     anim_speed: 0.25,
     size: 2,
     damage: 1,
-    max_health: 2.0,
+    max_health: 8.0,
     damage_resistance: DamageResistance::None,
     ..DEFAULT_ENEMY_TYPE
 };
-
+static SLIME: EnemyType = EnemyType {
+    name: "slime",
+    sprite: 3 * 32,
+    anim_length: 3,
+    damage: 2,
+    speed: 0.75,
+    max_health: 6.0,
+    damage_resistance: DamageResistance::Partial(DamageType::Pierce),
+    ..DEFAULT_ENEMY_TYPE
+};
+static SPIDER: EnemyType = EnemyType {
+    name: "spider",
+    sprite: 2 * 32,
+    anim_length: 2,
+    speed: 1.0,
+    max_health: 3.0,
+    damage_resistance: DamageResistance::None,
+    ..DEFAULT_ENEMY_TYPE
+};
 pub static ENEMY_TYPES: &[EnemyType] = &[
     HORSEY,
     EnemyType {
@@ -116,23 +143,16 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         damage_resistance: DamageResistance::Full(DamageType::Pierce),
         ..HORSEY
     },
-    EnemyType {
-        name: "spider",
-        sprite: 2 * 32,
-        anim_length: 2,
-        speed: 1.0,
-        max_health: 3.0,
-        damage_resistance: DamageResistance::None,
-        ..DEFAULT_ENEMY_TYPE
-    },
+    SPIDER,
     EnemyType {
         name: "armored_spider",
         sprite: 2 * 32 + 2,
         anim_length: 2,
-        damage: 10,
+        damage: 9,
         speed: 0.5,
-        max_health: 15.0,
+        max_health: 34.0,
         damage_resistance: DamageResistance::Full(DamageType::Pierce),
+        payload: EnemyPayload::Some(&SPIDER, 1),
         ..DEFAULT_ENEMY_TYPE
     },
     BABY_SPIDER,
@@ -142,7 +162,7 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         anim_length: 2,
         damage: 10,
         speed: 1.0,
-        max_health: 15.0,
+        max_health: 20.0,
         damage_resistance: DamageResistance::None,
         ..DEFAULT_ENEMY_TYPE
     },
@@ -157,22 +177,13 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         size: 2,
         ..DEFAULT_ENEMY_TYPE
     },
-    EnemyType {
-        name: "slime",
-        sprite: 3 * 32,
-        anim_length: 3,
-        damage: 2,
-        speed: 0.5,
-        max_health: 6.0,
-        damage_resistance: DamageResistance::Partial(DamageType::Pierce),
-        ..DEFAULT_ENEMY_TYPE
-    },
+    SLIME,
     EnemyType {
         name: "big_slime",
         sprite: 3 * 32 + 3,
         anim_length: 3,
         damage: 2,
-        speed: 1.0 / 4.0,
+        speed: 0.4,
         max_health: 32.0,
         damage_resistance: DamageResistance::Partial(DamageType::Pierce),
         ..DEFAULT_ENEMY_TYPE
@@ -182,9 +193,10 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         sprite: 3 * 32 + 6,
         anim_length: 3,
         damage: 2,
-        speed: 0.5,
-        max_health: 20.0,
+        speed: 0.6,
+        max_health: 24.0,
         damage_resistance: DamageResistance::Partial(DamageType::Burn),
+        payload: EnemyPayload::Some(&SLIME, 1),
         ..DEFAULT_ENEMY_TYPE
     },
     EnemyType {
@@ -202,7 +214,7 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         sprite: 4 * 32,
         anim_length: 2,
         speed: 1.0,
-        max_health: 6.0,
+        max_health: 5.0,
         damage_resistance: DamageResistance::Full(DamageType::Burn),
         ..DEFAULT_ENEMY_TYPE
     },
@@ -213,15 +225,17 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         damage: 15,
         speed: 1.0 / 4.0,
         size: 2,
-        max_health: 40.0,
+        max_health: 65.0,
         damage_resistance: DamageResistance::Partial(DamageType::Burn),
+        payload: EnemyPayload::Some(&FIRE_MITE, 15),
         ..DEFAULT_ENEMY_TYPE
     },
     EnemyType {
         name: "skeleton",
         sprite: 5 * 32,
         anim_length: 2,
-        speed: 1.0,
+        anim_speed: 0.8,
+        speed: 1.7,
         max_health: 6.0,
         damage_resistance: DamageResistance::None,
         ..DEFAULT_ENEMY_TYPE
@@ -231,7 +245,7 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         sprite: 8 * 32,
         anim_length: 2,
         speed: 1.0,
-        max_health: 6.0,
+        max_health: 15.0,
         damage_resistance: DamageResistance::Full(DamageType::Cold),
         ..DEFAULT_ENEMY_TYPE
     },
@@ -240,7 +254,7 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         sprite: 8 * 32 + 2,
         anim_length: 6,
         speed: 2.0,
-        max_health: 6.0,
+        max_health: 13.0,
         damage_resistance: DamageResistance::Full(DamageType::Cold),
         ..DEFAULT_ENEMY_TYPE
     },
@@ -248,10 +262,10 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         name: "giga_ice_slug",
         sprite: 9 * 32,
         anim_length: 2,
-        speed: 0.5,
+        speed: 0.42,
         damage: 15,
         size: 2,
-        max_health: 30.0,
+        max_health: 77.0,
         damage_resistance: DamageResistance::Full(DamageType::Cold),
         ..DEFAULT_ENEMY_TYPE
     },
@@ -261,7 +275,7 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         anim_length: 2,
         speed: 1.0,
         damage: 2,
-        max_health: 15.0,
+        max_health: 20.0,
         damage_resistance: DamageResistance::Full(DamageType::Magic),
         ..DEFAULT_ENEMY_TYPE
     },

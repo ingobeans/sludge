@@ -1,4 +1,4 @@
-fire_slime-5 delay-10 fire_cat-5
-fire_cat-5 delay-60 fire_cat-1 fire_golem-2
-delay-15 fire_slime-15 delay-10 fire_cat-10
-fire_golem-5 delay-10 fire_cat-10
+fire_slime-5 delay-10 fire_cat-20
+delay-20 fire_cat-35 delay-60 fire_cat-1 fire_golem-1
+delay-15 fire_slime-25 delay-15 fire_cat-25
+fire_golem-5 delay-10 fire_cat-25

@@ -14,6 +14,8 @@ pub fn get_cards() -> Vec<Card> {
         library::homing(),
         library::speed(),
         library::acidify(),
+        library::piercing(),
+        library::freezeify(),
         // multidraw
         library::double(),
         library::triple(),
@@ -28,6 +30,8 @@ pub fn get_cards() -> Vec<Card> {
         library::dart(),
         library::acid_flask(),
         library::razor(),
+        library::icecicle(),
+        library::road_thorns(),
     ];
 
     let mut triggers = Vec::new();
@@ -69,7 +73,6 @@ impl Default for CardType {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Clone)]
 pub enum SpriteRotationMode {
     /// Fixed/no rotation

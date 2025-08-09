@@ -1,4 +1,4 @@
-delay-10 skeleton-5 delay-30 skeleton-1 snow_ball-5
+delay-10 skeleton-15 delay-25 skeleton-1 snow_ball-5 delay-10 skeleton-5
 delay-20 snow_ball-5 delay-15 ice_slug-15
 delay-10 snow_ball-13 ice_slug-20 delay-5 skeleton-25
-delay-40 giga_ice_slug-5 delay-10 snow_ball-5 delay-40 ice_slug-3 delay-10 skeleton-11
+delay-40 giga_ice_slug-5 delay-10 snow_ball-15 ice_slug-3 skeleton-11

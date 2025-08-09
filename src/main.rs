@@ -104,6 +104,7 @@ impl Sludge {
         }
     }
     fn start_round(&mut self) {
+        self.kill_immortal_projectiles();
         if self.ui_manager.shop.is_some() {
             self.ui_manager.shop = None;
             self.ui_manager.shop_open = false;
@@ -373,6 +374,11 @@ impl Sludge {
             }
             // check if projectile hit any enemy
             for enemy in self.enemies.iter_mut() {
+                // check that enemy hasnt already been killed this frame
+                if enemy.health <= 0.0 {
+                    continue;
+                }
+
                 let distance =
                     ((enemy.x - projectile.x).powi(2) + (enemy.y - projectile.y).powi(2)).sqrt();
                 if distance < 8.0 + projectile.extra_size {
@@ -531,12 +537,15 @@ impl Sludge {
             if self.round_manager.finish_round() {
                 self.ui_manager.open_shop(self.round_manager.round - 1);
             }
-            // despawn all immortal projectiles because otherwise they would never despawn.
-            // we still let mortal projectiles live out their full lifes before killing them,
-            // so that projectiles flying in the air dont just randomly pop out of existence on round end.
-            self.projectiles
-                .retain(|f| f.modifier_data.lifetime != -1.0);
+            // despawn all immortal projectiles so they dont carry over to next round,
+            // because that would be kind of OP, allowing you to ex. build a larger and larger
+            // heap of road thorns
+            self.kill_immortal_projectiles()
         }
+    }
+    fn kill_immortal_projectiles(&mut self) {
+        self.projectiles
+            .retain(|f| f.modifier_data.lifetime != -1.0);
     }
 }
 

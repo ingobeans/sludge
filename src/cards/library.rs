@@ -2,13 +2,92 @@ use hashmap_macro::hashmap;
 
 use crate::{cards::*, particle};
 
+// pub fn death_ray() -> Card {
+//     let projectile = Projectile {
+//         draw_type: ProjectileDrawType::Sprite(12, SpriteRotationMode::Direction),
+//         modifier_data: CardModifierData {
+//             speed: 5.0,
+//             lifetime: 60.0,
+//             shoot_delay: 0.5,
+//             damage: hashmap!(DamageType::Cold => 5.0),
+//             ..Default::default()
+//         },
+//         ..Default::default()
+//     };
+
+//     Card {
+//         name: "death ray",
+//         desc: "magic beam of death",
+//         ty: CardType::Projectile(projectile, false),
+//         sprite: 21,
+//         ..Default::default()
+//     }
+// }
+pub fn road_thorns() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Sprite(13, SpriteRotationMode::None),
+        drag: 0.15,
+        modifier_data: CardModifierData {
+            speed: 1.5,
+            lifetime: -1.0,
+            shoot_delay: 1.0,
+            damage: hashmap!(DamageType::Pierce => 12.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    Card {
+        name: "road thorns",
+        desc: "put thorns on path",
+        ty: CardType::Projectile(projectile, false),
+        sprite: 22,
+        ..Default::default()
+    }
+}
+pub fn icecicle() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Sprite(12, SpriteRotationMode::Direction),
+        modifier_data: CardModifierData {
+            speed: 5.0,
+            lifetime: 60.0,
+            shoot_delay: 0.5,
+            damage: hashmap!(DamageType::Cold => 5.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    Card {
+        name: "icecicle",
+        desc: "shoot an icecicle",
+        ty: CardType::Projectile(projectile, false),
+        sprite: 19,
+        ..Default::default()
+    }
+}
+
+pub fn freezeify() -> Card {
+    Card {
+        name: "freezeify",
+        desc: "adds extra cold dmg",
+        ty: CardType::Modifier(CardModifierData {
+            damage: hashmap!(DamageType::Cold => 4.0),
+            shoot_delay: 0.4,
+            ..Default::default()
+        }),
+        sprite: 18,
+        ..Default::default()
+    }
+}
+
 pub fn acidify() -> Card {
     Card {
         name: "acidify",
-        desc: "adds acid damage",
+        desc: "adds extra acid dmg",
         ty: CardType::Modifier(CardModifierData {
-            damage: hashmap!(DamageType::Acid => 6.0),
-            shoot_delay: 0.2,
+            damage: hashmap!(DamageType::Acid => 4.0),
+            shoot_delay: 0.4,
             ..Default::default()
         }),
         sprite: 17,
@@ -103,7 +182,7 @@ pub fn magicbolt() -> Card {
         modifier_data: CardModifierData {
             speed: 7.0,
             lifetime: 60.0,
-            shoot_delay: 0.1,
+            shoot_delay: 0.25,
             damage: hashmap!(DamageType::Magic => 3.0),
             ..Default::default()
         },
@@ -152,7 +231,7 @@ pub fn dart() -> Card {
         modifier_data: CardModifierData {
             speed: 5.0,
             lifetime: 40.0,
-            shoot_delay: 0.16,
+            shoot_delay: 0.34,
             damage: hashmap!(DamageType::Pierce => 4.0),
             ..Default::default()
         },
@@ -174,7 +253,7 @@ pub fn razor() -> Card {
         modifier_data: CardModifierData {
             speed: 3.0,
             lifetime: 70.0,
-            shoot_delay: 0.66,
+            shoot_delay: 0.85,
             damage: hashmap!(DamageType::Pierce => 12.0),
             ..Default::default()
         },
@@ -214,7 +293,7 @@ pub fn fireball() -> Card {
         modifier_data: CardModifierData {
             speed: 3.0,
             lifetime: 120.0,
-            shoot_delay: 1.1,
+            shoot_delay: 1.15,
             damage: hashmap!(DamageType::Burn => 1.0),
             ..Default::default()
         },
@@ -238,7 +317,7 @@ pub fn explosion() -> Card {
         modifier_data: CardModifierData {
             speed: 0.0,
             lifetime: 0.0,
-            shoot_delay: 1.0,
+            shoot_delay: 1.15,
             piercing: true,
             damage: hashmap!(DamageType::Burn => 13.0),
             ..Default::default()
@@ -284,7 +363,7 @@ pub fn rocket() -> Card {
         modifier_data: CardModifierData {
             speed: 3.0,
             lifetime: 40.0,
-            shoot_delay: 0.85,
+            shoot_delay: 1.25,
             ..Default::default()
         },
         payload: vec![explosion()],
@@ -300,6 +379,18 @@ pub fn rocket() -> Card {
     }
 }
 
+pub fn piercing() -> Card {
+    Card {
+        sprite: 24,
+        ty: CardType::Modifier(CardModifierData {
+            piercing: true,
+            shoot_delay: 0.25,
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
+}
+
 fn acid_puddle() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::ACID_PUDDLE),
@@ -308,7 +399,7 @@ fn acid_puddle() -> Card {
             speed: 0.0,
             lifetime: 30.0,
             piercing: true,
-            damage: hashmap!(DamageType::Acid => 0.5),
+            damage: hashmap!(DamageType::Acid => 0.9),
             ..Default::default()
         },
         ..Default::default()
@@ -323,6 +414,7 @@ fn acid_puddle() -> Card {
 pub fn acid_flask() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(8, SpriteRotationMode::Spin),
+        drag: 0.05,
         modifier_data: CardModifierData {
             speed: 3.5,
             lifetime: 60.0,

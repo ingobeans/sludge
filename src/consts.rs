@@ -19,11 +19,11 @@ pub const INV_WIDTH: f32 = INV_SLOTS_HORIZONTAL as f32 * CARD_SIZE + 4.0;
 
 pub const LEFT: Vec2 = Vec2::new(-1.0, 0.0);
 pub const SPREAD: f32 = 4.0_f32.to_radians();
-pub const DEFAULT_SPAWN_DELAY: u8 = 30;
+pub const DEFAULT_SPAWN_DELAY: u8 = 24;
 
 pub const STARTING_LIVES: u8 = 40;
 pub const STARTING_GOLD: u16 = 100;
-pub const GOLD_ROUND_REWARD: u16 = 100;
+pub const GOLD_ROUND_REWARD: u16 = 45;
 
 pub const CARD_INFO_WIDTH: f32 = 64.0 + 32.0;
 pub const CARD_INFO_HEIGHT: f32 = 32.0;

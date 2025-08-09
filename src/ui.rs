@@ -91,12 +91,12 @@ impl UIManager {
         let projectile_penalty = 1.2 + round as f32 / 10.0;
         let cards = get_cards();
         self.shop = Some(std::array::from_fn(|_| {
-            let mut price = rand::gen_range(70.0, 160.0);
+            let mut price = rand::gen_range(120.0, 230.0);
             let card = cards[rand::gen_range(0, cards.len())].clone();
             if let CardType::Projectile(_, _) = &card.ty {
                 price *= projectile_penalty;
             }
-            let big_rand = rand::gen_range(-2, 4);
+            let big_rand = rand::gen_range(-1, 4);
             price += big_rand as f32 * 10.0;
             price *= price_modifier;
 
