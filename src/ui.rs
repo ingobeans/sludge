@@ -305,7 +305,6 @@ impl UIManager {
                 );
             }
             for (index, card_slot) in tower.card_slots.iter().enumerate() {
-                // todo: draw text
                 let tile_x = index as f32 * CARD_SIZE + 2.0;
                 if let Some(card) = card_slot {
                     card.draw(card_sheet, tile_x + 2.0, tile_y + 2.0);

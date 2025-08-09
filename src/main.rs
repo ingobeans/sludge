@@ -229,7 +229,7 @@ impl Sludge {
         }
     }
 
-    fn draw_ui(&self, local_x: f32, local_y: f32) {
+    fn handle_ui(&mut self, local_x: f32, local_y: f32) {
         let selected_tower = self.selected.map(|index| &self.towers[index]);
         if let Some(tower) = selected_tower {
             self.icon_sheet.draw_tile(tower.x, tower.y, 32, false, 0.0);
@@ -282,6 +282,25 @@ impl Sludge {
             &self.round_manager.round.to_string(),
             0,
         );
+
+        // draw start round button
+        let text = "start round";
+        let width = text.len() as f32 * 4.0 + 4.0;
+        let x = (SCREEN_WIDTH - width) / 2.0;
+        if !self.round_manager.in_progress {
+            if draw_button(
+                &self.ui_manager.text_engine,
+                x,
+                0.0,
+                width,
+                8.0,
+                local_x,
+                local_y,
+                text,
+            ) {
+                self.start_round();
+            }
+        }
     }
     fn draw(&self) {
         self.tileset.draw_tilemap(&self.map.background);
@@ -751,15 +770,10 @@ impl GameManager {
             }
         }
 
-        // debug
-        if is_key_pressed(KeyCode::E) {
-            game.start_round();
-        }
-
         match game.state {
             GameState::Running => {
                 // only draw ui if game is not over
-                game.draw_ui(local_x, local_y);
+                game.handle_ui(local_x, local_y);
             }
             _ => {
                 let mut anim_frame = self.gameover_anim_frame;
