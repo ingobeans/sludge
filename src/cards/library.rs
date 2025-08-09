@@ -379,6 +379,7 @@ pub fn rocket() -> Card {
     }
 }
 
+#[allow(dead_code)]
 pub fn piercing() -> Card {
     Card {
         name: "piercing",

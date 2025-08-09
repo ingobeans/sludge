@@ -740,10 +740,8 @@ impl GameManager {
                     anim_frame as f32 / 30.0 * (SCREEN_HEIGHT / 2.0 + height / 2.0) - height - 1.0;
                 let x = SCREEN_WIDTH / 2.0 - width / 2.0;
                 ui::draw_square(x, y, width, height);
-                if !matches!(game.state, GameState::Paused) {
-                    if self.gameover_anim_frame < 30 {
-                        self.gameover_anim_frame += 1;
-                    }
+                if !matches!(game.state, GameState::Paused) && self.gameover_anim_frame < 30 {
+                    self.gameover_anim_frame += 1;
                 }
                 game.ui_manager
                     .text_engine

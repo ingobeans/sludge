@@ -149,18 +149,17 @@ impl UIManager {
             let tile_x = 2.0 + x as f32 * SHOP_CARD_SIZE;
             if local_x == local_x.clamp(tile_x, tile_x + CARD_SIZE)
                 && local_y == local_y.clamp(tile_y, tile_y + CARD_SIZE)
+                && shop[x].is_some()
             {
-                if shop[x].is_some() {
-                    if self.cursor_card.is_none() {
-                        let price = (shop[x].as_ref()).map(|f| f.1.clone()).unwrap();
-                        if self.gold >= price {
-                            self.gold -= price;
-                            let (card, _) = shop[x].take().unwrap();
-                            self.cursor_card = Some(card);
-                            self.inventory_open = true;
-                        }
-                        return true;
+                if self.cursor_card.is_none() {
+                    let price = (shop[x].as_ref()).map(|f| f.1).unwrap();
+                    if self.gold >= price {
+                        self.gold -= price;
+                        let (card, _) = shop[x].take().unwrap();
+                        self.cursor_card = Some(card);
+                        self.inventory_open = true;
                     }
+                    return true;
                 }
             }
         }
