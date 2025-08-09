@@ -58,7 +58,7 @@ impl TextEngine {
 }
 
 pub struct UIManager {
-    inventory: [[Option<Card>; INV_SLOTS_HORIZONTAL]; INV_SLOTS_VERTICAL],
+    pub inventory: [[Option<Card>; INV_SLOTS_HORIZONTAL]; INV_SLOTS_VERTICAL],
     pub inventory_open: bool,
     cursor_card: Option<Card>,
     pub shop: Option<[Option<(Card, u16)>; SHOP_SLOTS_HORIZONTAL]>,

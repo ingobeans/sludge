@@ -1,8 +1,8 @@
 spider-5
-!spider-10
+spider-20
 delay-10 spider-5 delay-30 slime-5
 delay-10 slime-20 baby_spider-10
-delay-20 slime-30
+!delay-20 slime-30
 !horsey-10 delay-10 slime-10
 :sublevel a
 big_spider-4

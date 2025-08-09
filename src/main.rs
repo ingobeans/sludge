@@ -228,7 +228,6 @@ impl Sludge {
             }
         }
     }
-
     fn handle_ui(&mut self, local_x: f32, local_y: f32) {
         let selected_tower = self.selected.map(|index| &self.towers[index]);
         if let Some(tower) = selected_tower {
@@ -703,11 +702,22 @@ impl GameManager {
             local_y,
             "play",
         ) {
-            self.sludge = Some(Sludge::new(
-                self.maps[1].clone(),
-                self.text_engine.clone(),
-                false,
-            ));
+            // start game
+            // create new Sludge instance
+            let mut new = Sludge::new(self.maps[1].clone(), self.text_engine.clone(), false);
+            // populate shop with starting options
+            new.ui_manager.shop_open = true;
+            let mut shop = std::array::from_fn(|_| None.clone());
+            for (index, card) in [library::magicbolt(), library::dart(), library::bomb()]
+                .into_iter()
+                .enumerate()
+            {
+                shop[index] = Some((card, STARTING_GOLD));
+            }
+            new.ui_manager.shop = Some(shop);
+            // give free aiming card
+            new.ui_manager.inventory[0][0] = Some(library::aiming());
+            self.sludge = Some(new);
         }
         if draw_button(
             &self.text_engine,

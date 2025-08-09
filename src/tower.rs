@@ -1,12 +1,9 @@
 use std::collections::VecDeque;
 
-use macroquad::{
-    math::Vec2,
-    rand::{self, RandomRange},
-};
+use macroquad::{math::Vec2, rand::RandomRange};
 
 use crate::{
-    cards::{library, Card, CardType, FiringContext, Projectile},
+    cards::{Card, CardType, FiringContext, Projectile},
     consts::*,
 };
 
@@ -16,19 +13,11 @@ pub fn get_towers(spawnpoints: [(usize, usize); 4]) -> [Tower; 4] {
         direction: LEFT,
         ..Default::default()
     };
-
-    let mut card_slots = vec![None; 6];
-    let projs = [library::magicbolt(), library::thorn_dart(), library::dart()];
-
-    let random_proj = projs[rand::gen_range(0, projs.len())].clone();
-
-    card_slots[0] = Some(library::aiming());
-    card_slots[1] = Some(random_proj);
     let tower1 = Tower {
         x: spawnpoints[0].0 as f32,
         y: spawnpoints[0].1 as f32,
         sprite: 0,
-        card_slots,
+        card_slots: vec![None; 6],
         shoot_delay: 0.1,
         recharge_speed: 0.50,
         ..default
