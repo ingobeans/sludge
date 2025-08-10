@@ -273,7 +273,7 @@ pub fn magicbolt() -> Card {
         draw_type: ProjectileDrawType::Sprite(0, SpriteRotationMode::Direction),
         modifier_data: CardModifierData {
             speed: 7.0,
-            lifetime: 60.0,
+            lifetime: 30.0,
             shoot_delay: 0.25,
             damage: hashmap!(DamageType::Magic => 3.0),
             ..Default::default()

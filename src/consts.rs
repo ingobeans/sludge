@@ -15,7 +15,7 @@ pub const SHOP_CARD_HEIGHT: f32 = CARD_SIZE + 4.0 + 5.0;
 pub const INV_WIDTH: f32 = INV_SLOTS_HORIZONTAL as f32 * CARD_SIZE + 4.0;
 
 pub const LEFT: Vec2 = Vec2::new(-1.0, 0.0);
-pub const SPREAD: f32 = 4.0_f32.to_radians();
+pub const SPREAD: f32 = 2.5_f32.to_radians();
 pub const DEFAULT_SPAWN_DELAY: u8 = 24;
 
 pub const STARTING_LIVES: u8 = 40;
