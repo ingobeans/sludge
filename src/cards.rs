@@ -14,6 +14,7 @@ pub fn get_cards() -> Vec<Card> {
         library::homing(),
         library::speed(),
         library::acidify(),
+        library::supercharge(),
         //library::piercing(), // piercing is disabled because its wayyyy to OP and im not sure how i want to nerf it
         library::freezeify(),
         // multidraw
@@ -32,6 +33,8 @@ pub fn get_cards() -> Vec<Card> {
         library::razor(),
         library::icecicle(),
         library::road_thorns(),
+        library::banana(),
+        library::death_ray(),
     ];
 
     let mut triggers = Vec::new();
@@ -111,6 +114,10 @@ pub struct Projectile {
     pub death_payload: Vec<Card>,
     /// Can projectile travel through walls?
     pub ghost: bool,
+    /// How many frames of stun does this give enemies?
+    pub stuns: u8,
+    /// Is the projectile immune to being rotated, i.e. by homing modifier?
+    pub straight: bool,
     pub modifier_data: CardModifierData,
 }
 impl Projectile {
@@ -175,6 +182,9 @@ impl CardModifierData {
             ("reload time", self.recharge_speed),
             ("speed", self.speed),
         ] {
+            if fields.len() >= 3 {
+                break;
+            }
             if field != 0.0 {
                 fields.push((k, field.to_string()));
             }

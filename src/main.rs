@@ -76,6 +76,11 @@ impl Sludge {
 
         // add starting towers
         let base_towers = get_towers(map.tower_spawnpoints);
+        let towers = if !lab {
+            base_towers[..2].into()
+        } else {
+            base_towers.into()
+        };
 
         let round_manager = load_round_data();
 
@@ -84,7 +89,7 @@ impl Sludge {
             map,
             enemies: Vec::with_capacity(100),
             enemy_spawn_queue: VecDeque::with_capacity(10),
-            towers: base_towers[..2].into(),
+            towers,
             projectiles: Vec::with_capacity(100),
             projectile_spawnlist: Vec::with_capacity(100),
             orphaned_particles: Vec::with_capacity(100),
@@ -102,7 +107,7 @@ impl Sludge {
     }
     fn start_round(&mut self) {
         self.kill_immortal_projectiles();
-        if self.ui_manager.shop.is_some() {
+        if !self.lab {
             self.ui_manager.shop = None;
         }
 
@@ -394,7 +399,7 @@ impl Sludge {
                 particle.life += 1;
             }
 
-            if projectile.modifier_data.homing {
+            if projectile.modifier_data.homing && !projectile.straight {
                 let target_dir =
                     get_direction_nearest_enemy(&self.enemies, projectile.x, projectile.y);
                 if let Some(target_dir) = target_dir {
@@ -429,26 +434,30 @@ impl Sludge {
                             DamageResistance::None => {}
                         }
                         enemy.health -= amount;
-                        // also check whether enemy should be frozen
-                        // if projectile deals cold damage
-                        if *projectile
-                            .modifier_data
-                            .damage
-                            .get(&DamageType::Cold)
-                            .unwrap_or(&0.0)
-                            > 0.0
-                        {
-                            let is_cold_resistant = match enemy.ty.damage_resistance {
-                                DamageResistance::None => false,
-                                DamageResistance::Full(ty) => matches!(ty, DamageType::Cold),
-                                DamageResistance::Partial(ty) => matches!(ty, DamageType::Cold),
-                            };
-                            // if enemy isnt cold resistant
-                            if !is_cold_resistant {
-                                enemy.state.freeze_frames = FREEZE_TIME;
-                            }
+                    }
+                    // also check whether enemy should be frozen
+                    // if projectile deals cold damage
+                    if *projectile
+                        .modifier_data
+                        .damage
+                        .get(&DamageType::Cold)
+                        .unwrap_or(&0.0)
+                        > 0.0
+                    {
+                        let is_cold_resistant = match enemy.ty.damage_resistance {
+                            DamageResistance::None => false,
+                            DamageResistance::Full(ty) => matches!(ty, DamageType::Cold),
+                            DamageResistance::Partial(ty) => matches!(ty, DamageType::Cold),
+                        };
+                        // if enemy isnt cold resistant
+                        if !is_cold_resistant {
+                            enemy.state.freeze_frames = FREEZE_TIME;
                         }
                     }
+                    // stun enemy if projectile has stun frames
+                    enemy.state.stun_frames =
+                        enemy.state.stun_frames.saturating_add(projectile.stuns);
+
                     // send trigger payload
                     if !projectile.payload.is_empty() {
                         self.projectile_spawnlist
@@ -594,12 +603,15 @@ impl Sludge {
                 self.lives = self.lives.saturating_sub(enemy.ty.calc_damage());
                 return false;
             }
-            let speed_factor = if enemy.state.freeze_frames > 0 {
+            let mut speed_factor = 1.0;
+            if enemy.state.freeze_frames > 0 {
                 enemy.state.freeze_frames -= 1;
-                0.25
-            } else {
-                1.0
-            };
+                speed_factor = 0.25;
+            }
+            if enemy.state.stun_frames > 0 {
+                enemy.state.stun_frames -= 1;
+                speed_factor = 0.0;
+            }
             enemy.state.score += enemy.ty.speed * speed_factor;
             true
         });

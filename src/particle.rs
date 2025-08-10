@@ -42,6 +42,40 @@ pub const HIT_MARKER: Particle = Particle {
     },
 };
 
+pub const DEATH_RAY: Particle = Particle {
+    life: 0,
+    lifetime: 5,
+    function: &|this, x, y, direction, particles| {
+        let projectile_speed = 8.0;
+        let travel_frames = this.life.min(3);
+        let origin_x = x - direction.x * projectile_speed * travel_frames as f32;
+        let origin_y = y - direction.y * projectile_speed * travel_frames as f32 + 4.0;
+
+        if this.life <= 3 {
+            let width = 8.0 * 3.0;
+            let height = 4.0;
+            let mut params = DrawRectangleParams {
+                offset: Vec2::ZERO,
+                rotation: direction.to_angle(),
+                color: RED,
+            };
+            draw_rectangle_ex(origin_x, origin_y, width, height, params.clone());
+            params.color = BLACK;
+            draw_rectangle_ex(origin_x, origin_y - 1.0, width, height - 2.0, params);
+        }
+        basic_animation_particle(
+            this.life,
+            this.lifetime,
+            origin_x,
+            origin_y - 2.0,
+            32 + 10,
+            1,
+            3,
+            particles,
+        );
+    },
+};
+
 pub const BUBBLE: Particle = Particle {
     life: 0,
     lifetime: 19,

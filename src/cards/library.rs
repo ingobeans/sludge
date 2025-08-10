@@ -2,32 +2,49 @@ use hashmap_macro::hashmap;
 
 use crate::{cards::*, particle};
 
-// pub fn death_ray() -> Card {
-//     let projectile = Projectile {
-//         draw_type: ProjectileDrawType::Sprite(12, SpriteRotationMode::Direction),
-//         modifier_data: CardModifierData {
-//             speed: 5.0,
-//             lifetime: 60.0,
-//             shoot_delay: 0.5,
-//             damage: hashmap!(DamageType::Cold => 5.0),
-//             ..Default::default()
-//         },
-//         ..Default::default()
-//     };
-
-//     Card {
-//         name: "death ray",
-//         desc: "magic beam of death",
-//         ty: CardType::Projectile(projectile, false),
-//         sprite: 21,
-//         ..Default::default()
-//     }
-// }
 pub fn as_trigger(mut card: Card) -> Card {
     card.is_trigger = true;
     card
 }
 
+pub fn death_ray() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Particle(particle::DEATH_RAY),
+        straight: true,
+        modifier_data: CardModifierData {
+            speed: 8.0,
+            lifetime: 3.0,
+            shoot_delay: 0.85,
+            recharge_speed: 0.85,
+            piercing: true,
+            damage: hashmap!(DamageType::Magic => 25.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    Card {
+        name: "death ray",
+        desc: "magic beam of death",
+        ty: CardType::Projectile(projectile, false),
+        sprite: 21,
+        ..Default::default()
+    }
+}
+
+pub fn supercharge() -> Card {
+    Card {
+        name: "supercharge",
+        desc: "makes tower faster",
+        ty: CardType::Modifier(CardModifierData {
+            shoot_delay: -0.3,
+            recharge_speed: -0.2,
+            ..Default::default()
+        }),
+        sprite: 25,
+        ..Default::default()
+    }
+}
 pub fn road_thorns() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(13, SpriteRotationMode::None),
@@ -358,6 +375,29 @@ pub fn bomb() -> Card {
         desc: "goes boom",
         ty: CardType::Projectile(projectile, false),
         sprite: 3,
+        ..Default::default()
+    }
+}
+pub fn banana() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Sprite(13, SpriteRotationMode::Spin),
+        drag: 0.07,
+        stuns: 10,
+        modifier_data: CardModifierData {
+            speed: 2.0,
+            lifetime: 40.0,
+            shoot_delay: 0.85,
+            damage: hashmap!(DamageType::Pierce => 3.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    Card {
+        name: "banana peel",
+        desc: "stuns enemies",
+        ty: CardType::Projectile(projectile, false),
+        sprite: 23,
         ..Default::default()
     }
 }

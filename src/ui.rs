@@ -40,6 +40,11 @@ impl TextEngine {
                 index = 'z' as usize - 'a' as usize + 12;
             }
 
+            // hardcoded index of '-'
+            if char == '-' {
+                index = 'z' as usize - 'a' as usize + 13;
+            }
+
             // for characters in range a-z
             if index >= 'a' as usize {
                 index -= 'a' as usize
@@ -83,6 +88,7 @@ impl UIManager {
         }
     }
     pub fn open_lab_shop(&mut self) {
+        let was_open = self.shop.as_ref().map_or(false, |f| f.open);
         let mut shop_cards: Vec<Vec<Option<(Card, u16)>>> = Vec::new();
         let all_cards = get_cards();
         let slots_horizontal = 8;
@@ -95,7 +101,7 @@ impl UIManager {
         }
         self.shop = Some(Shop {
             cards: shop_cards,
-            open: false,
+            open: was_open,
         });
     }
     pub fn open_spawn_shop(&mut self) {

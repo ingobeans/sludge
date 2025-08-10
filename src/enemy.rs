@@ -56,6 +56,8 @@ pub struct EnemyState {
     pub score: f32,
     /// When an enemy is frozen, this value > 0, and ticks down
     pub freeze_frames: u8,
+    /// When an enemy is stunned, this value > 0, and ticks down
+    pub stun_frames: u8,
 }
 /// A live instance of an enemy
 pub struct Enemy {
