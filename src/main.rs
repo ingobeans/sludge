@@ -61,6 +61,7 @@ struct Sludge {
     ui_manager: UIManager,
     round_manager: RoundManager,
     lab: bool,
+    rotating_tower: bool,
     moving: Option<Tower>,
     selected: Option<usize>,
     tileset: Spritesheet,
@@ -97,6 +98,7 @@ impl Sludge {
             lives: STARTING_LIVES,
             round_manager,
             lab,
+            rotating_tower: false,
             moving: None,
             selected: None,
             ui_manager: UIManager::new(text_engine),
@@ -186,6 +188,30 @@ impl Sludge {
             return;
         }
 
+        if let Some(tower) = self.selected.map(|f| &mut self.towers[f]) {
+            let x1 = (tower.x + SPRITE_SIZE / 2.0).round();
+            let y1 = (tower.y + SPRITE_SIZE / 2.0).round();
+            let x2 = (x1 + tower.direction.x * 16.0).round();
+            let y2 = (y1 + tower.direction.y * 16.0).round();
+
+            // if we're currently rotating a tower
+            if self.rotating_tower {
+                tower.direction = Vec2::new(local_x - x1, local_y - y1).normalize();
+                if !is_mouse_button_down(MouseButton::Left) {
+                    self.rotating_tower = false;
+                }
+                return;
+            }
+
+            if is_mouse_button_pressed(MouseButton::Left) {
+                let distance = ((x2 - local_x).powi(2) + (y2 - local_y).powi(2)).sqrt();
+                if distance <= 2.0 {
+                    self.rotating_tower = true;
+                    return;
+                }
+            }
+        }
+
         // handle ui elements. if an element is interacted with, also return to stop other inputs being handled.
         if self.handle_ui_input(local_x, local_y) {
             return;
@@ -234,6 +260,31 @@ impl Sludge {
         let selected_tower = self.selected.map(|index| &self.towers[index]);
         if let Some(tower) = selected_tower {
             self.icon_sheet.draw_tile(tower.x, tower.y, 32, false, 0.0);
+            // draw little arrow thingy
+            let x1 = (tower.x + SPRITE_SIZE / 2.0).round();
+            let y1 = (tower.y + SPRITE_SIZE / 2.0).round();
+            let x2 = (x1 + tower.direction.x * 16.0).round();
+            let y2 = (y1 + tower.direction.y * 16.0).round();
+            draw_line(x1, y1, x2, y2, 1.0, COLOR_YELLOW);
+            for m in [-1.0, 1.0] {
+                let x1 = x2;
+                let y1 = y2;
+                let angle = 40.0_f32.to_radians();
+                let direction = Vec2::from_angle(PI + tower.direction.to_angle() + angle * m);
+                let x2 = x1 + direction.x * 8.0;
+                let y2 = y1 + direction.y * 8.0;
+                draw_line(x1, y1, x2, y2, 1.0, COLOR_YELLOW);
+            }
+
+            let distance = ((x2 - local_x).powi(2) + (y2 - local_y).powi(2)).sqrt();
+            let border_color = if distance <= 2.0 {
+                COLOR_BEIGE
+            } else {
+                COLOR_BROWN
+            };
+
+            draw_circle(x2, y2, 2.0, border_color);
+            draw_circle(x2, y2, 1.0, COLOR_YELLOW);
         }
         if let Some(tower) = &self.moving {
             self.icon_sheet
@@ -303,13 +354,26 @@ impl Sludge {
             }
         }
     }
+    fn draw_tower(&self, tower: &Tower) {
+        let mut sprite = tower.sprite;
+        let mut flipped = false;
+        let angle = tower.direction.to_angle();
+        if angle < -0.6 && angle > -2.5 {
+            sprite += 2;
+        } else if angle < 2.3 && angle > 0.6 {
+            sprite += 1;
+        } else if angle < 0.6 && angle > -1.5 {
+            flipped = true;
+        }
+        self.icon_sheet
+            .draw_tile(tower.x, tower.y, sprite, flipped, 0.0);
+    }
     fn draw(&self) {
         self.tileset.draw_tilemap(&self.map.background);
         self.tileset.draw_tilemap(&self.map.out_of_bounds);
         self.tileset.draw_tilemap(&self.map.obstructions);
         for tower in self.towers.iter() {
-            self.icon_sheet
-                .draw_tile(tower.x, tower.y, tower.sprite, false, 0.0);
+            self.draw_tower(tower);
         }
         for enemy in &self.enemies {
             let anim_frame = (enemy.state.score * enemy.ty.speed * enemy.ty.anim_speed) as usize
@@ -501,17 +565,15 @@ impl Sludge {
                 }
             }
             // check for collisions
-            if !projectile.ghost
-                && projectile.x > 0.0
-                && projectile.y > 0.0
-                && projectile.x < SCREEN_WIDTH
-                && projectile.y < SCREEN_HEIGHT
-            {
+            if !projectile.ghost && projectile.x > 0.0 && projectile.y > 0.0 {
                 let (x, y) = (
                     (projectile.x + SPRITE_SIZE / 2.0) as usize / SPRITE_SIZE_USIZE,
                     (projectile.y + SPRITE_SIZE / 2.0) as usize / SPRITE_SIZE_USIZE,
                 );
-                if self.map.obstructions[y][x] != 0 {
+                if y < self.map.obstructions.len()
+                    && x < self.map.obstructions[0].len()
+                    && self.map.obstructions[y][x] != 0
+                {
                     // send trigger payload
                     if !projectile.payload.is_empty() {
                         self.projectile_spawnlist
@@ -562,7 +624,7 @@ impl Sludge {
             if !tower.can_shoot() {
                 tower.delay_counter -= deltatime_ms as f32 / 1000.0;
             } else {
-                if self.round_manager.in_progress && !self.enemies.is_empty() {
+                if self.round_manager.in_progress {
                     let mut spawn_queue = tower.shoot();
                     self.projectile_spawnlist.append(&mut spawn_queue);
                 }
