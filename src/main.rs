@@ -357,12 +357,14 @@ impl Sludge {
     fn draw_tower(&self, tower: &Tower) {
         let mut sprite = tower.sprite;
         let mut flipped = false;
-        let angle = tower.direction.to_angle();
-        if angle < -0.6 && angle > -2.5 {
+        let angle = tower.direction.to_angle().to_degrees();
+        let up_angle_span = 25.0;
+        let down_angle_spawn = 45.0;
+        if angle > -90.0 - up_angle_span && angle < -90.0 + up_angle_span {
             sprite += 2;
-        } else if angle < 2.3 && angle > 0.6 {
+        } else if angle < 90.0 + down_angle_spawn && angle > 90.0 - down_angle_spawn {
             sprite += 1;
-        } else if angle < 0.6 && angle > -1.5 {
+        } else if angle < 90.0 && angle > -90.0 {
             flipped = true;
         }
         self.icon_sheet
