@@ -72,31 +72,22 @@ pub struct Map {
     pub background: TileMap,
     pub obstructions: TileMap,
     pub out_of_bounds: TileMap,
+    pub path: TileMap,
     pub points: Vec<(f32, f32)>,
     pub tower_spawnpoints: [(usize, usize); 4],
 }
 impl Map {
     pub fn is_unobstructed(&self, x: usize, y: usize) -> bool {
-        // make size slightly smaller than sprite size so you can squeeze towers in slightly tighter spots
-        let size = SPRITE_SIZE_USIZE - 1;
-
-        let top_left = (x, y);
-        let top_right = (x + size, y);
-        let bottom_left = (x, y + size);
-        let bottom_right = (x + size, y + size);
-        for (corner_x, corner_y) in [top_left, top_right, bottom_left, bottom_right] {
-            if self.obstructions[corner_y / SPRITE_SIZE_USIZE][corner_x / SPRITE_SIZE_USIZE] != 0 {
-                return false;
-            }
-            if self.out_of_bounds[corner_y / SPRITE_SIZE_USIZE][corner_x / SPRITE_SIZE_USIZE] != 0 {
-                return false;
-            }
-            if self.points.contains(&(
-                (corner_x / SPRITE_SIZE_USIZE) as f32,
-                (corner_y / SPRITE_SIZE_USIZE) as f32,
-            )) {
-                return false;
-            }
+        let x = x + SPRITE_SIZE_USIZE / 2;
+        let y = y + SPRITE_SIZE_USIZE / 2 + 2;
+        if self.obstructions[y / SPRITE_SIZE_USIZE][x / SPRITE_SIZE_USIZE] != 0 {
+            return false;
+        }
+        if self.out_of_bounds[y / SPRITE_SIZE_USIZE][x / SPRITE_SIZE_USIZE] != 0 {
+            return false;
+        }
+        if self.path[y / SPRITE_SIZE_USIZE][x / SPRITE_SIZE_USIZE] != 0 {
+            return false;
         }
 
         true

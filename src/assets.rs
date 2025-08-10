@@ -65,10 +65,11 @@ pub fn load_maps() -> Vec<Map> {
         let path = parse_tilemap_layer(&data, "Path").expect("bad map data");
 
         let map = Map {
+            points: parse_points_from_tilemap(&path),
             background,
             out_of_bounds,
             obstructions,
-            points: parse_points_from_tilemap(&path),
+            path,
             tower_spawnpoints: parse_spawnpoints_from_tilemap(&path),
         };
         maps.push(map);
