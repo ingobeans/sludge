@@ -71,6 +71,7 @@ pub struct BadMapDataError(&'static str);
 pub struct Map {
     pub background: TileMap,
     pub obstructions: TileMap,
+    pub out_of_bounds: TileMap,
     pub points: Vec<(f32, f32)>,
     pub tower_spawnpoints: [(usize, usize); 4],
 }
@@ -85,6 +86,9 @@ impl Map {
         let bottom_right = (x + size, y + size);
         for (corner_x, corner_y) in [top_left, top_right, bottom_left, bottom_right] {
             if self.obstructions[corner_y / SPRITE_SIZE_USIZE][corner_x / SPRITE_SIZE_USIZE] != 0 {
+                return false;
+            }
+            if self.out_of_bounds[corner_y / SPRITE_SIZE_USIZE][corner_x / SPRITE_SIZE_USIZE] != 0 {
                 return false;
             }
             if self.points.contains(&(

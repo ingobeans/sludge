@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Debug};
 
 use macroquad::{color::Color, math::Vec2, shapes::draw_rectangle};
 
-use crate::{consts::*, map::Spritesheet, particle::Particle};
+use crate::{consts::*, map::Spritesheet, particle::Particle, tower::fire_deck};
 
 pub mod library;
 
@@ -111,7 +111,22 @@ pub struct Projectile {
     pub payload: Vec<Card>,
     /// Released on death. Used by ex. the bomb exploding when its lifetime runs out.
     pub death_payload: Vec<Card>,
+    /// Can projectile travel through walls?
+    pub ghost: bool,
     pub modifier_data: CardModifierData,
+}
+impl Projectile {
+    pub fn fire_payload(&self) -> Vec<Projectile> {
+        let mut context = FiringContext::default();
+        fire_deck(
+            self.x,
+            self.y,
+            self.direction,
+            self.payload.clone(),
+            &mut context,
+        );
+        context.spawn_list
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]

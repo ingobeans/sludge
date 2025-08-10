@@ -127,7 +127,6 @@ pub fn fire_deck(
     origin_x: f32,
     origin_y: f32,
     direction: Vec2,
-    direction_nearest_enemy: Vec2,
     deck: Vec<Card>,
     context: &mut FiringContext,
 ) {
@@ -135,11 +134,6 @@ pub fn fire_deck(
     for card in deck {
         if let CardType::Projectile(mut projectile, _) = card.ty {
             projectile.modifier_data.merge(&context.modifier_data);
-            let direction = if projectile.modifier_data.aim {
-                direction_nearest_enemy
-            } else {
-                direction
-            };
 
             let spread = RandomRange::gen_range(-SPREAD, SPREAD);
             projectile.x = origin_x;
@@ -154,19 +148,12 @@ impl Tower {
     pub fn can_shoot(&self) -> bool {
         self.delay_counter <= 0.0
     }
-    pub fn shoot(&mut self, direction_nearest_enemy: Vec2) -> Vec<Projectile> {
+    pub fn shoot(&mut self) -> Vec<Projectile> {
         let (drawn, should_recharge) = self.draw_next();
         let mut context = FiringContext::default();
         context.modifier_data.recharge_speed = self.recharge_speed;
         context.modifier_data.shoot_delay = self.shoot_delay;
-        fire_deck(
-            self.x,
-            self.y,
-            self.direction,
-            direction_nearest_enemy,
-            drawn,
-            &mut context,
-        );
+        fire_deck(self.x, self.y, self.direction, drawn, &mut context);
 
         let mut cooldown = context.modifier_data.shoot_delay;
         self.delay_counter = context.modifier_data.shoot_delay;

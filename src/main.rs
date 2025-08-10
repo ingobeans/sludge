@@ -54,6 +54,7 @@ struct Sludge {
     enemy_spawn_queue: VecDeque<(&'static EnemyType, f32, f32, EnemyState)>,
     towers: Vec<Tower>,
     projectiles: Vec<Projectile>,
+    projectile_spawnlist: Vec<Projectile>,
     orphaned_particles: Vec<(Particle, f32, f32)>,
     lives: u8,
     ui_manager: UIManager,
@@ -91,6 +92,7 @@ impl Sludge {
             enemy_spawn_queue: VecDeque::with_capacity(10),
             towers: base_towers[..2].into(),
             projectiles: Vec::with_capacity(100),
+            projectile_spawnlist: Vec::with_capacity(100),
             orphaned_particles: Vec::with_capacity(100),
             lives: STARTING_LIVES,
             round_manager,
@@ -222,8 +224,8 @@ impl Sludge {
             if let Some(selected) = self.selected {
                 let tower = &mut self.towers[selected];
                 if tower.can_shoot() && !self.round_manager.in_progress {
-                    let mut spawn_queue = tower.shoot(LEFT);
-                    self.projectiles.append(&mut spawn_queue);
+                    let mut spawn_queue = tower.shoot();
+                    self.projectile_spawnlist.append(&mut spawn_queue);
                 }
             }
         }
@@ -303,6 +305,7 @@ impl Sludge {
     }
     fn draw(&self) {
         self.tileset.draw_tilemap(&self.map.background);
+        self.tileset.draw_tilemap(&self.map.out_of_bounds);
         self.tileset.draw_tilemap(&self.map.obstructions);
         for tower in self.towers.iter() {
             self.icon_sheet
@@ -385,8 +388,6 @@ impl Sludge {
         });
     }
     fn update_projectiles(&mut self) {
-        let mut new_projectiles = Vec::new();
-
         let death_queue = self.projectiles.extract_if(.., |projectile| {
             projectile.x += projectile.direction.x * projectile.modifier_data.speed;
             projectile.y += projectile.direction.y * projectile.modifier_data.speed;
@@ -454,20 +455,10 @@ impl Sludge {
                             }
                         }
                     }
-                    let direction_nearest_enemy =
-                        Vec2::new(enemy.x - projectile.x, enemy.y - projectile.y).normalize();
                     // send trigger payload
                     if !projectile.payload.is_empty() {
-                        let mut context = FiringContext::default();
-                        fire_deck(
-                            projectile.x,
-                            projectile.y,
-                            projectile.direction,
-                            direction_nearest_enemy,
-                            projectile.payload.clone(),
-                            &mut context,
-                        );
-                        new_projectiles.append(&mut context.spawn_list);
+                        self.projectile_spawnlist
+                            .append(&mut projectile.fire_payload());
                     }
                     // spawn hitmarker particle
                     self.orphaned_particles.push((
@@ -489,22 +480,34 @@ impl Sludge {
                     return true;
                 }
             }
+            // check for collisions
+            if !projectile.ghost && projectile.x > 0.0 && projectile.y > 0.0 {
+                let (x, y) = (
+                    (projectile.x + SPRITE_SIZE / 2.0) as usize / SPRITE_SIZE_USIZE,
+                    (projectile.y + SPRITE_SIZE / 2.0) as usize / SPRITE_SIZE_USIZE,
+                );
+                if self.map.obstructions[y][x] != 0 {
+                    // send trigger payload
+                    if !projectile.payload.is_empty() {
+                        self.projectile_spawnlist
+                            .append(&mut projectile.fire_payload());
+                    }
+                    return true;
+                }
+            }
             false
         });
         for killed in death_queue.collect::<Vec<Projectile>>() {
             if !killed.death_payload.is_empty() {
-                let direction_nearest_enemy =
-                    get_direction_nearest_enemy(&self.enemies, killed.x, killed.y);
                 let mut context = FiringContext::default();
                 fire_deck(
                     killed.x,
                     killed.y,
                     killed.direction,
-                    direction_nearest_enemy.unwrap_or(LEFT),
                     killed.death_payload,
                     &mut context,
                 );
-                self.projectiles.append(&mut context.spawn_list);
+                self.projectile_spawnlist.append(&mut context.spawn_list);
             }
             if let ProjectileDrawType::Particle(particle) = killed.draw_type {
                 if particle.life < particle.lifetime {
@@ -512,19 +515,29 @@ impl Sludge {
                 }
             }
         }
-        self.projectiles.append(&mut new_projectiles);
+
+        // spawn spawnlist
+
+        // first iterate through spawnlist to update direction of projectiles with aiming
+        // todo: also play sound effects here?
+        for projectile in &mut self.projectile_spawnlist {
+            if projectile.modifier_data.aim {
+                let direction_nearest =
+                    get_direction_nearest_enemy(&self.enemies, projectile.x, projectile.y)
+                        .unwrap_or(LEFT);
+                projectile.direction = direction_nearest;
+            }
+        }
+        self.projectiles.append(&mut self.projectile_spawnlist);
     }
     fn update_towers(&mut self, deltatime_ms: u128) {
         for tower in self.towers.iter_mut() {
             if !tower.can_shoot() {
                 tower.delay_counter -= deltatime_ms as f32 / 1000.0;
             } else {
-                let direction_nearest_enemy =
-                    get_direction_nearest_enemy(&self.enemies, tower.x, tower.y);
                 if self.round_manager.in_progress && !self.enemies.is_empty() {
-                    let mut spawn_queue =
-                        tower.shoot(direction_nearest_enemy.unwrap_or(tower.direction));
-                    self.projectiles.append(&mut spawn_queue);
+                    let mut spawn_queue = tower.shoot();
+                    self.projectile_spawnlist.append(&mut spawn_queue);
                 }
             }
         }
