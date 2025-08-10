@@ -19,7 +19,8 @@ fn basic_animation_particle(
     frame_amt: usize,
     particles: &Spritesheet,
 ) {
-    let anim_frame_offset = (life as usize / (lifetime as usize / frame_amt)) % frame_amt * size;
+    let anim_frame_offset =
+        (life as f32 / (lifetime as f32 / frame_amt as f32)) as usize % frame_amt * size;
     for i in 0..size {
         for j in 0..size {
             particles.draw_tile(

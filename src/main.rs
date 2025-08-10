@@ -509,6 +509,7 @@ impl Sludge {
                 );
                 self.projectile_spawnlist.append(&mut context.spawn_list);
             }
+            // if projectile had a particle thats still alive, orphan it
             if let ProjectileDrawType::Particle(particle) = killed.draw_type {
                 if particle.life < particle.lifetime {
                     self.orphaned_particles.push((particle, killed.x, killed.y));
