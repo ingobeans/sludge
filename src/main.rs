@@ -55,7 +55,7 @@ struct Sludge {
     towers: Vec<Tower>,
     projectiles: Vec<Projectile>,
     projectile_spawnlist: Vec<Projectile>,
-    orphaned_particles: Vec<(Particle, f32, f32)>,
+    orphaned_particles: Vec<(Particle, f32, f32, Vec2)>,
     lives: u8,
     ui_manager: UIManager,
     round_manager: RoundManager,
@@ -369,19 +369,19 @@ impl Sludge {
                         particle,
                         projectile.x,
                         projectile.y,
-                        projectile.direction,
+                        &projectile.direction,
                         &self.particle_sheet,
                     );
                 }
                 _ => {}
             }
         }
-        for (particle, x, y) in self.orphaned_particles.iter() {
-            (particle.function)(particle, *x, *y, LEFT, &self.particle_sheet);
+        for (particle, x, y, direction) in self.orphaned_particles.iter() {
+            (particle.function)(particle, *x, *y, direction, &self.particle_sheet);
         }
     }
     fn update_particles(&mut self) {
-        self.orphaned_particles.retain_mut(|(projectile, _, _)| {
+        self.orphaned_particles.retain_mut(|(projectile, _, _, _)| {
             projectile.life += 1;
             projectile.life < projectile.lifetime
         });
@@ -468,6 +468,7 @@ impl Sludge {
                         particle::HIT_MARKER,
                         projectile.x,
                         projectile.y,
+                        projectile.direction,
                     ));
                     if !projectile.modifier_data.piercing {
                         // kil projectile if not piercing
@@ -520,7 +521,8 @@ impl Sludge {
             // if projectile had a particle thats still alive, orphan it
             if let ProjectileDrawType::Particle(particle) = killed.draw_type {
                 if particle.life < particle.lifetime {
-                    self.orphaned_particles.push((particle, killed.x, killed.y));
+                    self.orphaned_particles
+                        .push((particle, killed.x, killed.y, killed.direction));
                 }
             }
         }
@@ -669,6 +671,7 @@ impl GameManager {
     }
     async fn run(&mut self) {
         loop {
+            println!("{}", get_fps());
             let (screen_width, screen_height) = screen_size();
             let scale_factor = (screen_width / SCREEN_WIDTH).min(screen_height / SCREEN_HEIGHT);
 

@@ -27,9 +27,13 @@ pub const FREEZE_TIME: u8 = 90;
 pub const CARD_INFO_WIDTH: f32 = 64.0 + 32.0;
 pub const CARD_INFO_HEIGHT: f32 = 32.0;
 
-pub const UI_BG_COLOR: Color = Color::from_hex(0xb86f50);
-pub const UI_BORDER_COLOR: Color = Color::from_hex(0x743f39);
-pub const UI_BUTTON_BG_COLOR: Color = Color::from_hex(0xffe762);
+pub const COLOR_BEIGE: Color = Color::from_hex(0xb86f50);
+pub const COLOR_BROWN: Color = Color::from_hex(0x743f39);
+pub const COLOR_YELLOW: Color = Color::from_hex(0xffe762);
+pub const COLOR_RED: Color = Color::from_hex(0xe53b44);
+pub const COLOR_CYAN: Color = Color::from_hex(0x2ce8f4);
+pub const COLOR_BLACK: Color = BLACK;
+pub const COLOR_WHITE: Color = WHITE;
 
 // define usize variants
 pub const SCREEN_WIDTH_USIZE: usize = SCREEN_WIDTH as usize;

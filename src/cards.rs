@@ -35,6 +35,8 @@ pub fn get_cards() -> Vec<Card> {
         library::road_thorns(),
         library::banana(),
         library::death_ray(),
+        library::sunbeam(),
+        library::freeze_ray(),
     ];
 
     let mut triggers = Vec::new();
@@ -238,7 +240,7 @@ impl Card {
             y - 1.0,
             SPRITE_SIZE + 2.0,
             SPRITE_SIZE + 2.0,
-            UI_BG_COLOR,
+            COLOR_BEIGE,
         );
         card_sheet.draw_tile(x, y, self.sprite, false, 0.0);
         if self.is_trigger {

@@ -6,7 +6,7 @@ use crate::{consts::*, map::Spritesheet};
 pub struct Particle {
     pub life: u8,
     pub lifetime: u8,
-    pub function: &'static dyn Fn(&Particle, f32, f32, Vec2, &Spritesheet),
+    pub function: &'static dyn Fn(&Particle, f32, f32, &Vec2, &Spritesheet),
 }
 
 fn basic_animation_particle(
@@ -33,46 +33,99 @@ fn basic_animation_particle(
         }
     }
 }
+fn ray_particle(
+    life: u8,
+    lifetime: u8,
+    x: f32,
+    y: f32,
+    direction: &Vec2,
+    particles: &Spritesheet,
+    colors: (Color, Color),
+    sprite: usize,
+) {
+    let projectile_speed = 8.0;
+    let travel_frames = life.min(3);
+    let origin_x = x - direction.x * projectile_speed * travel_frames as f32;
+    let origin_y = y - direction.y * projectile_speed * travel_frames as f32 + 4.0;
+
+    if life <= 3 {
+        let width = 8.0 * 3.0;
+        let height = 4.0;
+        let mut params = DrawRectangleParams {
+            offset: Vec2::ZERO,
+            rotation: direction.to_angle(),
+            color: colors.0,
+        };
+        draw_rectangle_ex(origin_x, origin_y, width, height, params.clone());
+        params.color = colors.1;
+        draw_rectangle_ex(origin_x, origin_y - 1.0, width, height - 2.0, params);
+    }
+    basic_animation_particle(
+        life,
+        lifetime,
+        origin_x,
+        origin_y - 2.0,
+        sprite,
+        1,
+        3,
+        particles,
+    );
+}
+
+pub const DEATH_RAY: Particle = Particle {
+    life: 0,
+    lifetime: 5,
+    function: &|this, x, y, direction, particles| {
+        ray_particle(
+            this.life,
+            this.lifetime,
+            x,
+            y,
+            direction,
+            particles,
+            (COLOR_RED, COLOR_BLACK),
+            32 + 10,
+        );
+    },
+};
+pub const SUNBEAM: Particle = Particle {
+    life: 0,
+    lifetime: 5,
+    function: &|this, x, y, direction, particles| {
+        ray_particle(
+            this.life,
+            this.lifetime,
+            x,
+            y,
+            direction,
+            particles,
+            (COLOR_YELLOW, COLOR_WHITE),
+            32 * 2 + 10,
+        );
+    },
+};
+pub const FREEZE_RAY: Particle = Particle {
+    life: 0,
+    lifetime: 5,
+    function: &|this, x, y, direction, particles| {
+        ray_particle(
+            this.life,
+            this.lifetime,
+            x,
+            y,
+            direction,
+            particles,
+            (COLOR_CYAN, COLOR_WHITE),
+            32 * 3 + 10,
+        );
+    },
+};
 
 pub const HIT_MARKER: Particle = Particle {
     life: 0,
     lifetime: 2,
     function: &|_, x, y, _, particles| {
         particles.draw_tile(x, y, 6, false, 0.0);
-    },
-};
-
-pub const DEATH_RAY: Particle = Particle {
-    life: 0,
-    lifetime: 5,
-    function: &|this, x, y, direction, particles| {
-        let projectile_speed = 8.0;
-        let travel_frames = this.life.min(3);
-        let origin_x = x - direction.x * projectile_speed * travel_frames as f32;
-        let origin_y = y - direction.y * projectile_speed * travel_frames as f32 + 4.0;
-
-        if this.life <= 3 {
-            let width = 8.0 * 3.0;
-            let height = 4.0;
-            let mut params = DrawRectangleParams {
-                offset: Vec2::ZERO,
-                rotation: direction.to_angle(),
-                color: RED,
-            };
-            draw_rectangle_ex(origin_x, origin_y, width, height, params.clone());
-            params.color = BLACK;
-            draw_rectangle_ex(origin_x, origin_y - 1.0, width, height - 2.0, params);
-        }
-        basic_animation_particle(
-            this.life,
-            this.lifetime,
-            origin_x,
-            origin_y - 2.0,
-            32 + 10,
-            1,
-            3,
-            particles,
-        );
     },
 };
 

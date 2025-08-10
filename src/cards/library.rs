@@ -7,6 +7,30 @@ pub fn as_trigger(mut card: Card) -> Card {
     card
 }
 
+pub fn sunbeam() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Particle(particle::SUNBEAM),
+        straight: true,
+        modifier_data: CardModifierData {
+            speed: 8.0,
+            lifetime: 3.0,
+            shoot_delay: -0.15,
+            recharge_speed: -0.25,
+            piercing: true,
+            damage: hashmap!(DamageType::Burn => 0.5),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    Card {
+        name: "sunbeam",
+        desc: "a bright beam",
+        ty: CardType::Projectile(projectile, false),
+        sprite: 2,
+        ..Default::default()
+    }
+}
 pub fn death_ray() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::DEATH_RAY),
@@ -28,6 +52,30 @@ pub fn death_ray() -> Card {
         desc: "magic beam of death",
         ty: CardType::Projectile(projectile, false),
         sprite: 21,
+        ..Default::default()
+    }
+}
+pub fn freeze_ray() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Particle(particle::FREEZE_RAY),
+        straight: true,
+        modifier_data: CardModifierData {
+            speed: 8.0,
+            lifetime: 3.0,
+            shoot_delay: 0.45,
+            recharge_speed: 0.2,
+            piercing: true,
+            damage: hashmap!(DamageType::Cold => 8.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    Card {
+        name: "freeze ray",
+        desc: "a really cold ray",
+        ty: CardType::Projectile(projectile, false),
+        sprite: 20,
         ..Default::default()
     }
 }
