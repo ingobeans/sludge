@@ -16,6 +16,7 @@ use crate::particle::Particle;
 use crate::rounds::*;
 use crate::tower::*;
 use crate::ui::*;
+use macroquad::rand;
 use macroquad::{miniquad::window::screen_size, prelude::*};
 
 mod assets;
@@ -70,7 +71,7 @@ struct Sludge {
 impl Sludge {
     fn new(map: Map, text_engine: TextEngine, lab: bool) -> Self {
         let tileset = load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE);
-        let icon_sheet = load_spritesheet("data/assets/icons.png", SPRITE_SIZE_USIZE);
+        let icon_sheet = load_spritesheet("data/assets/entities.png", SPRITE_SIZE_USIZE);
         let card_sheet = load_spritesheet("data/assets/cards.png", SPRITE_SIZE_USIZE);
         let particle_sheet = load_spritesheet("data/assets/particles.png", SPRITE_SIZE_USIZE);
 
@@ -435,6 +436,11 @@ impl Sludge {
                         }
                         enemy.health -= amount;
                     }
+                    // if projectile deals random damage, apply that
+                    if let Some((min, max)) = projectile.random_damage {
+                        let amount = rand::gen_range(min, max) as f32;
+                        enemy.health -= amount;
+                    }
                     // also check whether enemy should be frozen
                     // if projectile deals cold damage
                     if *projectile
@@ -455,8 +461,18 @@ impl Sludge {
                         }
                     }
                     // stun enemy if projectile has stun frames
-                    enemy.state.stun_frames =
-                        enemy.state.stun_frames.saturating_add(projectile.stuns);
+                    if projectile.stuns > 0 {
+                        enemy.state.stun_frames =
+                            enemy.state.stun_frames.saturating_add(projectile.stuns);
+                        let mut particle = particle::STUNNED;
+                        particle.lifetime = projectile.stuns;
+                        self.orphaned_particles.push((
+                            particle,
+                            enemy.x,
+                            enemy.y,
+                            projectile.direction,
+                        ));
+                    }
 
                     // send trigger payload
                     if !projectile.payload.is_empty() {
@@ -671,7 +687,6 @@ impl GameManager {
     }
     async fn run(&mut self) {
         loop {
-            println!("{}", get_fps());
             let (screen_width, screen_height) = screen_size();
             let scale_factor = (screen_width / SCREEN_WIDTH).min(screen_height / SCREEN_HEIGHT);
 

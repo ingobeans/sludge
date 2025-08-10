@@ -7,6 +7,29 @@ pub fn as_trigger(mut card: Card) -> Card {
     card
 }
 
+pub fn playing_card() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Sprite(15, SpriteRotationMode::Spin),
+        straight: true,
+        random_damage: Some((0, 10)),
+        modifier_data: CardModifierData {
+            speed: 4.0,
+            lifetime: 60.0,
+            shoot_delay: 0.15,
+            piercing: false,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    Card {
+        name: "playing card",
+        desc: "random dmg 0-10",
+        ty: CardType::Projectile(projectile, false),
+        sprite: 26,
+        ..Default::default()
+    }
+}
 pub fn sunbeam() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::SUNBEAM),
@@ -79,7 +102,6 @@ pub fn freeze_ray() -> Card {
         ..Default::default()
     }
 }
-
 pub fn supercharge() -> Card {
     Card {
         name: "supercharge",
@@ -403,6 +425,30 @@ pub fn explosion() -> Card {
     }
 }
 
+pub fn stun_explosion() -> Card {
+    let explosion_projectile = Projectile {
+        draw_type: ProjectileDrawType::Particle(particle::STUN_EXPLOSION),
+        extra_size: SPRITE_SIZE,
+        stuns: 20,
+        modifier_data: CardModifierData {
+            speed: 0.0,
+            lifetime: 0.0,
+            shoot_delay: 0.85,
+            piercing: true,
+            damage: hashmap!(DamageType::Burn => 5.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    Card {
+        name: "stun explosion",
+        desc: "akin to a flashbang",
+        ty: CardType::Projectile(explosion_projectile, false),
+        sprite: 14,
+        ..Default::default()
+    }
+}
+
 pub fn bomb() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(1, SpriteRotationMode::Spin),
@@ -428,9 +474,9 @@ pub fn bomb() -> Card {
 }
 pub fn banana() -> Card {
     let projectile = Projectile {
-        draw_type: ProjectileDrawType::Sprite(13, SpriteRotationMode::Spin),
+        draw_type: ProjectileDrawType::Sprite(14, SpriteRotationMode::Spin),
         drag: 0.07,
-        stuns: 10,
+        stuns: 20,
         modifier_data: CardModifierData {
             speed: 2.0,
             lifetime: 40.0,

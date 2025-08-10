@@ -26,6 +26,8 @@ pub fn get_cards() -> Vec<Card> {
         library::magicbolt(),
         library::bubble(),
         library::explosion(),
+        library::stun_explosion(),
+        library::playing_card(),
         library::fireball(),
         library::thorn_dart(),
         library::dart(),
@@ -120,6 +122,7 @@ pub struct Projectile {
     pub stuns: u8,
     /// Is the projectile immune to being rotated, i.e. by homing modifier?
     pub straight: bool,
+    pub random_damage: Option<(u8, u8)>,
     pub modifier_data: CardModifierData,
 }
 impl Projectile {

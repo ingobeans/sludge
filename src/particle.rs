@@ -72,6 +72,14 @@ fn ray_particle(
     );
 }
 
+pub const STUNNED: Particle = Particle {
+    life: 0,
+    lifetime: 20,
+    function: &|this, x, y, _, particles| {
+        basic_animation_particle(this.life, 10, x + 4.0, y, 32 + 13, 1, 3, particles);
+    },
+};
+
 pub const DEATH_RAY: Particle = Particle {
     life: 0,
     lifetime: 5,
@@ -156,6 +164,14 @@ pub const FIRE_EXPLOSION: Particle = Particle {
     lifetime: 10,
     function: &|this, x, y, _, particles| {
         basic_animation_particle(this.life, this.lifetime, x, y, 5 * 32, 2, 3, particles);
+    },
+};
+
+pub const STUN_EXPLOSION: Particle = Particle {
+    life: 0,
+    lifetime: 5,
+    function: &|this, x, y, _, particles| {
+        basic_animation_particle(this.life, this.lifetime, x, y, 5 * 32 + 6, 2, 3, particles);
     },
 };
 
