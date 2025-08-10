@@ -39,9 +39,7 @@ pub fn get_cards() -> Vec<Card> {
     for card in &cards {
         if let CardType::Projectile(_, trigger_allowed) = card.ty {
             if trigger_allowed {
-                let mut trigger = card.clone();
-                trigger.is_trigger = true;
-                triggers.push(trigger);
+                triggers.push(library::as_trigger(card.clone()));
             }
         }
     }

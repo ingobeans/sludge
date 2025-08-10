@@ -59,6 +59,7 @@ struct Sludge {
     lives: u8,
     ui_manager: UIManager,
     round_manager: RoundManager,
+    lab: bool,
     moving: Option<Tower>,
     selected: Option<usize>,
     tileset: Spritesheet,
@@ -76,14 +77,7 @@ impl Sludge {
         // add starting towers
         let base_towers = get_towers(map.tower_spawnpoints);
 
-        let mut round_manager = load_round_data();
-
-        // disable shop in lab
-        if lab {
-            for round in &mut round_manager.rounds {
-                round.shop = false;
-            }
-        }
+        let round_manager = load_round_data();
 
         Self {
             state: GameState::Running,
@@ -96,9 +90,10 @@ impl Sludge {
             orphaned_particles: Vec::with_capacity(100),
             lives: STARTING_LIVES,
             round_manager,
+            lab,
             moving: None,
             selected: None,
-            ui_manager: UIManager::new(lab, text_engine),
+            ui_manager: UIManager::new(text_engine),
             tileset,
             icon_sheet,
             card_sheet,
@@ -109,7 +104,6 @@ impl Sludge {
         self.kill_immortal_projectiles();
         if self.ui_manager.shop.is_some() {
             self.ui_manager.shop = None;
-            self.ui_manager.shop_open = false;
         }
 
         self.round_manager.in_progress = true;
@@ -481,7 +475,12 @@ impl Sludge {
                 }
             }
             // check for collisions
-            if !projectile.ghost && projectile.x > 0.0 && projectile.y > 0.0 {
+            if !projectile.ghost
+                && projectile.x > 0.0
+                && projectile.y > 0.0
+                && projectile.x < SCREEN_WIDTH
+                && projectile.y < SCREEN_HEIGHT
+            {
                 let (x, y) = (
                     (projectile.x + SPRITE_SIZE / 2.0) as usize / SPRITE_SIZE_USIZE,
                     (projectile.y + SPRITE_SIZE / 2.0) as usize / SPRITE_SIZE_USIZE,
@@ -596,6 +595,7 @@ impl Sludge {
                 return false;
             }
             let speed_factor = if enemy.state.freeze_frames > 0 {
+                enemy.state.freeze_frames -= 1;
                 0.25
             } else {
                 1.0
@@ -606,8 +606,12 @@ impl Sludge {
 
         if matches!(round_update, RoundUpdate::Finished) && self.enemies.is_empty() {
             self.ui_manager.gold += GOLD_ROUND_REWARD;
-            if self.round_manager.finish_round() {
-                self.ui_manager.open_shop(self.round_manager.round - 1);
+            self.round_manager.finish_round();
+            if !self.lab {
+                self.ui_manager
+                    .open_shop(self.round_manager.round - 1, 4, 1);
+            } else {
+                self.ui_manager.open_lab_shop();
             }
             // despawn all immortal projectiles so they dont carry over to next round,
             // because that would be kind of OP, allowing you to ex. build a larger and larger
@@ -720,17 +724,17 @@ impl GameManager {
             // create new Sludge instance
             let mut new = Sludge::new(self.maps[1].clone(), self.text_engine.clone(), false);
             // populate shop with starting options
-            new.ui_manager.shop_open = true;
-            let mut shop = std::array::from_fn(|_| None.clone());
-            for (index, card) in [library::magicbolt(), library::dart(), library::bomb()]
-                .into_iter()
-                .enumerate()
-            {
-                shop[index] = Some((card, STARTING_GOLD));
-            }
-            new.ui_manager.shop = Some(shop);
-            // give free aiming card
-            new.ui_manager.inventory[0][0] = Some(library::aiming());
+            // let mut shop = std::array::from_fn(|_| None.clone());
+            // for (index, card) in [library::magicbolt(), library::dart(), library::bomb()]
+            //     .into_iter()
+            //     .enumerate()
+            // {
+            //     shop[index] = Some((card, STARTING_GOLD));
+            // }
+            // new.ui_manager.shop = Some(shop);
+            // // give free aiming card
+            // new.ui_manager.inventory[0][0] = Some(library::aiming());
+            new.ui_manager.open_spawn_shop();
             self.sludge = Some(new);
         }
         if draw_button(
@@ -743,11 +747,9 @@ impl GameManager {
             local_y,
             "open lab",
         ) {
-            self.sludge = Some(Sludge::new(
-                self.maps[0].clone(),
-                self.text_engine.clone(),
-                true,
-            ))
+            let mut new = Sludge::new(self.maps[0].clone(), self.text_engine.clone(), true);
+            new.ui_manager.open_lab_shop();
+            self.sludge = Some(new);
         }
         if draw_button(
             &self.text_engine,
@@ -775,8 +777,8 @@ impl GameManager {
             // run update loops at fixed FPS
             if deltatime_ms >= 1000 / 30 {
                 self.last = now;
-                game.update_enemies();
                 game.update_projectiles();
+                game.update_enemies();
                 game.update_particles();
                 game.update_towers(1000 / 30);
                 game.update_state();

@@ -2,7 +2,7 @@ use macroquad::prelude::*;
 
 use crate::{
     assets::load_spritesheet,
-    cards::{get_cards, Card, CardType},
+    cards::{get_cards, library, Card, CardType},
     consts::*,
     map::Spritesheet,
     tower::Tower,
@@ -57,53 +57,103 @@ impl TextEngine {
     }
 }
 
+pub struct Shop {
+    cards: Vec<Vec<Option<(Card, u16)>>>,
+    open: bool,
+}
+
 pub struct UIManager {
     pub inventory: [[Option<Card>; INV_SLOTS_HORIZONTAL]; INV_SLOTS_VERTICAL],
     pub inventory_open: bool,
     cursor_card: Option<Card>,
-    pub shop: Option<[Option<(Card, u16)>; SHOP_SLOTS_HORIZONTAL]>,
-    pub shop_open: bool,
+    pub shop: Option<Shop>,
     pub gold: u16,
     pub text_engine: TextEngine,
 }
 impl UIManager {
-    pub fn new(grant_all_cards: bool, text_engine: TextEngine) -> Self {
-        let mut inventory = std::array::from_fn(|_| std::array::from_fn(|_| None.clone()).clone());
-        if grant_all_cards {
-            let all_cards = get_cards();
-            for (index, card) in all_cards.into_iter().enumerate() {
-                inventory[index / inventory[0].len()][index % inventory[0].len()] = Some(card);
-            }
-        }
+    pub fn new(text_engine: TextEngine) -> Self {
+        let inventory = std::array::from_fn(|_| std::array::from_fn(|_| None.clone()).clone());
         Self {
             inventory,
             inventory_open: false,
             cursor_card: None,
             shop: None,
             gold: STARTING_GOLD,
-            shop_open: false,
             text_engine,
         }
     }
-    pub fn open_shop(&mut self, round: usize) {
-        self.shop_open = true;
-        let price_modifier = 1.0 + round as f32 / 10.0;
-        let projectile_penalty = 1.2 + round as f32 / 10.0;
-        let cards = get_cards();
-        self.shop = Some(std::array::from_fn(|_| {
-            let mut price = rand::gen_range(120.0, 230.0);
-            let card = cards[rand::gen_range(0, cards.len())].clone();
-            if let CardType::Projectile(_, _) = &card.ty {
-                price *= projectile_penalty;
+    pub fn open_lab_shop(&mut self) {
+        let mut shop_cards: Vec<Vec<Option<(Card, u16)>>> = Vec::new();
+        let all_cards = get_cards();
+        let slots_horizontal = 8;
+        for (index, card) in all_cards.into_iter().enumerate() {
+            let y = index / slots_horizontal;
+            if y >= shop_cards.len() {
+                shop_cards.push(vec![None; slots_horizontal]);
             }
-            let big_rand = rand::gen_range(-1, 4);
-            price += big_rand as f32 * 10.0;
-            price *= price_modifier;
+            shop_cards[y][index % slots_horizontal] = Some((card, 0));
+        }
+        self.shop = Some(Shop {
+            cards: shop_cards,
+            open: false,
+        });
+    }
+    pub fn open_spawn_shop(&mut self) {
+        self.open_shop(0, 4, 2);
+        let shop = self.shop.as_mut().unwrap();
+        let mut cards = vec![
+            (library::road_thorns(), 150),
+            (library::icecicle(), 150),
+            (library::thorn_dart(), 150),
+            (library::rocket(), 150),
+            (library::bomb(), 100),
+            (library::dart(), 100),
+            (library::magicbolt(), 100),
+            (library::aiming(), 50),
+        ];
 
-            // round to nearest 5 and convert to u16
-            let price = ((price + 2.5) / 5.0) as u16 * 5;
-            Some((card, price))
-        }));
+        for row in shop.cards.iter_mut() {
+            for (card, price) in row.iter_mut().flatten() {
+                if let Some((popped, new_price)) = cards.pop() {
+                    *card = popped;
+                    *price = new_price;
+                } else {
+                    *price = 200
+                }
+            }
+        }
+    }
+    pub fn open_shop(&mut self, round: usize, width: usize, height: usize) {
+        let price_modifier = 1.0 + round as f32 / 7.5;
+        let projectile_penalty = 1.2 + round as f32 / 25.0;
+        let cards = get_cards();
+        let mut shop_cards: Vec<Vec<Option<(Card, u16)>>> = Vec::new();
+        for _ in 0..height {
+            let mut row = Vec::with_capacity(width);
+            for _ in 0..width {
+                let mut price = rand::gen_range(120.0, 210.0);
+                let card = cards[rand::gen_range(0, cards.len())].clone();
+                if let CardType::Projectile(_, _) = &card.ty {
+                    price *= projectile_penalty;
+                }
+                if card.is_trigger {
+                    price += 100.0;
+                }
+                let big_rand = rand::gen_range(-1, 4);
+                price += big_rand as f32 * 10.0;
+                price *= price_modifier;
+
+                // round to nearest 5 and convert to u16
+                let price = ((price + 2.5) / 5.0) as u16 * 5;
+
+                row.push(Some((card, price)));
+            }
+            shop_cards.push(row);
+        }
+        self.shop = Some(Shop {
+            cards: shop_cards,
+            open: true,
+        });
     }
     fn draw_inventory(&self, local_x: f32, local_y: f32, card_sheet: &Spritesheet) {
         if self.inventory_open {
@@ -136,30 +186,33 @@ impl UIManager {
             && local_y > handle_y
             && local_y < handle_y + SPRITE_SIZE
         {
-            self.shop_open = !self.shop_open;
+            shop.open = !shop.open;
             return true;
         }
-        if !self.shop_open {
+        if !shop.open {
             return false;
         }
+        let shop_height = SHOP_PADDING + shop.cards.len() as f32 * SHOP_CARD_HEIGHT - 5.0;
 
-        let shop_y = SCREEN_HEIGHT - SHOP_HEIGHT;
-        let tile_y = SHOP_PADDING + shop_y + 2.0;
-        for x in 0..shop.len() {
-            let tile_x = 2.0 + x as f32 * SHOP_CARD_SIZE;
-            if local_x == local_x.clamp(tile_x, tile_x + CARD_SIZE)
-                && local_y == local_y.clamp(tile_y, tile_y + CARD_SIZE)
-                && shop[x].is_some()
-            {
-                if self.cursor_card.is_none() {
-                    let price = (shop[x].as_ref()).map(|f| f.1).unwrap();
-                    if self.gold >= price {
-                        self.gold -= price;
-                        let (card, _) = shop[x].take().unwrap();
-                        self.cursor_card = Some(card);
-                        self.inventory_open = true;
+        let shop_y = SCREEN_HEIGHT - shop_height;
+        for y in 0..shop.cards.len() {
+            for x in 0..shop.cards[0].len() {
+                let tile_y = SHOP_PADDING + shop_y + 2.0 + y as f32 * SHOP_CARD_HEIGHT;
+                let tile_x = 2.0 + x as f32 * SHOP_CARD_WIDTH;
+                if local_x == local_x.clamp(tile_x, tile_x + CARD_SIZE)
+                    && local_y == local_y.clamp(tile_y, tile_y + CARD_SIZE)
+                    && shop.cards[y][x].is_some()
+                {
+                    if self.cursor_card.is_none() {
+                        let price = (shop.cards[y][x].as_ref()).map(|f| f.1).unwrap();
+                        if self.gold >= price {
+                            self.gold -= price;
+                            let (card, _) = shop.cards[y][x].take().unwrap();
+                            self.cursor_card = Some(card);
+                            self.inventory_open = true;
+                        }
+                        return true;
                     }
-                    return true;
                 }
             }
         }
@@ -174,33 +227,39 @@ impl UIManager {
         draw_img_button(
             card_sheet, handle_x, handle_y, local_x, local_y, 35, flipped,
         );
-        if !self.shop_open {
+        if !shop.open {
             return;
         }
+        let shop_width = shop.cards[0].len() as f32 * SHOP_CARD_WIDTH + 4.0 - 7.0;
+        let shop_height = SHOP_PADDING + shop.cards.len() as f32 * SHOP_CARD_HEIGHT - 5.0;
         let shop_x = 0.0;
-        let shop_y = SCREEN_HEIGHT - SHOP_HEIGHT;
-        draw_square(shop_x, shop_y, SHOP_WIDTH, SHOP_HEIGHT);
+        let shop_y = SCREEN_HEIGHT - shop_height;
+        draw_square(shop_x, shop_y, shop_width, shop_height);
         self.text_engine
-            .draw_text(shop_x + 2.0, shop_y + 2.0, "shop", 1);
-        self.text_engine
-            .draw_text(shop_x + 2.0, shop_y + 2.0 + 5.0, "closes next round", 2);
-        let tile_y = SHOP_PADDING + shop_y + 2.0;
-        for x in 0..shop.len() {
-            let tile_x = 2.0 + x as f32 * SHOP_CARD_SIZE;
-            draw_square(tile_x, tile_y - 7.0, CARD_SIZE, CARD_SIZE + 7.0);
-            if let Some((card, price)) = &shop[x] {
-                self.text_engine
-                    .draw_text(tile_x, tile_y - 5.0, &price.to_string(), 0);
-                card.draw(card_sheet, tile_x + 2.0, tile_y + 2.0);
+            .draw_text(shop_x + 2.0, shop_y + 2.0, "card shop", 1);
+        for y in 0..shop.cards.len() {
+            for x in 0..shop.cards[0].len() {
+                let tile_y = SHOP_PADDING + shop_y + 2.0 + y as f32 * SHOP_CARD_HEIGHT;
+                let tile_x = 2.0 + x as f32 * SHOP_CARD_WIDTH;
+                if let Some((card, price)) = &shop.cards[y][x] {
+                    self.text_engine
+                        .draw_text(tile_x, tile_y - 5.0, &price.to_string(), 0);
+                    card.draw(card_sheet, tile_x + 2.0, tile_y + 2.0);
+                } else {
+                    draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
+                }
             }
         }
-        for x in 0..shop.len() {
-            let tile_x = 2.0 + x as f32 * SHOP_CARD_SIZE;
-            if let Some((card, _)) = &shop[x] {
-                if local_x == local_x.clamp(tile_x, tile_x + CARD_SIZE)
-                    && local_y == local_y.clamp(tile_y, tile_y + CARD_SIZE)
-                {
-                    self.draw_card_info(local_x, local_y, card, card_sheet);
+        for y in 0..shop.cards.len() {
+            for x in 0..shop.cards[0].len() {
+                let tile_y = SHOP_PADDING + shop_y + 2.0 + y as f32 * SHOP_CARD_HEIGHT;
+                let tile_x = 2.0 + x as f32 * SHOP_CARD_WIDTH;
+                if let Some((card, _)) = &shop.cards[y][x] {
+                    if local_x == local_x.clamp(tile_x, tile_x + CARD_SIZE)
+                        && local_y == local_y.clamp(tile_y, tile_y + CARD_SIZE)
+                    {
+                        self.draw_card_info(local_x, local_y, card, card_sheet);
+                    }
                 }
             }
         }
@@ -216,7 +275,7 @@ impl UIManager {
         if local_x > SCREEN_WIDTH / 2.0 {
             local_x -= CARD_INFO_WIDTH;
         }
-        if local_y + CARD_INFO_HEIGHT > SCREEN_HEIGHT {
+        if local_y + CARD_INFO_HEIGHT + 4.0 > SCREEN_HEIGHT {
             local_y -= CARD_INFO_HEIGHT;
         }
         draw_square(local_x, local_y, CARD_INFO_WIDTH, CARD_INFO_HEIGHT);
@@ -264,18 +323,25 @@ impl UIManager {
         }
     }
     fn get_shop_handle_state(&self) -> (f32, f32, bool) {
-        if self.shop_open {
-            (
-                (SHOP_WIDTH),
-                (SCREEN_HEIGHT - SHOP_HEIGHT + (SHOP_HEIGHT / 2.0 - SPRITE_SIZE / 2.0)),
-                false,
-            )
+        if let Some(shop) = &self.shop {
+            let shop_width = shop.cards[0].len() as f32 * SHOP_CARD_WIDTH + 4.0 - 7.0;
+            let shop_height = SHOP_PADDING + shop.cards.len() as f32 * SHOP_CARD_HEIGHT - 5.0;
+
+            if shop.open {
+                (
+                    (shop_width),
+                    (SCREEN_HEIGHT - shop_height + (shop_height / 2.0 - SPRITE_SIZE / 2.0)),
+                    false,
+                )
+            } else {
+                (
+                    (0.0),
+                    (SCREEN_HEIGHT - shop_height + (shop_height / 2.0 - SPRITE_SIZE / 2.0)),
+                    true,
+                )
+            }
         } else {
-            (
-                (0.0),
-                (SCREEN_HEIGHT - SHOP_HEIGHT + (SHOP_HEIGHT / 2.0 - SPRITE_SIZE / 2.0)),
-                true,
-            )
+            (0.0, 0.0, false)
         }
     }
 

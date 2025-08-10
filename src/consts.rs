@@ -8,12 +8,9 @@ pub const CARD_SIZE: f32 = SPRITE_SIZE + 4.0;
 pub const INV_SLOTS_HORIZONTAL: usize = 2;
 pub const INV_SLOTS_VERTICAL: usize = (SCREEN_HEIGHT_USIZE - 4) / CARD_SIZE_USIZE;
 
-pub const SHOP_SLOTS_HORIZONTAL: usize = 5;
-
-pub const SHOP_WIDTH: f32 = SHOP_SLOTS_HORIZONTAL as f32 * SHOP_CARD_SIZE + 4.0;
-pub const SHOP_PADDING: f32 = 24.0;
-pub const SHOP_HEIGHT: f32 = CARD_SIZE + 4.0 + SHOP_PADDING;
-pub const SHOP_CARD_SIZE: f32 = CARD_SIZE + 4.0;
+pub const SHOP_PADDING: f32 = 12.0;
+pub const SHOP_CARD_WIDTH: f32 = CARD_SIZE + 7.0;
+pub const SHOP_CARD_HEIGHT: f32 = CARD_SIZE + 4.0 + 5.0;
 
 pub const INV_WIDTH: f32 = INV_SLOTS_HORIZONTAL as f32 * CARD_SIZE + 4.0;
 
@@ -22,8 +19,8 @@ pub const SPREAD: f32 = 4.0_f32.to_radians();
 pub const DEFAULT_SPAWN_DELAY: u8 = 24;
 
 pub const STARTING_LIVES: u8 = 40;
-pub const STARTING_GOLD: u16 = 100;
-pub const GOLD_ROUND_REWARD: u16 = 45;
+pub const STARTING_GOLD: u16 = 200;
+pub const GOLD_ROUND_REWARD: u16 = 100;
 
 pub const FREEZE_TIME: u8 = 90;
 

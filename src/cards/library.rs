@@ -23,6 +23,11 @@ use crate::{cards::*, particle};
 //         ..Default::default()
 //     }
 // }
+pub fn as_trigger(mut card: Card) -> Card {
+    card.is_trigger = true;
+    card
+}
+
 pub fn road_thorns() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(13, SpriteRotationMode::None),

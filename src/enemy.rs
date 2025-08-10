@@ -92,6 +92,7 @@ static BABY_SPIDER: EnemyType = EnemyType {
     sprite: 2 * 32 + 4,
     anim_length: 2,
     speed: 2.0,
+    anim_speed: 1.6,
     max_health: 1.0,
     damage_resistance: DamageResistance::None,
     ..DEFAULT_ENEMY_TYPE
@@ -101,6 +102,7 @@ static FIRE_MITE: EnemyType = EnemyType {
     sprite: 4 * 32 + 12,
     anim_length: 2,
     speed: 2.0,
+    anim_speed: 1.6,
     max_health: 5.0,
     damage_resistance: DamageResistance::Full(DamageType::Burn),
     ..DEFAULT_ENEMY_TYPE
@@ -212,6 +214,7 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         anim_length: 2,
         damage: 2,
         speed: 2.0,
+        anim_speed: 1.6,
         max_health: 6.0,
         damage_resistance: DamageResistance::Partial(DamageType::Pierce),
         ..DEFAULT_ENEMY_TYPE
@@ -261,6 +264,7 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         sprite: 8 * 32 + 2,
         anim_length: 6,
         speed: 2.0,
+        anim_speed: 1.5,
         max_health: 13.0,
         damage_resistance: DamageResistance::Full(DamageType::Cold),
         ..DEFAULT_ENEMY_TYPE
