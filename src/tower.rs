@@ -1,9 +1,6 @@
 use std::collections::VecDeque;
 
-use macroquad::{
-    math::Vec2,
-    rand::{self, rand, RandomRange},
-};
+use macroquad::{math::Vec2, rand};
 
 use crate::{
     cards::{Card, CardType, FiringContext, Projectile},

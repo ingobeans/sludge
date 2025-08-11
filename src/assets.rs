@@ -57,19 +57,19 @@ impl Default for ProjectileSound {
         Self::None
     }
 }
-type SFX = (Vec<Sound>, f32);
+type Sfx = (Vec<Sound>, f32);
 pub struct SFXManager {
-    pub explosion: SFX,
-    pub hit: SFX,
+    pub explosion: Sfx,
+    pub hit: Sfx,
 }
 impl SFXManager {
     pub async fn new() -> Self {
         SFXManager {
-            explosion: (load_sounds(&"data/sfx/explosion/").await, 0.3),
-            hit: (load_sounds(&"data/sfx/hit/").await, 0.2),
+            explosion: (load_sounds("data/sfx/explosion/").await, 0.3),
+            hit: (load_sounds("data/sfx/hit/").await, 0.2),
         }
     }
-    pub fn play_sound(sounds: &SFX) {
+    pub fn play_sound(sounds: &Sfx) {
         let sound = &sounds.0[rand::gen_range(0, sounds.0.len())];
 
         play_sound(

@@ -223,11 +223,10 @@ impl CardModifierData {
                 fields.push((k, field.to_string()));
             }
         }
-        if fields.len() < 3 {
-            if self.spread != 0.0 {
-                fields.push(("spread", self.spread.to_degrees().to_string() + " deg"));
-            }
+        if fields.len() < 3 && self.spread != 0.0 {
+            fields.push(("spread", self.spread.to_degrees().to_string() + " deg"));
         }
+
         fields
     }
     /// Like [CardModifierData::merge] but only merges shoot_delay, recharge_speed fields, which are the only fields that

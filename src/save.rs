@@ -35,7 +35,7 @@ pub struct SaveData {
         [Option<(u8, u16)>; DEFAULT_SHOP_SLOTS_HORIZONTAL * DEFAULT_SHOP_SLOTS_VERTICAL],
     pub towers: [Option<TowerSaveData>; 4],
 }
-fn actualize_virtual_card(mut card: u8, cards: &Vec<Card>) -> Card {
+fn actualize_virtual_card(mut card: u8, cards: &[Card]) -> Card {
     let mut trigger = false;
     let cards_len = cards.len() as u8;
     if card > cards_len {
@@ -49,7 +49,7 @@ fn actualize_virtual_card(mut card: u8, cards: &Vec<Card>) -> Card {
         card
     }
 }
-fn virtualize_card(card: &Card, cards: &Vec<Card>) -> u8 {
+fn virtualize_card(card: &Card, cards: &[Card]) -> u8 {
     let mut index = cards.iter().position(|f| f == card).unwrap() as u8;
     let cards_len = cards.len() as u8;
     if card.is_trigger {
