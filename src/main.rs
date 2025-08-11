@@ -519,12 +519,11 @@ impl Sludge {
 
                     // also check whether enemy should be frozen
                     // if projectile deals cold damage
-                    if *projectile
+                    if projectile
                         .modifier_data
                         .damage
                         .get(&DamageType::Cold)
-                        .unwrap_or(&0.0)
-                        > 0.0
+                        .is_some_and(|f| *f > 0.0)
                     {
                         let is_cold_resistant = match enemy.ty.damage_resistance {
                             DamageResistance::None => false,
@@ -623,10 +622,11 @@ impl Sludge {
         // and play sfx
         for projectile in &mut self.projectile_spawnlist {
             if projectile.modifier_data.aim {
-                let direction_nearest =
+                if let Some(direction_nearest) =
                     get_direction_nearest_enemy(&self.enemies, projectile.x, projectile.y)
-                        .unwrap_or(LEFT);
-                projectile.direction = direction_nearest;
+                {
+                    projectile.direction = direction_nearest;
+                }
             }
 
             projectile.fire_sound.play(&self.sfx_manager);
