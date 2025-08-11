@@ -1,3 +1,4 @@
+slime-5
 spider-5
 !spider-20
 delay-10 spider-5 delay-30 slime-5

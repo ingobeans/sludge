@@ -178,7 +178,13 @@ impl UIManager {
         }
         let (handle_x, handle_y, flipped) = self.get_inv_handle_state();
         draw_img_button(
-            card_sheet, handle_x, handle_y, local_x, local_y, 35, flipped,
+            card_sheet,
+            handle_x,
+            handle_y,
+            local_x,
+            local_y,
+            32 * 3 + 1,
+            flipped,
         );
     }
     fn handle_shop_input(&mut self, local_x: f32, local_y: f32) -> bool {
@@ -230,7 +236,13 @@ impl UIManager {
         };
         let (handle_x, handle_y, flipped) = self.get_shop_handle_state();
         draw_img_button(
-            card_sheet, handle_x, handle_y, local_x, local_y, 35, flipped,
+            card_sheet,
+            handle_x,
+            handle_y,
+            local_x,
+            local_y,
+            32 * 3 + 1,
+            flipped,
         );
         if !shop.open {
             return;

@@ -7,17 +7,154 @@ pub fn as_trigger(mut card: Card) -> Card {
     card
 }
 
+pub fn shotgun() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Particle(particle::SHOTGUN),
+        hit_sound: ProjectileSound::Hit,
+        clones_amount: 2,
+        drag: 0.01,
+        modifier_data: CardModifierData {
+            speed: 8.0,
+            lifetime: 60.0,
+            recharge_speed: 0.65,
+            damage: hashmap!(DamageType::Pierce => 4.0),
+            spread: 5.0_f32.to_radians(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    Card {
+        name: "shotgun",
+        desc: "triple barrel",
+        ty: CardType::Projectile(projectile, false),
+        sprite: 33,
+        ..Default::default()
+    }
+}
+pub fn shock() -> Card {
+    Card {
+        name: "shock",
+        desc: "makes projectile\nbriefly stun enemies",
+        ty: CardType::Modifier(CardModifierData {
+            stuns: 7,
+            ..Default::default()
+        }),
+        sprite: 32,
+        ..Default::default()
+    }
+}
+pub fn lightning() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Particle(particle::LIGHTNING),
+        only_enemy_triggers: true,
+        modifier_data: CardModifierData {
+            speed: 8.0,
+            lifetime: 3.0,
+            shoot_delay: 0.70,
+            recharge_speed: 0.15,
+            spread: -100.0,
+            aim: true,
+            damage: hashmap!(DamageType::Magic => 4.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let card = Card {
+        name: "lightning",
+        desc: "zaps that chain",
+        ty: CardType::Projectile(projectile, false),
+        sprite: 31,
+        ..Default::default()
+    };
+    // basically make 3 inner copies of the spell, such that the lightning chains thrice.
+    let mut last = card;
+    for _ in 0..3 {
+        let old = last;
+        last = old.clone();
+
+        if let CardType::Projectile(proj, _) = &mut last.ty {
+            proj.payload = vec![old];
+        }
+    }
+    // make the very last projectile NOT have aiming or negative spread
+    if let CardType::Projectile(proj, _) = &mut last.ty {
+        proj.modifier_data.aim = false;
+        proj.modifier_data.spread = 0.0;
+    }
+    last
+}
+pub fn hammer() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Sprite(16, SpriteRotationMode::Spin),
+        hit_sound: ProjectileSound::Hit,
+        drag: 0.02,
+        modifier_data: CardModifierData {
+            speed: 3.0,
+            lifetime: 60.0,
+            shoot_delay: 0.85,
+            recharge_speed: -0.25,
+            damage: hashmap!(DamageType::Pierce => 8.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    Card {
+        name: "hammer",
+        desc: "throws a hammer",
+        ty: CardType::Projectile(projectile, false),
+        sprite: 30,
+        ..Default::default()
+    }
+}
+pub fn ghost_shot() -> Card {
+    Card {
+        name: "ghost shot",
+        desc: "lets proj go\nthrough walls",
+        ty: CardType::Modifier(CardModifierData {
+            ghost: true,
+            ..Default::default()
+        }),
+        sprite: 29,
+        ..Default::default()
+    }
+}
+pub fn scatter() -> Card {
+    Card {
+        name: "scatter",
+        desc: "fast but inaccurate",
+        ty: CardType::Modifier(CardModifierData {
+            spread: 40.0_f32.to_radians(),
+            shoot_delay: -0.2,
+            recharge_speed: -0.3,
+            ..Default::default()
+        }),
+        sprite: 28,
+        ..Default::default()
+    }
+}
+pub fn high_precision() -> Card {
+    Card {
+        name: "high precision",
+        desc: "reduces spread",
+        ty: CardType::Modifier(CardModifierData {
+            spread: -40.0_f32.to_radians(),
+            ..Default::default()
+        }),
+        sprite: 27,
+        ..Default::default()
+    }
+}
 pub fn playing_card() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(15, SpriteRotationMode::Spin),
-        straight: true,
         random_damage: Some((0, 10)),
         hit_sound: ProjectileSound::Hit,
         modifier_data: CardModifierData {
             speed: 4.0,
-            lifetime: 60.0,
+            lifetime: 30.0,
             shoot_delay: 0.15,
-            piercing: false,
             ..Default::default()
         },
         ..Default::default()
@@ -438,9 +575,9 @@ pub fn stun_explosion() -> Card {
     let explosion_projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::STUN_EXPLOSION),
         extra_size: SPRITE_SIZE,
-        stuns: 20,
         fire_sound: ProjectileSound::Explosion,
         modifier_data: CardModifierData {
+            stuns: 20,
             speed: 0.0,
             lifetime: 0.0,
             shoot_delay: 0.85,
@@ -486,8 +623,8 @@ pub fn banana() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(14, SpriteRotationMode::Spin),
         drag: 0.07,
-        stuns: 20,
         modifier_data: CardModifierData {
+            stuns: 20,
             speed: 2.0,
             lifetime: 40.0,
             shoot_delay: 0.85,

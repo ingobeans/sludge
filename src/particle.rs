@@ -42,15 +42,20 @@ fn ray_particle(
     particles: &Spritesheet,
     colors: (Color, Color),
     sprite: usize,
+    size: f32,
 ) {
     let projectile_speed = 8.0;
     let travel_frames = life.min(3);
-    let origin_x = x - direction.x * projectile_speed * travel_frames as f32;
-    let origin_y = y - direction.y * projectile_speed * travel_frames as f32 + 4.0;
+    let origin_x = x - direction.x * projectile_speed * travel_frames as f32
+        + SPRITE_SIZE / 2.0
+        + direction.x * SPRITE_SIZE / 2.0;
+    let origin_y = y - direction.y * projectile_speed * travel_frames as f32
+        + SPRITE_SIZE / 2.0
+        + direction.y * SPRITE_SIZE / 2.0;
 
     if life <= 3 {
         let width = 8.0 * 3.0;
-        let height = 4.0;
+        let height = size;
         let mut params = DrawRectangleParams {
             offset: Vec2::ZERO,
             rotation: direction.to_angle(),
@@ -71,6 +76,44 @@ fn ray_particle(
         particles,
     );
 }
+
+pub const SHOTGUN: Particle = Particle {
+    life: 0,
+    lifetime: 0,
+    function: &|this, x, y, direction, particles| {
+        // draw little explosion at origin for the first couple of frames
+        if this.life <= 3 {
+            let projectile_speed = 8.0;
+            let origin_x = x - direction.x * projectile_speed * this.life as f32
+                + SPRITE_SIZE / 2.0
+                + direction.x * SPRITE_SIZE / 2.0;
+            let origin_y = y - direction.y * projectile_speed * this.life as f32
+                + SPRITE_SIZE / 2.0
+                + direction.y * SPRITE_SIZE / 2.0;
+            basic_animation_particle(this.life, 3, origin_x, origin_y, 32 + 16, 1, 3, particles);
+        }
+
+        particles.draw_tile(x, y, 17, false, direction.to_angle());
+    },
+};
+
+pub const LIGHTNING: Particle = Particle {
+    life: 0,
+    lifetime: 5,
+    function: &|this, x, y, direction, particles: &Spritesheet| {
+        ray_particle(
+            this.life,
+            this.lifetime,
+            x,
+            y,
+            direction,
+            particles,
+            (COLOR_CYAN, COLOR_CYAN),
+            64 + 13,
+            1.0,
+        );
+    },
+};
 
 pub const STUNNED: Particle = Particle {
     life: 0,
@@ -93,6 +136,7 @@ pub const DEATH_RAY: Particle = Particle {
             particles,
             (COLOR_RED, COLOR_BLACK),
             32 + 10,
+            4.0,
         );
     },
 };
@@ -109,6 +153,7 @@ pub const SUNBEAM: Particle = Particle {
             particles,
             (COLOR_YELLOW, COLOR_WHITE),
             32 * 2 + 10,
+            4.0,
         );
     },
 };
@@ -125,6 +170,7 @@ pub const FREEZE_RAY: Particle = Particle {
             particles,
             (COLOR_CYAN, COLOR_WHITE),
             32 * 3 + 10,
+            4.0,
         );
     },
 };

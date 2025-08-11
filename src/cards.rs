@@ -17,6 +17,10 @@ pub fn get_cards() -> Vec<Card> {
         library::speed(),
         library::acidify(),
         library::supercharge(),
+        library::high_precision(),
+        library::scatter(),
+        library::ghost_shot(),
+        library::shock(),
         //library::piercing(), // piercing is disabled because its wayyyy to OP and im not sure how i want to nerf it
         library::freezeify(),
         // multidraw
@@ -41,6 +45,9 @@ pub fn get_cards() -> Vec<Card> {
         library::death_ray(),
         library::sunbeam(),
         library::freeze_ray(),
+        library::hammer(),
+        library::lightning(),
+        library::shotgun(),
     ];
 
     if cards.len() as u8 > u8::MAX / 2 {
@@ -121,10 +128,15 @@ pub struct Projectile {
     pub payload: Vec<Card>,
     /// Released on death. Used by ex. the bomb exploding when its lifetime runs out.
     pub death_payload: Vec<Card>,
-    /// Can projectile travel through walls?
-    pub ghost: bool,
-    /// How many frames of stun does this give enemies?
-    pub stuns: u8,
+    /// Ghost frames allow projectile to travel through walls.
+    /// Different to [CardModifierData]'s ghost, as this is only for a couple of frames.
+    /// Used such that payloads of projectiles that hit a wall are allowed a couple frames
+    /// to bounce away.
+    pub ghost_frames: u8,
+    /// How many "clones" the projectile has. Ex. the shotgun spell shoots 3 projectiles at a time,
+    /// therefore it has 2 clones.
+    pub clones_amount: u8,
+    pub only_enemy_triggers: bool,
     /// Is the projectile immune to being rotated, i.e. by homing modifier?
     pub straight: bool,
     pub hit_sound: ProjectileSound,
@@ -171,13 +183,19 @@ pub struct CardModifierData {
     pub recharge_speed: f32,
     pub aim: bool,
     pub homing: bool,
+    /// How many frames of stun does this give enemies?
+    pub stuns: u8,
     pub lifetime: f32,
     /// Can projectile hit multiple enemies
     pub piercing: bool,
     /// Stops projectile from interacting with enemies at all, like the bomb,
     /// which doesn't get destroyed, nor deal damage on impact.
     pub anti_piercing: bool,
+    /// Can projectile travel through walls/obstacles
+    pub ghost: bool,
     pub speed: f32,
+    /// Degrees (in radians) of spread/inaccuracy
+    pub spread: f32,
     pub damage: HashMap<DamageType, f32>,
 }
 impl CardModifierData {
@@ -205,9 +223,14 @@ impl CardModifierData {
                 fields.push((k, field.to_string()));
             }
         }
+        if fields.len() < 3 {
+            if self.spread != 0.0 {
+                fields.push(("spread", self.spread.to_degrees().to_string() + " deg"));
+            }
+        }
         fields
     }
-    /// Like [CardModifierData::merge] but only merges shoot_delay and recharge_speed fields, which are the only fields that
+    /// Like [CardModifierData::merge] but only merges shoot_delay, recharge_speed fields, which are the only fields that
     /// projectile type cards modify
     pub fn merge_projectile(&mut self, other: &CardModifierData) {
         self.shoot_delay += other.shoot_delay;
@@ -220,7 +243,10 @@ impl CardModifierData {
         self.homing |= other.homing;
         self.lifetime += other.lifetime;
         self.piercing |= other.piercing;
+        self.ghost |= other.ghost;
         self.speed += other.speed;
+        self.spread += other.spread;
+        self.stuns += other.stuns;
         for (k, v) in &other.damage {
             if let Some(amt) = self.damage.get_mut(k) {
                 *amt += v;
@@ -263,7 +289,7 @@ impl Card {
         );
         card_sheet.draw_tile(x, y, self.sprite, false, 0.0);
         if self.is_trigger {
-            card_sheet.draw_tile(x - 1.0, y - 1.0, 32, false, 0.0);
+            card_sheet.draw_tile(x - 1.0, y - 1.0, 32 * 3, false, 0.0);
         }
     }
 }

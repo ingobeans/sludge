@@ -37,6 +37,9 @@ fn get_direction_nearest_enemy(enemies: &Vec<Enemy>, x: f32, y: f32) -> Option<V
     }
     let mut nearest: (f32, Vec2) = (f32::MAX, Vec2::ZERO);
     for enemy in enemies {
+        if enemy.health <= 0.0 {
+            continue;
+        }
         let distance = ((enemy.x - x).powi(2) + (enemy.y - y).powi(2)).sqrt();
         if distance < nearest.0 {
             nearest = (distance, Vec2::new(enemy.x - x, enemy.y - y).normalize())
@@ -464,6 +467,9 @@ impl Sludge {
             projectile.x += projectile.direction.x * projectile.modifier_data.speed;
             projectile.y += projectile.direction.y * projectile.modifier_data.speed;
             projectile.life += 1.0;
+            if projectile.ghost_frames > 0 {
+                projectile.ghost_frames -= 1;
+            }
 
             projectile.modifier_data.speed =
                 projectile.modifier_data.speed.lerp(0.0, projectile.drag);
@@ -538,17 +544,23 @@ impl Sludge {
                             }
                         }
                         // stun enemy if projectile has stun frames
-                        if projectile.stuns > 0 {
-                            enemy.state.stun_frames =
-                                enemy.state.stun_frames.saturating_add(projectile.stuns);
-                            let mut particle = particle::STUNNED;
-                            particle.lifetime = projectile.stuns;
-                            self.orphaned_particles.push((
-                                particle,
-                                enemy.x,
-                                enemy.y,
-                                projectile.direction,
-                            ));
+                        if projectile.modifier_data.stuns > 0 {
+                            enemy.state.stun_frames = enemy
+                                .state
+                                .stun_frames
+                                .saturating_add(projectile.modifier_data.stuns);
+
+                            // spawn particles to show stun (given that the enemy isnt dead)
+                            if enemy.health > 0.0 {
+                                let mut particle = particle::STUNNED;
+                                particle.lifetime = projectile.modifier_data.stuns;
+                                self.orphaned_particles.push((
+                                    particle,
+                                    enemy.x,
+                                    enemy.y,
+                                    projectile.direction,
+                                ));
+                            }
                         }
 
                         // send trigger payload
@@ -579,7 +591,11 @@ impl Sludge {
                 }
             }
             // check for collisions
-            if !projectile.ghost && projectile.x > 0.0 && projectile.y > 0.0 {
+            if !projectile.modifier_data.ghost
+                && projectile.ghost_frames == 0
+                && projectile.x > 0.0
+                && projectile.y > 0.0
+            {
                 let (x, y) = (
                     (projectile.x + SPRITE_SIZE / 2.0) as usize / SPRITE_SIZE_USIZE,
                     (projectile.y + SPRITE_SIZE / 2.0) as usize / SPRITE_SIZE_USIZE,
@@ -589,9 +605,15 @@ impl Sludge {
                     && self.map.obstructions[y][x] != 0
                 {
                     // send trigger payload
-                    if !projectile.payload.is_empty() {
-                        self.projectile_spawnlist
-                            .append(&mut projectile.fire_payload());
+                    if !projectile.payload.is_empty() && !projectile.only_enemy_triggers {
+                        let mut spawnlist = projectile.fire_payload();
+                        // flip their direction, so payload is shot off like a bounce off the obstacle
+                        let inverted = Vec2::from_angle(PI + projectile.direction.to_angle());
+                        for p in spawnlist.iter_mut() {
+                            p.direction = inverted;
+                            p.ghost_frames = 10;
+                        }
+                        self.projectile_spawnlist.append(&mut spawnlist);
                     }
                     return true;
                 }
@@ -628,7 +650,9 @@ impl Sludge {
                 if let Some(direction_nearest) =
                     get_direction_nearest_enemy(&self.enemies, projectile.x, projectile.y)
                 {
-                    projectile.direction = direction_nearest;
+                    let max_spread = projectile.modifier_data.spread.max(0.0);
+                    let spread = rand::gen_range(-max_spread, max_spread);
+                    projectile.direction = Vec2::from_angle(direction_nearest.to_angle() + spread);
                 }
             }
 

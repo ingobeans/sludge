@@ -1,6 +1,9 @@
 use std::collections::VecDeque;
 
-use macroquad::{math::Vec2, rand::RandomRange};
+use macroquad::{
+    math::Vec2,
+    rand::{self, rand, RandomRange},
+};
 
 use crate::{
     cards::{Card, CardType, FiringContext, Projectile},
@@ -140,11 +143,15 @@ pub fn fire_deck(
         if let CardType::Projectile(mut projectile, _) = card.ty {
             projectile.modifier_data.merge(&context.modifier_data);
 
-            let spread = RandomRange::gen_range(-SPREAD, SPREAD);
+            let max_spread = projectile.modifier_data.spread.max(0.0);
             projectile.x = origin_x;
             projectile.y = origin_y;
-            projectile.direction = Vec2::from_angle(direction.to_angle() + spread);
-            context.spawn_list.push(projectile);
+            for _ in 0..projectile.clones_amount + 1 {
+                let mut projectile = projectile.clone();
+                let spread = rand::gen_range(-max_spread, max_spread);
+                projectile.direction = Vec2::from_angle(direction.to_angle() + spread);
+                context.spawn_list.push(projectile);
+            }
         }
     }
 }
@@ -156,6 +163,7 @@ impl Tower {
     pub fn shoot(&mut self) -> Vec<Projectile> {
         let (drawn, should_recharge) = self.draw_next();
         let mut context = FiringContext::default();
+        context.modifier_data.spread = DEFAULT_SPREAD;
         context.modifier_data.recharge_speed = self.recharge_speed;
         context.modifier_data.shoot_delay = self.shoot_delay;
         fire_deck(self.x, self.y, self.direction, drawn, &mut context);
