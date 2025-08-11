@@ -466,7 +466,7 @@ pub fn bomb() -> Card {
         modifier_data: CardModifierData {
             speed: 2.0,
             lifetime: 40.0,
-            piercing: true,
+            anti_piercing: true,
             shoot_delay: 0.85,
             ..Default::default()
         },

@@ -172,7 +172,11 @@ pub struct CardModifierData {
     pub aim: bool,
     pub homing: bool,
     pub lifetime: f32,
+    /// Can projectile hit multiple enemies
     pub piercing: bool,
+    /// Stops projectile from interacting with enemies at all, like the bomb,
+    /// which doesn't get destroyed, nor deal damage on impact.
+    pub anti_piercing: bool,
     pub speed: f32,
     pub damage: HashMap<DamageType, f32>,
 }

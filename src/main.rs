@@ -479,91 +479,94 @@ impl Sludge {
                     projectile.direction = target_dir;
                 }
             }
-            // check if projectile hit any enemy
-            for enemy in self.enemies.iter_mut() {
-                // check that enemy hasnt already been killed this frame
-                if enemy.health <= 0.0 {
-                    continue;
-                }
+            if !projectile.modifier_data.anti_piercing {
+                // check if projectile hit any enemy
+                for enemy in self.enemies.iter_mut() {
+                    // check that enemy hasnt already been killed this frame
+                    if enemy.health <= 0.0 {
+                        continue;
+                    }
 
-                let distance =
-                    ((enemy.x - projectile.x).powi(2) + (enemy.y - projectile.y).powi(2)).sqrt();
-                if distance < 8.0 + projectile.extra_size {
-                    // hit!
-                    for (damage_type, mut amount) in projectile.modifier_data.damage.clone() {
-                        match &enemy.ty.damage_resistance {
-                            // skip damage of enemy if fully resistant
-                            DamageResistance::Full(ty) => {
-                                if *ty == damage_type {
-                                    continue;
+                    let distance = ((enemy.x - projectile.x).powi(2)
+                        + (enemy.y - projectile.y).powi(2))
+                    .sqrt();
+                    if distance < 8.0 + projectile.extra_size {
+                        // hit!
+                        for (damage_type, mut amount) in projectile.modifier_data.damage.clone() {
+                            match &enemy.ty.damage_resistance {
+                                // skip damage of enemy if fully resistant
+                                DamageResistance::Full(ty) => {
+                                    if *ty == damage_type {
+                                        continue;
+                                    }
                                 }
-                            }
-                            // halve damage if enemy partially resistant
-                            DamageResistance::Partial(ty) => {
-                                if *ty == damage_type {
-                                    amount /= 2.0;
+                                // halve damage if enemy partially resistant
+                                DamageResistance::Partial(ty) => {
+                                    if *ty == damage_type {
+                                        amount /= 2.0;
+                                    }
                                 }
+                                DamageResistance::None => {}
                             }
-                            DamageResistance::None => {}
+                            enemy.health -= amount;
                         }
-                        enemy.health -= amount;
-                    }
-                    // if projectile deals random damage, apply that
-                    if let Some((min, max)) = projectile.random_damage {
-                        let amount = rand::gen_range(min, max) as f32;
-                        enemy.health -= amount;
-                    }
-                    // play sound
-                    projectile.hit_sound.play(&self.sfx_manager);
-                    projectile.hit_sound = ProjectileSound::None;
+                        // if projectile deals random damage, apply that
+                        if let Some((min, max)) = projectile.random_damage {
+                            let amount = rand::gen_range(min, max) as f32;
+                            enemy.health -= amount;
+                        }
+                        // play sound
+                        projectile.hit_sound.play(&self.sfx_manager);
+                        projectile.hit_sound = ProjectileSound::None;
 
-                    // also check whether enemy should be frozen
-                    // if projectile deals cold damage
-                    if projectile
-                        .modifier_data
-                        .damage
-                        .get(&DamageType::Cold)
-                        .is_some_and(|f| *f > 0.0)
-                    {
-                        let is_cold_resistant = match enemy.ty.damage_resistance {
-                            DamageResistance::None => false,
-                            DamageResistance::Full(ty) => matches!(ty, DamageType::Cold),
-                            DamageResistance::Partial(ty) => matches!(ty, DamageType::Cold),
-                        };
-                        // if enemy isnt cold resistant
-                        if !is_cold_resistant {
-                            enemy.state.freeze_frames = FREEZE_TIME;
+                        // also check whether enemy should be frozen
+                        // if projectile deals cold damage
+                        if projectile
+                            .modifier_data
+                            .damage
+                            .get(&DamageType::Cold)
+                            .is_some_and(|f| *f > 0.0)
+                        {
+                            let is_cold_resistant = match enemy.ty.damage_resistance {
+                                DamageResistance::None => false,
+                                DamageResistance::Full(ty) => matches!(ty, DamageType::Cold),
+                                DamageResistance::Partial(ty) => matches!(ty, DamageType::Cold),
+                            };
+                            // if enemy isnt cold resistant
+                            if !is_cold_resistant {
+                                enemy.state.freeze_frames = FREEZE_TIME;
+                            }
                         }
-                    }
-                    // stun enemy if projectile has stun frames
-                    if projectile.stuns > 0 {
-                        enemy.state.stun_frames =
-                            enemy.state.stun_frames.saturating_add(projectile.stuns);
-                        let mut particle = particle::STUNNED;
-                        particle.lifetime = projectile.stuns;
+                        // stun enemy if projectile has stun frames
+                        if projectile.stuns > 0 {
+                            enemy.state.stun_frames =
+                                enemy.state.stun_frames.saturating_add(projectile.stuns);
+                            let mut particle = particle::STUNNED;
+                            particle.lifetime = projectile.stuns;
+                            self.orphaned_particles.push((
+                                particle,
+                                enemy.x,
+                                enemy.y,
+                                projectile.direction,
+                            ));
+                        }
+
+                        // send trigger payload
+                        if !projectile.payload.is_empty() {
+                            self.projectile_spawnlist
+                                .append(&mut projectile.fire_payload());
+                        }
+                        // spawn hitmarker particle
                         self.orphaned_particles.push((
-                            particle,
-                            enemy.x,
-                            enemy.y,
+                            particle::HIT_MARKER,
+                            projectile.x,
+                            projectile.y,
                             projectile.direction,
                         ));
-                    }
-
-                    // send trigger payload
-                    if !projectile.payload.is_empty() {
-                        self.projectile_spawnlist
-                            .append(&mut projectile.fire_payload());
-                    }
-                    // spawn hitmarker particle
-                    self.orphaned_particles.push((
-                        particle::HIT_MARKER,
-                        projectile.x,
-                        projectile.y,
-                        projectile.direction,
-                    ));
-                    if !projectile.modifier_data.piercing {
-                        // kil projectile if not piercing
-                        return true;
+                        if !projectile.modifier_data.piercing {
+                            // kil projectile if not piercing
+                            return true;
+                        }
                     }
                 }
             }
