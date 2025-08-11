@@ -164,11 +164,12 @@ pub fn parse_points_from_tilemap(map: &TileMap) -> Vec<(f32, f32)> {
                 let y = y as f32;
                 current_x = x;
                 current_y = y;
-                points.push((x, y));
                 break 'master;
             }
         }
     }
+    let start_x = current_x;
+    let start_y = current_y;
 
     let neighbour_directions = [(0, 1), (0, -1), (1, 0), (-1, 0)];
     'master: loop {
@@ -183,12 +184,32 @@ pub fn parse_points_from_tilemap(map: &TileMap) -> Vec<(f32, f32)> {
                 continue;
             }
             if map[y as usize][x as usize] == 34 {
+                // if the first point after the start, then calc the direction to start,
+                // to shift the actual spawn point one tile offscreen
+                if points.is_empty() {
+                    let dir_x = start_x - x;
+                    let dir_y = start_y - y;
+                    let new_x = start_x + dir_x;
+                    let new_y = start_y + dir_y;
+                    points.push((new_x, new_y));
+                    points.push((start_x, start_y));
+                }
                 current_x = x;
                 current_y = y;
                 points.push((x, y));
                 continue 'master;
             }
         }
+        // calc direction between last and second to last point
+        // to 'extrapolate' a new final point, thats one tile offscreen
+        let (prev_x, prev_y) = points[points.len() - 2];
+        let dir_x = current_x - prev_x;
+        let dir_y = current_y - prev_y;
+        let new_x = current_x + dir_x;
+        let new_y = current_y + dir_y;
+
+        points.push((new_x, new_y));
+
         return points;
     }
 }
