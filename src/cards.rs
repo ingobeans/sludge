@@ -43,6 +43,10 @@ pub fn get_cards() -> Vec<Card> {
         library::freeze_ray(),
     ];
 
+    if cards.len() as u8 > u8::MAX / 2 {
+        panic!("too many cards to represent as u8 in save data!");
+    }
+
     let mut triggers = Vec::new();
     // generate trigger variants of projectile cards that allow it
     for card in &cards {

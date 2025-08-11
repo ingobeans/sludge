@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use bincode::{decode_from_std_read, encode_into_std_write, Decode, Encode};
 use macroquad::math::Vec2;
 
-use crate::cards::get_cards;
+use crate::cards::{get_cards, library, Card};
 use crate::map::Map;
 use crate::tower::get_towers;
 use crate::ui::TextEngine;
@@ -35,6 +35,28 @@ pub struct SaveData {
         [Option<(u8, u16)>; DEFAULT_SHOP_SLOTS_HORIZONTAL * DEFAULT_SHOP_SLOTS_VERTICAL],
     pub towers: [Option<TowerSaveData>; 4],
 }
+fn actualize_virtual_card(mut card: u8, cards: &Vec<Card>) -> Card {
+    let mut trigger = false;
+    let cards_len = cards.len() as u8;
+    if card > cards_len {
+        trigger = true;
+        card -= cards_len;
+    }
+    let card = cards[card as usize].clone();
+    if trigger {
+        library::as_trigger(card)
+    } else {
+        card
+    }
+}
+fn virtualize_card(card: &Card, cards: &Vec<Card>) -> u8 {
+    let mut index = cards.iter().position(|f| f == card).unwrap() as u8;
+    let cards_len = cards.len() as u8;
+    if card.is_trigger {
+        index += cards_len;
+    }
+    index
+}
 impl SaveData {
     pub fn create(sludge: &Sludge) -> Self {
         let all_cards = get_cards();
@@ -43,21 +65,14 @@ impl SaveData {
         let shop_items: [Option<(u8, u16)>; _] = std::array::from_fn(|index| {
             shop_items[index / DEFAULT_SHOP_SLOTS_HORIZONTAL][index % DEFAULT_SHOP_SLOTS_HORIZONTAL]
                 .take()
-                .map(|(card, price)| {
-                    (
-                        all_cards.iter().position(|f| f == &card).unwrap() as u8,
-                        price,
-                    )
-                })
+                .map(|(card, price)| (virtualize_card(&card, &all_cards), price))
         });
         let all_towers = get_towers([(0, 0); 4]);
         let mut towers = std::array::from_fn(|_| None);
         for tower in sludge.towers.iter() {
             let mut slots = std::array::from_fn(|_| None);
             for (index, slot) in tower.card_slots.iter().enumerate() {
-                slots[index] = slot
-                    .as_ref()
-                    .map(|card| (all_cards.iter().position(|f| f == card).unwrap() as u8))
+                slots[index] = slot.as_ref().map(|card| virtualize_card(card, &all_cards))
             }
             let index = all_towers.iter().position(|f| f == tower).unwrap();
             towers[index] = Some(TowerSaveData {
@@ -94,7 +109,8 @@ impl SaveData {
             if y >= cards.len() {
                 cards.push(Vec::new());
             }
-            let item = item.map(|(index, price)| (all_cards[index as usize].clone(), price));
+            let item =
+                item.map(|(index, price)| (actualize_virtual_card(index, &all_cards), price));
             cards.last_mut().unwrap().push(item);
         }
         let shop = ui::Shop { cards, open: false };
@@ -110,7 +126,7 @@ impl SaveData {
                     if card_index >= tower.card_slots.len() {
                         break;
                     }
-                    let card = card_data.map(|f| all_cards[f as usize].clone());
+                    let card = card_data.map(|f| actualize_virtual_card(f, &all_cards));
                     tower.card_slots[card_index] = card;
                 }
                 towers.push(tower);
