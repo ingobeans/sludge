@@ -255,13 +255,12 @@ impl Sludge {
                 }
             }
         }
-        if is_key_down(KeyCode::Space) {
-            if let Some(selected) = self.selected {
-                let tower = &mut self.towers[selected];
-                if tower.can_shoot() && !self.round_manager.in_progress {
-                    let mut spawn_queue = tower.shoot();
-                    self.projectile_spawnlist.append(&mut spawn_queue);
-                }
+        // make selected tower "test fire"
+        if let Some(selected) = self.selected {
+            let tower = &mut self.towers[selected];
+            if tower.can_shoot() && !self.round_manager.in_progress {
+                let mut spawn_queue = tower.shoot();
+                self.projectile_spawnlist.append(&mut spawn_queue);
             }
         }
     }
