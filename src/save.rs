@@ -39,6 +39,7 @@ pub struct SaveData {
     pub shop_items:
         [Option<(u8, u16)>; DEFAULT_SHOP_SLOTS_HORIZONTAL * DEFAULT_SHOP_SLOTS_VERTICAL],
     pub towers: [Option<TowerSaveData>; 4],
+    pub inventory: [Option<u8>; INV_SLOTS_HORIZONTAL * INV_SLOTS_VERTICAL],
 }
 fn actualize_virtual_card(mut card: u8, cards: &[Card]) -> Card {
     let mut trigger = false;
@@ -87,6 +88,11 @@ impl SaveData {
                 slots,
             });
         }
+        let inventory = std::array::from_fn(|index| {
+            sludge.ui_manager.inventory[index / INV_SLOTS_HORIZONTAL][index % INV_SLOTS_HORIZONTAL]
+                .as_ref()
+                .map(|f| virtualize_card(&f, &all_cards))
+        });
         Self {
             lives: sludge.lives,
             gold: sludge.ui_manager.gold,
@@ -94,6 +100,7 @@ impl SaveData {
             map_index: sludge.map_index as u8,
             shop_items,
             towers,
+            inventory,
         }
     }
     pub async fn load(&self, maps: &[Map], text_engine: TextEngine) -> Sludge {
@@ -137,9 +144,16 @@ impl SaveData {
                 towers.push(tower);
             }
         }
+        let inventory = std::array::from_fn(|y| {
+            std::array::from_fn(|x| {
+                self.inventory[y * INV_SLOTS_HORIZONTAL + x]
+                    .map(|card| actualize_virtual_card(card, &all_cards))
+            })
+        });
 
         new.ui_manager.shop = Some(shop);
         new.towers = towers;
+        new.ui_manager.inventory = inventory;
         new
     }
 }
