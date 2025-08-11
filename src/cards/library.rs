@@ -52,7 +52,6 @@ pub fn lightning() -> Card {
             speed: 8.0,
             lifetime: 3.0,
             shoot_delay: 0.70,
-            recharge_speed: 0.15,
             spread: -100.0,
             aim: true,
             damage: hashmap!(DamageType::Magic => 4.0),
@@ -81,6 +80,7 @@ pub fn lightning() -> Card {
     if let CardType::Projectile(proj, _) = &mut last.ty {
         proj.modifier_data.aim = false;
         proj.modifier_data.spread = 0.0;
+        proj.modifier_data.recharge_speed = 0.6;
     }
     last
 }

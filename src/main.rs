@@ -997,6 +997,7 @@ impl GameManager {
                 );
 
                 if clicked {
+                    // save the game if we're paused and exiting to menu
                     if let GameState::Paused = game.state {
                         if game.round_manager.round > 0
                             && !game.round_manager.in_progress
@@ -1005,6 +1006,10 @@ impl GameManager {
                             let data = SaveData::create(game);
                             write_save(data);
                         }
+                    }
+                    // delete save if player just lost/won the game and exiting to menu
+                    else {
+                        remove_save()
                     }
                     self.sludge = None;
                 }

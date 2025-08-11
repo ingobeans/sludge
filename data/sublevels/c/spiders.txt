@@ -1,5 +1,0 @@
-delay-10 spider-20 delay-30 armored_spider-3
-delay-25 armored_spider-5 delay-10 spider_warrior-5
-delay-15 spider-50 delay-60 spider-1 big_spider-1
-delay-15 spider_warrior-5 delay-10 spider-10 delay-30 armored_spider-10
-delay-5 spider-10 delay-20 spider_warrior-10 delay-30 armored_spider-5

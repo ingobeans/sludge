@@ -13,6 +13,9 @@ fn get_index_of_enemy(name: &str) -> usize {
 pub fn decode_rounds(data: &str, mut sublevels: Option<SublevelHashmap>) -> Vec<Round> {
     let mut rounds = Vec::new();
     for mut line in data.lines() {
+        if line.is_empty() {
+            continue;
+        }
         if line.starts_with("!") {
             line = line.trim_start_matches("!");
         }

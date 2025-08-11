@@ -96,7 +96,6 @@ static BABY_SPIDER: EnemyType = EnemyType {
     speed: 2.0,
     anim_speed: 1.6,
     max_health: 1.0,
-    damage_resistance: DamageResistance::None,
     ..DEFAULT_ENEMY_TYPE
 };
 static FIRE_MITE: EnemyType = EnemyType {
@@ -119,7 +118,6 @@ static HORSEY: EnemyType = EnemyType {
     size: 2,
     damage: 1,
     max_health: 8.0,
-    damage_resistance: DamageResistance::None,
     ..DEFAULT_ENEMY_TYPE
 };
 static SLIME: EnemyType = EnemyType {
@@ -138,7 +136,28 @@ static SPIDER: EnemyType = EnemyType {
     anim_length: 2,
     speed: 1.0,
     max_health: 3.0,
-    damage_resistance: DamageResistance::None,
+    ..DEFAULT_ENEMY_TYPE
+};
+static BIG_KNIGHT: EnemyType = EnemyType {
+    name: "big_knight",
+    sprite: 12 * 32,
+    anim_length: 2,
+    speed: 0.6,
+    damage: 14,
+    size: 2,
+    max_health: 85.0,
+    damage_resistance: DamageResistance::Full(DamageType::Pierce),
+    ..DEFAULT_ENEMY_TYPE
+};
+static GIGA_CULTIST: EnemyType = EnemyType {
+    name: "giga_cultist",
+    sprite: 12 * 32 + 8 + 2,
+    anim_length: 2,
+    damage: 20,
+    speed: 1.0,
+    size: 2,
+    max_health: 35.0,
+    damage_resistance: DamageResistance::Full(DamageType::Magic),
     ..DEFAULT_ENEMY_TYPE
 };
 pub static ENEMY_TYPES: &[EnemyType] = &[
@@ -174,7 +193,6 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         damage: 10,
         speed: 1.0,
         max_health: 20.0,
-        damage_resistance: DamageResistance::None,
         ..DEFAULT_ENEMY_TYPE
     },
     EnemyType {
@@ -183,7 +201,6 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         anim_length: 2,
         speed: 1.0 / 4.0,
         max_health: 30.0,
-        damage_resistance: DamageResistance::None,
         payload: EnemyPayload::Some(&BABY_SPIDER, 4),
         size: 2,
         ..DEFAULT_ENEMY_TYPE
@@ -235,11 +252,11 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         sprite: 4 * 32 + 2,
         anim_length: 5,
         damage: 15,
-        speed: 1.0 / 4.0,
+        speed: 0.25,
         size: 2,
         max_health: 65.0,
         damage_resistance: DamageResistance::Partial(DamageType::Burn),
-        payload: EnemyPayload::Some(&FIRE_MITE, 15),
+        payload: EnemyPayload::Some(&FIRE_MITE, 10),
         ..DEFAULT_ENEMY_TYPE
     },
     EnemyType {
@@ -249,7 +266,6 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         anim_speed: 0.8,
         speed: 1.7,
         max_health: 6.0,
-        damage_resistance: DamageResistance::None,
         ..DEFAULT_ENEMY_TYPE
     },
     EnemyType {
@@ -286,10 +302,64 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         name: "cultist",
         sprite: 11 * 32,
         anim_length: 2,
-        speed: 1.0,
+        speed: 1.2,
         damage: 2,
         max_health: 20.0,
         damage_resistance: DamageResistance::Full(DamageType::Magic),
+        ..DEFAULT_ENEMY_TYPE
+    },
+    EnemyType {
+        name: "knight",
+        sprite: 11 * 32 + 2,
+        anim_length: 2,
+        speed: 1.0,
+        damage: 4,
+        max_health: 15.0,
+        damage_resistance: DamageResistance::Full(DamageType::Pierce),
+        ..DEFAULT_ENEMY_TYPE
+    },
+    EnemyType {
+        name: "archer",
+        sprite: 11 * 32 + 4,
+        anim_length: 2,
+        speed: 1.2,
+        damage: 4,
+        max_health: 5.0,
+        ..DEFAULT_ENEMY_TYPE
+    },
+    EnemyType {
+        name: "big_knight_shield",
+        sprite: 12 * 32,
+        anim_length: 2,
+        speed: 0.55,
+        damage: 0,
+        size: 2,
+        max_health: 10.0,
+        payload: EnemyPayload::Some(&BIG_KNIGHT, 1),
+        damage_resistance: DamageResistance::Full(DamageType::Pierce),
+        ..DEFAULT_ENEMY_TYPE
+    },
+    EnemyType {
+        name: "dragon",
+        sprite: 9 * 32 + 4,
+        anim_length: 4,
+        damage: 15,
+        speed: 0.45,
+        size: 2,
+        max_health: 25.0,
+        damage_resistance: DamageResistance::Full(DamageType::Burn),
+        ..DEFAULT_ENEMY_TYPE
+    },
+    EnemyType {
+        name: "giga_cultist_shield",
+        sprite: 12 * 32 + 8,
+        anim_length: 1,
+        damage: 20,
+        speed: 1.0,
+        size: 2,
+        max_health: 15.0,
+        damage_resistance: DamageResistance::Partial(DamageType::Magic),
+        payload: EnemyPayload::Some(&GIGA_CULTIST, 1),
         ..DEFAULT_ENEMY_TYPE
     },
 ];

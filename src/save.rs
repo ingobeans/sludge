@@ -18,6 +18,11 @@ fn get_save_path() -> PathBuf {
 pub fn save_exists() -> bool {
     get_save_path().exists()
 }
+pub fn remove_save() {
+    if save_exists() {
+        let _ = std::fs::remove_file(get_save_path());
+    }
+}
 #[derive(Debug, PartialEq, Clone, Decode, Encode)]
 pub struct TowerSaveData {
     x: f32,
