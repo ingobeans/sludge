@@ -229,6 +229,11 @@ pub struct Card {
     pub sprite: usize,
     pub is_trigger: bool,
 }
+impl PartialEq for Card {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
 impl Card {
     pub fn draw(&self, card_sheet: &Spritesheet, x: f32, y: f32) {
         draw_rectangle(

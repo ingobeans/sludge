@@ -22,6 +22,11 @@ pub const STARTING_LIVES: u8 = 40;
 pub const STARTING_GOLD: u16 = 200;
 pub const GOLD_ROUND_REWARD: u16 = 100;
 
+pub const DEFAULT_SHOP_SLOTS_HORIZONTAL: usize = 4;
+pub const DEFAULT_SHOP_SLOTS_VERTICAL: usize = 1;
+
+pub const TOWER_MAX_SPELLS: usize = 16;
+
 pub const FREEZE_TIME: u8 = 90;
 
 pub const CARD_INFO_WIDTH: f32 = 64.0 + 32.0;

@@ -65,6 +65,11 @@ pub struct Tower {
     pub delay_counter: f32,
     pub direction: Vec2,
 }
+impl PartialEq for Tower {
+    fn eq(&self, other: &Self) -> bool {
+        self.sprite == other.sprite
+    }
+}
 
 fn draw_next(deck: &mut VecDeque<Card>) -> Vec<Card> {
     let mut cards = Vec::new();

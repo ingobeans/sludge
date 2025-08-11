@@ -1,12 +1,13 @@
 [package]
 name = "sludge"
-version = "0.1.60"
+version = "0.1.61"
 edition = "2021"
 
 [dependencies]
 include_directory = { version = "0.1.1", optional = true }
 hashmap_macro = "0.1.0"
 macroquad = "0.4.14"
+bincode = { version = "2.0.1", features = ["derive"] }
 
 [features]
 bundled = ["dep:include_directory"]

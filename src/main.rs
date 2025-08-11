@@ -14,6 +14,7 @@ use crate::enemy::*;
 use crate::map::*;
 use crate::particle::Particle;
 use crate::rounds::*;
+use crate::save::*;
 use crate::tower::*;
 use crate::ui::*;
 use macroquad::rand;
@@ -26,6 +27,7 @@ mod enemy;
 mod map;
 mod particle;
 mod rounds;
+mod save;
 mod tower;
 mod ui;
 
@@ -51,6 +53,7 @@ enum GameState {
 struct Sludge {
     state: GameState,
     map: Map,
+    map_index: usize,
     enemies: Vec<Enemy>,
     enemy_spawn_queue: VecDeque<(&'static EnemyType, f32, f32, EnemyState)>,
     towers: Vec<Tower>,
@@ -70,7 +73,7 @@ struct Sludge {
     particle_sheet: Spritesheet,
 }
 impl Sludge {
-    fn new(map: Map, text_engine: TextEngine, lab: bool) -> Self {
+    fn new(map: Map, map_index: usize, text_engine: TextEngine, lab: bool) -> Self {
         let tileset = load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE);
         let icon_sheet = load_spritesheet("data/assets/entities.png", SPRITE_SIZE_USIZE);
         let card_sheet = load_spritesheet("data/assets/cards.png", SPRITE_SIZE_USIZE);
@@ -89,6 +92,7 @@ impl Sludge {
         Self {
             state: GameState::Running,
             map,
+            map_index,
             enemies: Vec::with_capacity(100),
             enemy_spawn_queue: VecDeque::with_capacity(10),
             towers,
@@ -625,11 +629,9 @@ impl Sludge {
         for tower in self.towers.iter_mut() {
             if !tower.can_shoot() {
                 tower.delay_counter -= deltatime_ms as f32 / 1000.0;
-            } else {
-                if self.round_manager.in_progress {
-                    let mut spawn_queue = tower.shoot();
-                    self.projectile_spawnlist.append(&mut spawn_queue);
-                }
+            } else if self.round_manager.in_progress {
+                let mut spawn_queue = tower.shoot();
+                self.projectile_spawnlist.append(&mut spawn_queue);
             }
         }
     }
@@ -702,15 +704,22 @@ impl Sludge {
             self.ui_manager.gold += GOLD_ROUND_REWARD;
             self.round_manager.finish_round();
             if !self.lab {
-                self.ui_manager
-                    .open_shop(self.round_manager.round - 1, 4, 1);
+                self.ui_manager.open_shop(
+                    self.round_manager.round - 1,
+                    DEFAULT_SHOP_SLOTS_HORIZONTAL,
+                    DEFAULT_SHOP_SLOTS_VERTICAL,
+                );
             } else {
                 self.ui_manager.open_lab_shop();
             }
             // despawn all immortal projectiles so they dont carry over to next round,
             // because that would be kind of OP, allowing you to ex. build a larger and larger
             // heap of road thorns
-            self.kill_immortal_projectiles()
+            self.kill_immortal_projectiles();
+
+            // save
+            let data = SaveData::create(self);
+            write_save(data);
         }
     }
     fn kill_immortal_projectiles(&mut self) {
@@ -804,6 +813,23 @@ impl GameManager {
             button_height,
             "load save",
         );
+        if save_exists() {
+            if let Some(save) = read_save() {
+                if draw_button(
+                    &self.text_engine,
+                    left_padding,
+                    top_padding,
+                    button_width,
+                    button_height,
+                    local_x,
+                    local_y,
+                    "load save",
+                ) {
+                    let sludge = save.load(&self.maps, self.text_engine.clone());
+                    self.sludge = Some(sludge);
+                }
+            }
+        }
         if draw_button(
             &self.text_engine,
             left_padding - 2.0,
@@ -816,7 +842,7 @@ impl GameManager {
         ) {
             // start game
             // create new Sludge instance
-            let mut new = Sludge::new(self.maps[1].clone(), self.text_engine.clone(), false);
+            let mut new = Sludge::new(self.maps[1].clone(), 1, self.text_engine.clone(), false);
             // populate shop with starting options
             // let mut shop = std::array::from_fn(|_| None.clone());
             // for (index, card) in [library::magicbolt(), library::dart(), library::bomb()]
@@ -841,7 +867,7 @@ impl GameManager {
             local_y,
             "open lab",
         ) {
-            let mut new = Sludge::new(self.maps[0].clone(), self.text_engine.clone(), true);
+            let mut new = Sludge::new(self.maps[0].clone(), 0, self.text_engine.clone(), true);
             new.ui_manager.open_lab_shop();
             self.sludge = Some(new);
         }
@@ -945,6 +971,12 @@ impl GameManager {
                 );
 
                 if clicked {
+                    if let GameState::Paused = game.state {
+                        if game.round_manager.round > 0 {
+                            let data = SaveData::create(game);
+                            write_save(data);
+                        }
+                    }
                     self.sludge = None;
                 }
             }

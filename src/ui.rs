@@ -63,8 +63,8 @@ impl TextEngine {
 }
 
 pub struct Shop {
-    cards: Vec<Vec<Option<(Card, u16)>>>,
-    open: bool,
+    pub cards: Vec<Vec<Option<(Card, u16)>>>,
+    pub open: bool,
 }
 
 pub struct UIManager {
@@ -88,7 +88,7 @@ impl UIManager {
         }
     }
     pub fn open_lab_shop(&mut self) {
-        let was_open = self.shop.as_ref().map_or(false, |f| f.open);
+        let was_open = self.shop.as_ref().is_some_and(|f| f.open);
         let mut shop_cards: Vec<Vec<Option<(Card, u16)>>> = Vec::new();
         let all_cards = get_cards();
         let slots_horizontal = 8;
@@ -205,20 +205,19 @@ impl UIManager {
             for x in 0..shop.cards[0].len() {
                 let tile_y = SHOP_PADDING + shop_y + 2.0 + y as f32 * SHOP_CARD_HEIGHT;
                 let tile_x = 2.0 + x as f32 * SHOP_CARD_WIDTH;
-                if local_x == local_x.clamp(tile_x, tile_x + CARD_SIZE)
+                if self.cursor_card.is_none()
+                    && local_x == local_x.clamp(tile_x, tile_x + CARD_SIZE)
                     && local_y == local_y.clamp(tile_y, tile_y + CARD_SIZE)
                     && shop.cards[y][x].is_some()
                 {
-                    if self.cursor_card.is_none() {
-                        let price = (shop.cards[y][x].as_ref()).map(|f| f.1).unwrap();
-                        if self.gold >= price {
-                            self.gold -= price;
-                            let (card, _) = shop.cards[y][x].take().unwrap();
-                            self.cursor_card = Some(card);
-                            self.inventory_open = true;
-                        }
-                        return true;
+                    let price = (shop.cards[y][x].as_ref()).map(|f| f.1).unwrap();
+                    if self.gold >= price {
+                        self.gold -= price;
+                        let (card, _) = shop.cards[y][x].take().unwrap();
+                        self.cursor_card = Some(card);
+                        self.inventory_open = true;
                     }
+                    return true;
                 }
             }
         }
