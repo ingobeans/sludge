@@ -1,8 +1,15 @@
-use std::collections::HashMap;
 #[cfg(not(feature = "bundled"))]
 use std::fs::{read_dir, read_to_string};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
-use macroquad::texture::Texture2D;
+use macroquad::{
+    audio::{load_sound_from_bytes, play_sound, PlaySoundParams, Sound},
+    prelude::*,
+    rand,
+};
 
 use crate::{
     map::{
@@ -11,6 +18,76 @@ use crate::{
     },
     rounds::{decode_rounds, Round, RoundManager},
 };
+
+async fn load_sounds(path: &Path) -> Vec<Sound> {
+    let mut sounds: Vec<Option<Sound>> = vec![None];
+    for (mut index, sound) in sounds.iter_mut().enumerate() {
+        index += 1;
+        let bytes;
+        let path = path.join(index.to_string() + ".wav");
+        #[cfg(feature = "bundled")]
+        {
+            bytes = DATA.get_file(&path[5..]).unwrap().contents();
+        }
+        #[cfg(not(feature = "bundled"))]
+        {
+            let error = format!("{:?} is missing!!", path);
+            use std::fs::read;
+
+            bytes = read(path).expect(&error);
+        }
+        *sound = Some(load_sound_from_bytes(&bytes).await.unwrap());
+    }
+    sounds.into_iter().flatten().collect()
+}
+#[derive(Clone)]
+pub enum ProjectileSound {
+    Hit,
+    None,
+    Explosion,
+}
+impl ProjectileSound {
+    pub fn play(&self, sfx_manager: &SFXManager) {
+        match self {
+            ProjectileSound::None => {}
+            ProjectileSound::Hit => SFXManager::play_sound(&sfx_manager.hit),
+            ProjectileSound::Explosion => SFXManager::play_sound(&sfx_manager.explosion),
+        }
+    }
+}
+impl Default for ProjectileSound {
+    fn default() -> Self {
+        Self::None
+    }
+}
+type SFX = (Vec<Sound>, f32);
+pub struct SFXManager {
+    pub explosion: SFX,
+    pub hit: SFX,
+}
+impl SFXManager {
+    pub async fn new() -> Self {
+        SFXManager {
+            explosion: (
+                load_sounds(&PathBuf::from("data/sfx/explosion/")).await,
+                0.3,
+            ),
+            hit: (load_sounds(&PathBuf::from("data/sfx/hit/")).await, 0.2),
+        }
+    }
+    pub fn play_sound(sounds: &SFX) {
+        let sound = &sounds.0[rand::gen_range(0, sounds.0.len())];
+
+        play_sound(
+            sound,
+            PlaySoundParams {
+                looped: false,
+                volume: sounds.1,
+            },
+        );
+    }
+}
+
 #[cfg(feature = "bundled")]
 use include_directory::{include_directory, Dir};
 
@@ -69,8 +146,8 @@ pub fn load_maps() -> Vec<Map> {
             background,
             out_of_bounds,
             obstructions,
-            path,
             tower_spawnpoints: parse_spawnpoints_from_tilemap(&path),
+            path,
         };
         maps.push(map);
     }

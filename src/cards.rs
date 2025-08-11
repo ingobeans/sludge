@@ -2,7 +2,9 @@ use std::{collections::HashMap, fmt::Debug};
 
 use macroquad::{color::Color, math::Vec2, shapes::draw_rectangle};
 
-use crate::{consts::*, map::Spritesheet, particle::Particle, tower::fire_deck};
+use crate::{
+    assets::ProjectileSound, consts::*, map::Spritesheet, particle::Particle, tower::fire_deck,
+};
 
 pub mod library;
 
@@ -99,7 +101,6 @@ impl Default for ProjectileDrawType {
         Self::None
     }
 }
-
 #[derive(Default, Clone)]
 pub struct Projectile {
     pub x: f32,
@@ -122,6 +123,8 @@ pub struct Projectile {
     pub stuns: u8,
     /// Is the projectile immune to being rotated, i.e. by homing modifier?
     pub straight: bool,
+    pub hit_sound: ProjectileSound,
+    pub fire_sound: ProjectileSound,
     pub random_damage: Option<(u8, u8)>,
     pub modifier_data: CardModifierData,
 }

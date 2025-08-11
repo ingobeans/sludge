@@ -60,8 +60,7 @@ impl Spritesheet {
     }
 }
 
-pub type TileMap =
-    [[usize; SCREEN_WIDTH_USIZE / SPRITE_SIZE_USIZE]; SCREEN_HEIGHT_USIZE / SPRITE_SIZE_USIZE];
+pub type TileMap = Vec<[usize; SCREEN_WIDTH_USIZE / SPRITE_SIZE_USIZE]>;
 
 #[derive(Debug)]
 #[allow(dead_code)]
@@ -208,16 +207,15 @@ pub fn parse_tilemap_layer(xml: &str, layer_name: &str) -> Result<TileMap, BadMa
         .0;
     let mut split = xml.split(',');
     let mut data: TileMap =
-        [[0; SCREEN_WIDTH_USIZE / SPRITE_SIZE_USIZE]; SCREEN_HEIGHT_USIZE / SPRITE_SIZE_USIZE];
-    for y in 0..data.len() {
-        for x in 0..data[0].len() {
-            data[y][x] = split
+        vec![[0; SCREEN_WIDTH_USIZE / SPRITE_SIZE_USIZE]; SCREEN_HEIGHT_USIZE / SPRITE_SIZE_USIZE];
+    for row in &mut data {
+        for element in row {
+            *element = split
                 .next()
                 .ok_or(BadMapDataError("layer data too short!"))?
                 .trim()
                 .parse()
-                .ok()
-                .ok_or(BadMapDataError("layer data has invalid digit"))?
+                .map_err(|_| BadMapDataError("layer data has invalid digit"))?
         }
     }
     Ok(data)

@@ -76,14 +76,15 @@ impl SaveData {
             towers,
         }
     }
-    pub fn load(&self, maps: &[Map], text_engine: TextEngine) -> Sludge {
+    pub async fn load(&self, maps: &[Map], text_engine: TextEngine) -> Sludge {
         let all_cards = get_cards();
         let mut new = Sludge::new(
             maps[self.map_index as usize].clone(),
             self.map_index as usize,
             text_engine,
             false,
-        );
+        )
+        .await;
         new.lives = self.lives;
         new.ui_manager.gold = self.gold;
         new.round_manager.round = self.round_index as usize;

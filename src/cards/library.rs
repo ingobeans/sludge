@@ -12,6 +12,7 @@ pub fn playing_card() -> Card {
         draw_type: ProjectileDrawType::Sprite(15, SpriteRotationMode::Spin),
         straight: true,
         random_damage: Some((0, 10)),
+        hit_sound: ProjectileSound::Hit,
         modifier_data: CardModifierData {
             speed: 4.0,
             lifetime: 60.0,
@@ -119,6 +120,7 @@ pub fn road_thorns() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(13, SpriteRotationMode::None),
         drag: 0.15,
+        hit_sound: ProjectileSound::Hit,
         modifier_data: CardModifierData {
             speed: 1.5,
             lifetime: -1.0,
@@ -140,6 +142,7 @@ pub fn road_thorns() -> Card {
 pub fn icecicle() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(12, SpriteRotationMode::Direction),
+        hit_sound: ProjectileSound::Hit,
         modifier_data: CardModifierData {
             speed: 5.0,
             lifetime: 60.0,
@@ -271,6 +274,7 @@ pub fn homing() -> Card {
 pub fn magicbolt() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(0, SpriteRotationMode::Direction),
+        hit_sound: ProjectileSound::Hit,
         modifier_data: CardModifierData {
             speed: 7.0,
             lifetime: 30.0,
@@ -293,6 +297,7 @@ pub fn magicbolt() -> Card {
 pub fn thorn_dart() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(7, SpriteRotationMode::Direction),
+        hit_sound: ProjectileSound::Hit,
         modifier_data: CardModifierData {
             speed: 7.0,
             lifetime: 60.0,
@@ -320,6 +325,7 @@ pub fn thorn_dart() -> Card {
 pub fn dart() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(9, SpriteRotationMode::Direction),
+        hit_sound: ProjectileSound::Hit,
         modifier_data: CardModifierData {
             speed: 5.0,
             lifetime: 40.0,
@@ -341,6 +347,7 @@ pub fn dart() -> Card {
 pub fn razor() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(10, SpriteRotationMode::Spin),
+        hit_sound: ProjectileSound::Hit,
         drag: 0.01,
         modifier_data: CardModifierData {
             speed: 3.0,
@@ -364,6 +371,7 @@ fn fire_explosion() -> Card {
     let explosion_projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::FIRE_EXPLOSION),
         extra_size: SPRITE_SIZE,
+        fire_sound: ProjectileSound::Explosion,
         modifier_data: CardModifierData {
             speed: 0.0,
             lifetime: 1.0,
@@ -406,6 +414,7 @@ pub fn explosion() -> Card {
     let explosion_projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::EXPLOSION),
         extra_size: SPRITE_SIZE,
+        fire_sound: ProjectileSound::Explosion,
         modifier_data: CardModifierData {
             speed: 0.0,
             lifetime: 0.0,
@@ -430,6 +439,7 @@ pub fn stun_explosion() -> Card {
         draw_type: ProjectileDrawType::Particle(particle::STUN_EXPLOSION),
         extra_size: SPRITE_SIZE,
         stuns: 20,
+        fire_sound: ProjectileSound::Explosion,
         modifier_data: CardModifierData {
             speed: 0.0,
             lifetime: 0.0,
@@ -557,6 +567,7 @@ pub fn acid_flask() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(8, SpriteRotationMode::Spin),
         drag: 0.05,
+        hit_sound: ProjectileSound::Hit,
         modifier_data: CardModifierData {
             speed: 3.5,
             lifetime: 60.0,

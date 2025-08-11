@@ -63,6 +63,7 @@ struct Sludge {
     lives: u8,
     ui_manager: UIManager,
     round_manager: RoundManager,
+    sfx_manager: SFXManager,
     lab: bool,
     rotating_tower: bool,
     moving: Option<Tower>,
@@ -73,7 +74,7 @@ struct Sludge {
     particle_sheet: Spritesheet,
 }
 impl Sludge {
-    fn new(map: Map, map_index: usize, text_engine: TextEngine, lab: bool) -> Self {
+    async fn new(map: Map, map_index: usize, text_engine: TextEngine, lab: bool) -> Self {
         let tileset = load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE);
         let icon_sheet = load_spritesheet("data/assets/entities.png", SPRITE_SIZE_USIZE);
         let card_sheet = load_spritesheet("data/assets/cards.png", SPRITE_SIZE_USIZE);
@@ -86,8 +87,8 @@ impl Sludge {
         } else {
             base_towers.into()
         };
-
         let round_manager = load_round_data();
+        let sfx_manager = SFXManager::new().await;
 
         Self {
             state: GameState::Running,
@@ -106,6 +107,7 @@ impl Sludge {
             moving: None,
             selected: None,
             ui_manager: UIManager::new(text_engine),
+            sfx_manager,
             tileset,
             icon_sheet,
             card_sheet,
@@ -343,8 +345,8 @@ impl Sludge {
         let text = "start round";
         let width = text.len() as f32 * 4.0 + 4.0;
         let x = (SCREEN_WIDTH - width) / 2.0;
-        if !self.round_manager.in_progress {
-            if draw_button(
+        if !self.round_manager.in_progress
+            && draw_button(
                 &self.ui_manager.text_engine,
                 x,
                 0.0,
@@ -353,9 +355,9 @@ impl Sludge {
                 local_x,
                 local_y,
                 text,
-            ) {
-                self.start_round();
-            }
+            )
+        {
+            self.start_round();
         }
     }
     fn draw_tower(&self, tower: &Tower) {
@@ -511,6 +513,10 @@ impl Sludge {
                         let amount = rand::gen_range(min, max) as f32;
                         enemy.health -= amount;
                     }
+                    // play sound
+                    projectile.hit_sound.play(&self.sfx_manager);
+                    projectile.hit_sound = ProjectileSound::None;
+
                     // also check whether enemy should be frozen
                     // if projectile deals cold damage
                     if *projectile
@@ -614,7 +620,7 @@ impl Sludge {
         // spawn spawnlist
 
         // first iterate through spawnlist to update direction of projectiles with aiming
-        // todo: also play sound effects here?
+        // and play sfx
         for projectile in &mut self.projectile_spawnlist {
             if projectile.modifier_data.aim {
                 let direction_nearest =
@@ -622,6 +628,8 @@ impl Sludge {
                         .unwrap_or(LEFT);
                 projectile.direction = direction_nearest;
             }
+
+            projectile.fire_sound.play(&self.sfx_manager);
         }
         self.projectiles.append(&mut self.projectile_spawnlist);
     }
@@ -773,7 +781,7 @@ impl GameManager {
             if self.sludge.is_some() {
                 self.run_game(local_x, local_y);
             } else {
-                self.run_main_menu(local_x, local_y);
+                self.run_main_menu(local_x, local_y).await;
             }
 
             // draw low res render to screen
@@ -796,7 +804,7 @@ impl GameManager {
             next_frame().await;
         }
     }
-    fn run_main_menu(&mut self, local_x: f32, local_y: f32) {
+    async fn run_main_menu(&mut self, local_x: f32, local_y: f32) {
         draw_texture(&self.menu_texture, 0.0, 0.0, WHITE);
 
         let left_padding = 12.0;
@@ -825,7 +833,7 @@ impl GameManager {
                     local_y,
                     "load save",
                 ) {
-                    let sludge = save.load(&self.maps, self.text_engine.clone());
+                    let sludge = save.load(&self.maps, self.text_engine.clone()).await;
                     self.sludge = Some(sludge);
                 }
             }
@@ -842,18 +850,8 @@ impl GameManager {
         ) {
             // start game
             // create new Sludge instance
-            let mut new = Sludge::new(self.maps[1].clone(), 1, self.text_engine.clone(), false);
-            // populate shop with starting options
-            // let mut shop = std::array::from_fn(|_| None.clone());
-            // for (index, card) in [library::magicbolt(), library::dart(), library::bomb()]
-            //     .into_iter()
-            //     .enumerate()
-            // {
-            //     shop[index] = Some((card, STARTING_GOLD));
-            // }
-            // new.ui_manager.shop = Some(shop);
-            // // give free aiming card
-            // new.ui_manager.inventory[0][0] = Some(library::aiming());
+            let mut new =
+                Sludge::new(self.maps[1].clone(), 1, self.text_engine.clone(), false).await;
             new.ui_manager.open_spawn_shop();
             self.sludge = Some(new);
         }
@@ -867,7 +865,8 @@ impl GameManager {
             local_y,
             "open lab",
         ) {
-            let mut new = Sludge::new(self.maps[0].clone(), 0, self.text_engine.clone(), true);
+            let mut new =
+                Sludge::new(self.maps[0].clone(), 0, self.text_engine.clone(), true).await;
             new.ui_manager.open_lab_shop();
             self.sludge = Some(new);
         }
