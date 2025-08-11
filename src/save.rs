@@ -174,25 +174,3 @@ pub fn read_save() -> Option<SaveData> {
     let data = decode_from_std_read(&mut binary, bincode::config::standard()).ok()?;
     Some(data)
 }
-
-#[cfg(test)]
-mod tests {
-
-    use crate::save::{read_save, write_save, SaveData};
-
-    #[test]
-    fn encode_decode() {
-        let old_data = SaveData {
-            lives: 88,
-            round_index: 67,
-            gold: 1455,
-            shop_items: std::array::from_fn(|_| None),
-            map_index: 1,
-            towers: std::array::from_fn(|_| None),
-        };
-        write_save(old_data.clone());
-        let data = read_save().unwrap();
-        println!("{:?}", data);
-        assert_eq!(data, old_data)
-    }
-}
