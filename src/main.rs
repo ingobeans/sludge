@@ -971,7 +971,10 @@ impl GameManager {
 
                 if clicked {
                     if let GameState::Paused = game.state {
-                        if game.round_manager.round > 0 {
+                        if game.round_manager.round > 0
+                            && !game.round_manager.in_progress
+                            && game.ui_manager.shop.is_some()
+                        {
                             let data = SaveData::create(game);
                             write_save(data);
                         }

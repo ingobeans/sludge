@@ -1,9 +1,6 @@
+use std::collections::HashMap;
 #[cfg(not(feature = "bundled"))]
 use std::fs::{read_dir, read_to_string};
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-};
 
 use macroquad::{
     audio::{load_sound_from_bytes, play_sound, PlaySoundParams, Sound},
@@ -19,12 +16,12 @@ use crate::{
     rounds::{decode_rounds, Round, RoundManager},
 };
 
-async fn load_sounds(path: &Path) -> Vec<Sound> {
+async fn load_sounds(path: &str) -> Vec<Sound> {
     let mut sounds: Vec<Option<Sound>> = vec![None];
     for (mut index, sound) in sounds.iter_mut().enumerate() {
         index += 1;
         let bytes;
-        let path = path.join(index.to_string() + ".wav");
+        let path = path.to_string() + &(index.to_string() + ".wav");
         #[cfg(feature = "bundled")]
         {
             bytes = DATA.get_file(&path[5..]).unwrap().contents();
@@ -68,11 +65,8 @@ pub struct SFXManager {
 impl SFXManager {
     pub async fn new() -> Self {
         SFXManager {
-            explosion: (
-                load_sounds(&PathBuf::from("data/sfx/explosion/")).await,
-                0.3,
-            ),
-            hit: (load_sounds(&PathBuf::from("data/sfx/hit/")).await, 0.2),
+            explosion: (load_sounds(&"data/sfx/explosion/").await, 0.3),
+            hit: (load_sounds(&"data/sfx/hit/").await, 0.2),
         }
     }
     pub fn play_sound(sounds: &SFX) {
