@@ -38,6 +38,8 @@ pub const CARD_INFO_HEIGHT: f32 = 32.0;
 
 pub const UPGRADE_TIER_CHANCE: u8 = 7;
 
+pub const TOWER_CARDS_MENU_MIN_WIDTH: f32 = 68.0;
+
 pub const COLOR_BEIGE: Color = Color::from_hex(0xb86f50);
 pub const COLOR_BROWN: Color = Color::from_hex(0x743f39);
 pub const COLOR_YELLOW: Color = Color::from_hex(0xffe762);

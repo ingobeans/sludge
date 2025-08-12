@@ -70,6 +70,7 @@ pub struct Shop {
 pub struct UIManager {
     pub inventory: [[Option<Card>; INV_SLOTS_HORIZONTAL]; INV_SLOTS_VERTICAL],
     pub inventory_open: bool,
+    pub tower_open: bool,
     cursor_card: Option<Card>,
     pub shop: Option<Shop>,
     pub gold: u16,
@@ -81,6 +82,7 @@ impl UIManager {
         Self {
             inventory,
             inventory_open: false,
+            tower_open: false,
             cursor_card: None,
             shop: None,
             gold: STARTING_GOLD,
@@ -341,6 +343,17 @@ impl UIManager {
             )
         }
     }
+    fn get_tower_handle_state(&self, slots_amt: usize) -> (f32, f32, bool) {
+        if self.tower_open {
+            (
+                (slots_amt as f32 * CARD_SIZE + 4.0).max(TOWER_CARDS_MENU_MIN_WIDTH),
+                (12.0),
+                false,
+            )
+        } else {
+            ((0.0), (12.0), true)
+        }
+    }
     fn get_shop_handle_state(&self) -> (f32, f32, bool) {
         if let Some(shop) = &self.shop {
             let shop_width = shop.cards[0].len() as f32 * SHOP_CARD_WIDTH + 4.0 - 7.0;
@@ -372,31 +385,44 @@ impl UIManager {
         selected_tower: Option<&Tower>,
     ) {
         if let Some(tower) = selected_tower {
-            let width = (tower.card_slots.len() as f32 * CARD_SIZE + 4.0).max(68.0);
-            draw_square(0.0, 7.0, width, CARD_SIZE + 4.0 + 5.0 * 3.0);
-            let tile_y = 7.0 + 2.0;
-            for (index, (k, v)) in [
-                ("shoot delay", tower.shoot_delay),
-                ("reload time", tower.recharge_speed),
-            ]
-            .iter()
-            .enumerate()
-            {
-                self.text_engine.draw_text(
-                    2.0,
-                    tile_y + CARD_SIZE + 5.0 + 5.0 * index as f32,
-                    &format!("{k}:{v}"),
-                    2,
-                );
-            }
-            for (index, card_slot) in tower.card_slots.iter().enumerate() {
-                let tile_x = index as f32 * CARD_SIZE + 2.0;
-                if let Some(card) = card_slot {
-                    card.draw(card_sheet, tile_x + 2.0, tile_y + 2.0);
-                } else {
-                    draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
+            if self.tower_open {
+                let width = (tower.card_slots.len() as f32 * CARD_SIZE + 4.0)
+                    .max(TOWER_CARDS_MENU_MIN_WIDTH);
+                draw_square(0.0, 7.0, width, CARD_SIZE + 4.0 + 5.0 * 3.0);
+                let tile_y = 7.0 + 2.0;
+                for (index, (k, v)) in [
+                    ("shoot delay", tower.shoot_delay),
+                    ("reload time", tower.recharge_speed),
+                ]
+                .iter()
+                .enumerate()
+                {
+                    self.text_engine.draw_text(
+                        2.0,
+                        tile_y + CARD_SIZE + 5.0 + 5.0 * index as f32,
+                        &format!("{k}:{v}"),
+                        2,
+                    );
+                }
+                for (index, card_slot) in tower.card_slots.iter().enumerate() {
+                    let tile_x = index as f32 * CARD_SIZE + 2.0;
+                    if let Some(card) = card_slot {
+                        card.draw(card_sheet, tile_x + 2.0, tile_y + 2.0);
+                    } else {
+                        draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
+                    }
                 }
             }
+            let (handle_x, handle_y, flipped) = self.get_tower_handle_state(tower.card_slots.len());
+            draw_img_button(
+                card_sheet,
+                handle_x,
+                handle_y,
+                local_x,
+                local_y,
+                3 * 32 + 1,
+                flipped,
+            );
         }
         self.draw_inventory(local_x, local_y, card_sheet);
         self.draw_shop(local_x, local_y, card_sheet);
@@ -438,7 +464,8 @@ impl UIManager {
             if tile_y < INV_SLOTS_VERTICAL {
                 return Some(InventorySlot::Inventory(tile_x, tile_y));
             }
-        } else if local_x > 2.0
+        } else if self.tower_open
+            && local_x > 2.0
             && local_y > 8.0
             && local_y < 8.0 + SPRITE_SIZE + 4.0
             && slots_amt > 0
@@ -475,6 +502,17 @@ impl UIManager {
         };
 
         let slots_amt = tower_card_slots.as_ref().map(|f| f.len()).unwrap_or(0);
+
+        let (handle_x, handle_y, _) = self.get_tower_handle_state(slots_amt);
+
+        if local_x > handle_x
+            && local_x < handle_x + SPRITE_SIZE
+            && local_y > handle_y
+            && local_y < handle_y + SPRITE_SIZE
+        {
+            self.tower_open = !self.tower_open;
+            return true;
+        }
 
         if let Some(slot) = self.get_hovered_slot(local_x, local_y, slots_amt) {
             match slot {

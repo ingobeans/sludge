@@ -242,6 +242,7 @@ impl Sludge {
             let clicked = clicked.unwrap().0;
             if self.selected.is_none() {
                 self.selected = Some(clicked);
+                self.ui_manager.tower_open = true;
                 self.ui_manager.inventory_open = true;
             } else {
                 // if we did click a tower, and we previously did have a selected tower, check if theyre the same
