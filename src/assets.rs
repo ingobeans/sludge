@@ -160,7 +160,8 @@ pub fn load_maps() -> Vec<Map> {
     maps
 }
 
-pub fn load_round_data() -> RoundManager {
+pub fn load_round_data(seed: u64) -> RoundManager {
+    rand::srand(seed);
     let sublevels = get_sublevels_hashmap();
 
     let data;

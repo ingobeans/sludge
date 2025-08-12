@@ -25,7 +25,8 @@ pub fn decode_rounds(data: &str, mut sublevels: Option<SublevelHashmap>) -> Vec<
             if let Some(sublevels) = &mut sublevels {
                 let key = line.trim_start_matches(":sublevel ");
                 let mut sublevels = sublevels.remove(key).expect("sublevel not found!");
-                let mut random = sublevels.remove(rand::gen_range(0, sublevels.len()));
+                let rng_index = rand::gen_range(0, sublevels.len());
+                let mut random = sublevels.remove(rng_index);
                 rounds.append(&mut random);
             }
             continue;

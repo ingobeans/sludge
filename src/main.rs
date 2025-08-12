@@ -32,6 +32,10 @@ mod save;
 mod tower;
 mod ui;
 
+fn get_seed() -> u64 {
+    macroquad::miniquad::date::now() as u64
+}
+
 fn get_direction_nearest_enemy(enemies: &Vec<Enemy>, x: f32, y: f32) -> Option<Vec2> {
     if enemies.is_empty() {
         return None;
@@ -56,6 +60,8 @@ enum GameState {
 }
 struct Sludge {
     state: GameState,
+    /// just used to ensure same sublevels are used on saves
+    seed: u64,
     map: Map,
     map_index: usize,
     enemies: Vec<Enemy>,
@@ -78,7 +84,13 @@ struct Sludge {
     particle_sheet: Spritesheet,
 }
 impl Sludge {
-    async fn new(map: Map, map_index: usize, text_engine: TextEngine, lab: bool) -> Self {
+    async fn new(
+        map: Map,
+        map_index: usize,
+        text_engine: TextEngine,
+        lab: bool,
+        seed: u64,
+    ) -> Self {
         let tileset = load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE);
         let icon_sheet = load_spritesheet("data/assets/entities.png", SPRITE_SIZE_USIZE);
         let card_sheet = load_spritesheet("data/assets/cards.png", SPRITE_SIZE_USIZE);
@@ -91,11 +103,12 @@ impl Sludge {
         } else {
             base_towers.into()
         };
-        let round_manager = load_round_data();
+        let round_manager = load_round_data(seed);
         let sfx_manager = SFXManager::new().await;
 
         Self {
             state: GameState::Running,
+            seed,
             map,
             map_index,
             enemies: Vec::with_capacity(100),
@@ -940,6 +953,7 @@ impl GameManager {
                     index,
                     self.text_engine.clone(),
                     false,
+                    get_seed(),
                 )
                 .await;
                 new.ui_manager.open_spawn_shop();
@@ -1007,8 +1021,14 @@ impl GameManager {
             local_y,
             "open lab",
         ) {
-            let mut new =
-                Sludge::new(self.maps[0].clone(), 0, self.text_engine.clone(), true).await;
+            let mut new = Sludge::new(
+                self.maps[0].clone(),
+                0,
+                self.text_engine.clone(),
+                true,
+                get_seed(),
+            )
+            .await;
             new.ui_manager.open_lab_shop();
             self.sludge = Some(new);
         }
@@ -1149,7 +1169,6 @@ impl GameManager {
 
 #[macroquad::main("sludge")]
 async fn main() {
-    rand::srand(macroquad::miniquad::date::now() as _);
     let mut game_manager = GameManager::new();
     game_manager.run().await;
 }

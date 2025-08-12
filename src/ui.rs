@@ -7,6 +7,15 @@ use crate::{
     map::Spritesheet,
     tower::Tower,
 };
+fn count_occurence(text: &str, char: char) -> usize {
+    let mut count = 0;
+    for c in text.chars().into_iter() {
+        if c == char {
+            count += 1;
+        }
+    }
+    count
+}
 #[derive(Clone)]
 pub struct TextEngine {
     font: Spritesheet,
@@ -312,7 +321,8 @@ impl UIManager {
             }
         };
 
-        let mut index = 0.0;
+        // make stats get offset based on how many lines the description was
+        let mut index = count_occurence(card.desc, '\n') as f32;
         for (k, v) in modifier_data.iter() {
             self.text_engine.draw_text(
                 local_x + 2.0,

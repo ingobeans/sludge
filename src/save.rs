@@ -32,6 +32,7 @@ pub struct TowerSaveData {
 }
 #[derive(Debug, PartialEq, Clone, Decode, Encode)]
 pub struct SaveData {
+    pub seed: u64,
     pub lives: u8,
     pub gold: u16,
     pub round_index: u8,
@@ -94,6 +95,7 @@ impl SaveData {
                 .map(|f| virtualize_card(f, &all_cards))
         });
         Self {
+            seed: sludge.seed,
             lives: sludge.lives,
             gold: sludge.ui_manager.gold,
             round_index: sludge.round_manager.round as u8,
@@ -110,6 +112,7 @@ impl SaveData {
             self.map_index as usize,
             text_engine,
             false,
+            self.seed,
         )
         .await;
         new.lives = self.lives;
