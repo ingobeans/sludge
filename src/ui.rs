@@ -160,6 +160,20 @@ impl UIManager {
         });
     }
     fn draw_inventory(&mut self, local_x: f32, local_y: f32, card_sheet: &Spritesheet) {
+        let mut just_opened = false;
+        let (handle_x, handle_y, flipped) = self.get_inv_handle_state();
+        if draw_img_button(
+            card_sheet,
+            handle_x,
+            handle_y,
+            local_x,
+            local_y,
+            32 * 3 + 1,
+            flipped,
+        ) {
+            just_opened = true;
+            self.inventory_open = !self.inventory_open
+        }
         if self.inventory_open {
             draw_square(SCREEN_WIDTH - INV_WIDTH, 0.0, INV_WIDTH, SCREEN_HEIGHT);
             self.text_engine
@@ -173,26 +187,24 @@ impl UIManager {
                     } else {
                         draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
                     }
-                    if is_mouse_button_pressed(MouseButton::Left)
-                        && local_x == local_x.clamp(tile_x, tile_x + CARD_SIZE)
-                        && local_y == local_y.clamp(tile_y, tile_y + CARD_SIZE)
-                    {
-                        std::mem::swap(&mut self.inventory[y][x], &mut self.cursor_card);
+                }
+            }
+            if local_x > SCREEN_WIDTH - INV_WIDTH + 2.0
+                && local_x < SCREEN_WIDTH - 3.0
+                && local_y > 2.0 + INV_MARGIN_TOP
+            {
+                let tile_x =
+                    (local_x as usize + INV_WIDTH_USIZE - SCREEN_WIDTH_USIZE - 2) / CARD_SIZE_USIZE;
+                let tile_y = (local_y as usize - 2 - INV_MARGIN_TOP_USIZE) / CARD_SIZE_USIZE;
+                if tile_y < INV_SLOTS_VERTICAL {
+                    if let Some(card) = &self.inventory[tile_y][tile_x] {
+                        self.draw_card_info(local_x, local_y, card, card_sheet);
+                    }
+                    if !just_opened && is_mouse_button_pressed(MouseButton::Left) {
+                        std::mem::swap(&mut self.inventory[tile_y][tile_x], &mut self.cursor_card);
                     }
                 }
             }
-        }
-        let (handle_x, handle_y, flipped) = self.get_inv_handle_state();
-        if draw_img_button(
-            card_sheet,
-            handle_x,
-            handle_y,
-            local_x,
-            local_y,
-            32 * 3 + 1,
-            flipped,
-        ) {
-            self.inventory_open = !self.inventory_open
         }
     }
     fn draw_shop(&mut self, local_x: f32, local_y: f32, card_sheet: &Spritesheet) {
