@@ -16,11 +16,12 @@ delay-10 big_slime-10 slime_car-20
 delay-5 slime-30 delay-15 fire_slime-10 delay-10 skeleton-10
 delay-10 spider-20 delay-30 baby_spider-10 delay-10 slime-20
 !delay-15 skeleton-20 delay-23 skeleton-1 cultist-3
+delay-10 big_slime-2 fire_slime-2 slime-2 big_slime-3 fire_slime-3 slime-3 big_slime-4 fire_slime-4 big_slime-4 fire_slime-4 slime-4 big_slime-4 fire_slime-4 slime-20
 
 delay-10 horsey-20 delay-15 knight-20
 delay-15 horsey_rider-20 delay-5 skeleton-30
-delay-7 cultist-10 delay-15 horsey_rider-20 delay-15 knight-20
-delay-30 big_knight_shield-1 delay-5 archer-30
+delay-7 cultist-10 delay-15 horsey_rider-20 delay-8 knight-20
+delay-30 big_knight_shield-1 delay-5 archer-30 fire_slime-10
 
 delay-3 spider-50 delay-30 armored_spider-15
 delay-10 armored_spider-5 delay-20 spider_warrior-5
@@ -35,3 +36,5 @@ delay-40 fire_golem-3 delay-60 fire_golem-1 delay-5 knight-30
 delay-25 big_knight_shield-2 big_knight_shield-1 delay-5 spider-10 delay-5 spider_warrior-10 delay-5 armored_spider-15
 delay-30 giga_cultist_shield-2 delay-13 big_spider-10
 delay-6 spider_warrior-25 delay-10 armored_spider-35 delay-5 cultist-5 skeleton-5 cultist-5 skeleton-5 cultist-5 skeleton-5 cultist-5 skeleton-15
+delay-5 slime-50 delay-30 slime-1 giga_slime-1 delay-6 slime_car-10
+delay-15 giga_cultist_shield-5 big_knight_shield-5 giga_slime-5 giga_ice_slug-5 fire_golem-5 delay-5 snow_ball-30

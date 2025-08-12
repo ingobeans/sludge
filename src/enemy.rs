@@ -140,7 +140,7 @@ static SPIDER: EnemyType = EnemyType {
 };
 static BIG_KNIGHT: EnemyType = EnemyType {
     name: "big_knight",
-    sprite: 12 * 32,
+    sprite: 12 * 32 + 4,
     anim_length: 2,
     speed: 0.6,
     damage: 14,
@@ -159,6 +159,25 @@ static GIGA_CULTIST: EnemyType = EnemyType {
     max_health: 35.0,
     damage_resistance: DamageResistance::Full(DamageType::Magic),
     ..DEFAULT_ENEMY_TYPE
+};
+static BIG_SLIME: EnemyType = EnemyType {
+    name: "big_slime",
+    sprite: 3 * 32 + 3,
+    anim_length: 3,
+    damage: 2,
+    speed: 0.4,
+    max_health: 20.0,
+    damage_resistance: DamageResistance::Partial(DamageType::Pierce),
+    payload: EnemyPayload::Some(&SLIME, 2),
+    ..DEFAULT_ENEMY_TYPE
+};
+static BIG_FIRE_SLIME: EnemyType = EnemyType {
+    name: "big_fire_slime",
+    sprite: 2 * 32 + 8,
+    speed: 0.37,
+    damage_resistance: DamageResistance::Full(DamageType::Burn),
+    payload: EnemyPayload::Some(&BIG_SLIME, 2),
+    ..BIG_SLIME
 };
 pub static ENEMY_TYPES: &[EnemyType] = &[
     HORSEY,
@@ -206,16 +225,8 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         ..DEFAULT_ENEMY_TYPE
     },
     SLIME,
-    EnemyType {
-        name: "big_slime",
-        sprite: 3 * 32 + 3,
-        anim_length: 3,
-        damage: 2,
-        speed: 0.4,
-        max_health: 32.0,
-        damage_resistance: DamageResistance::Partial(DamageType::Pierce),
-        ..DEFAULT_ENEMY_TYPE
-    },
+    BIG_SLIME,
+    BIG_FIRE_SLIME,
     EnemyType {
         name: "fire_slime",
         sprite: 3 * 32 + 6,
@@ -334,9 +345,9 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         speed: 0.55,
         damage: 0,
         size: 2,
-        max_health: 10.0,
+        max_health: 40.0,
         payload: EnemyPayload::Some(&BIG_KNIGHT, 1),
-        damage_resistance: DamageResistance::Full(DamageType::Pierce),
+        damage_resistance: DamageResistance::Full(DamageType::Burn),
         ..DEFAULT_ENEMY_TYPE
     },
     EnemyType {
@@ -360,6 +371,18 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         max_health: 61.0,
         damage_resistance: DamageResistance::Full(DamageType::Pierce),
         payload: EnemyPayload::Some(&GIGA_CULTIST, 1),
+        ..DEFAULT_ENEMY_TYPE
+    },
+    EnemyType {
+        name: "giga_slime",
+        sprite: 2 * 32 + 1,
+        anim_length: 5,
+        damage: 20,
+        speed: 0.35,
+        size: 2,
+        max_health: 61.0,
+        damage_resistance: DamageResistance::Partial(DamageType::Pierce),
+        payload: EnemyPayload::Some(&BIG_FIRE_SLIME, 8),
         ..DEFAULT_ENEMY_TYPE
     },
 ];
