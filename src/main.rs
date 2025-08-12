@@ -35,17 +35,17 @@ fn get_direction_nearest_enemy(enemies: &Vec<Enemy>, x: f32, y: f32) -> Option<V
     if enemies.is_empty() {
         return None;
     }
-    let mut nearest: (f32, Vec2) = (f32::MAX, Vec2::ZERO);
+    let mut nearest: Option<(f32, Vec2)> = None;
     for enemy in enemies {
         if enemy.health <= 0.0 {
             continue;
         }
         let distance = ((enemy.x - x).powi(2) + (enemy.y - y).powi(2)).sqrt();
-        if distance < nearest.0 {
-            nearest = (distance, Vec2::new(enemy.x - x, enemy.y - y).normalize())
+        if nearest.is_none() || distance < nearest.unwrap().0 {
+            nearest = Some((distance, Vec2::new(enemy.x - x, enemy.y - y).normalize()));
         }
     }
-    Some(nearest.1)
+    nearest.map(|f| f.1)
 }
 enum GameState {
     Running,
