@@ -145,15 +145,6 @@ impl Sludge {
         }
         self.map.is_unobstructed(x as usize, y as usize)
     }
-    /// Returns whether a UI element was interacted with
-    fn handle_ui_input(&mut self, local_x: f32, local_y: f32) -> bool {
-        let selected_tower = match self.selected {
-            None => None,
-            Some(index) => Some(&mut self.towers[index]),
-        };
-        self.ui_manager
-            .handle_input(local_x, local_y, selected_tower)
-    }
     fn get_tower_near(&self, local_x: f32, local_y: f32) -> Option<(usize, f32)> {
         let mut clicked = None;
         for (index, tower) in self.towers.iter().enumerate() {
@@ -223,7 +214,11 @@ impl Sludge {
         }
 
         // handle ui elements. if an element is interacted with, also return to stop other inputs being handled.
-        if self.handle_ui_input(local_x, local_y) {
+        let slots_amt = self
+            .selected
+            .map(|index| self.towers[index].card_slots.len())
+            .unwrap_or(0);
+        if self.ui_manager.is_ui_hovered(local_x, local_y, slots_amt) {
             return;
         }
         if is_mouse_button_pressed(MouseButton::Left) {
@@ -297,8 +292,9 @@ impl Sludge {
                     .draw_tile(tower.x, tower.y - 4.0, 34, false, 0.0);
             }
         }
+        let selected_tower = self.selected.map(|index| &mut self.towers[index]);
         self.ui_manager
-            .draw_ui(local_x, local_y, &self.card_sheet, selected_tower);
+            .handle_ui(local_x, local_y, &self.card_sheet, selected_tower);
 
         // display topbar
         let mut cursor_x = 2.0;

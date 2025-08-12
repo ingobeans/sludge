@@ -52,6 +52,4 @@ pub const COLOR_WHITE: Color = WHITE;
 pub const SCREEN_WIDTH_USIZE: usize = SCREEN_WIDTH as usize;
 pub const SCREEN_HEIGHT_USIZE: usize = SCREEN_HEIGHT as usize;
 pub const SPRITE_SIZE_USIZE: usize = SPRITE_SIZE as usize;
-pub const INV_WIDTH_USIZE: usize = INV_WIDTH as usize;
 pub const CARD_SIZE_USIZE: usize = CARD_SIZE as usize;
-pub const INV_MARGIN_TOP_USIZE: usize = INV_MARGIN_TOP as usize;

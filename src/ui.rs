@@ -7,10 +7,6 @@ use crate::{
     map::Spritesheet,
     tower::Tower,
 };
-enum InventorySlot {
-    Inventory(usize, usize),
-    Tower(usize),
-}
 #[derive(Clone)]
 pub struct TextEngine {
     font: Spritesheet,
@@ -163,7 +159,7 @@ impl UIManager {
             open: true,
         });
     }
-    fn draw_inventory(&self, local_x: f32, local_y: f32, card_sheet: &Spritesheet) {
+    fn draw_inventory(&mut self, local_x: f32, local_y: f32, card_sheet: &Spritesheet) {
         if self.inventory_open {
             draw_square(SCREEN_WIDTH - INV_WIDTH, 0.0, INV_WIDTH, SCREEN_HEIGHT);
             self.text_engine
@@ -177,11 +173,17 @@ impl UIManager {
                     } else {
                         draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
                     }
+                    if is_mouse_button_pressed(MouseButton::Left)
+                        && local_x == local_x.clamp(tile_x, tile_x + CARD_SIZE)
+                        && local_y == local_y.clamp(tile_y, tile_y + CARD_SIZE)
+                    {
+                        std::mem::swap(&mut self.inventory[y][x], &mut self.cursor_card);
+                    }
                 }
             }
         }
         let (handle_x, handle_y, flipped) = self.get_inv_handle_state();
-        draw_img_button(
+        if draw_img_button(
             card_sheet,
             handle_x,
             handle_y,
@@ -189,33 +191,54 @@ impl UIManager {
             local_y,
             32 * 3 + 1,
             flipped,
-        );
+        ) {
+            self.inventory_open = !self.inventory_open
+        }
     }
-    fn handle_shop_input(&mut self, local_x: f32, local_y: f32) -> bool {
-        let (handle_x, handle_y, _) = self.get_shop_handle_state();
+    fn draw_shop(&mut self, local_x: f32, local_y: f32, card_sheet: &Spritesheet) {
+        let (handle_x, handle_y, flipped) = self.get_shop_handle_state();
         let Some(shop) = &mut self.shop else {
-            return false;
+            return;
         };
 
-        if local_x > handle_x
-            && local_x < handle_x + SPRITE_SIZE
-            && local_y > handle_y
-            && local_y < handle_y + SPRITE_SIZE
-        {
+        let mut just_opened = false;
+        if draw_img_button(
+            card_sheet,
+            handle_x,
+            handle_y,
+            local_x,
+            local_y,
+            32 * 3 + 1,
+            flipped,
+        ) {
             shop.open = !shop.open;
-            return true;
+            just_opened = true;
         }
         if !shop.open {
-            return false;
+            return;
         }
+        let shop_width = shop.cards[0].len() as f32 * SHOP_CARD_WIDTH + 4.0 - 7.0;
         let shop_height = SHOP_PADDING + shop.cards.len() as f32 * SHOP_CARD_HEIGHT - 5.0;
+        let shop_x = 0.0;
+        let shop_y = SCREEN_HEIGHT - shop_height;
+        draw_square(shop_x, shop_y, shop_width, shop_height);
 
         let shop_y = SCREEN_HEIGHT - shop_height;
         for y in 0..shop.cards.len() {
             for x in 0..shop.cards[0].len() {
                 let tile_y = SHOP_PADDING + shop_y + 2.0 + y as f32 * SHOP_CARD_HEIGHT;
                 let tile_x = 2.0 + x as f32 * SHOP_CARD_WIDTH;
-                if self.cursor_card.is_none()
+
+                if let Some((card, price)) = &shop.cards[y][x] {
+                    self.text_engine
+                        .draw_text(tile_x, tile_y - 5.0, &price.to_string(), 0);
+                    card.draw(card_sheet, tile_x + 2.0, tile_y + 2.0);
+                } else {
+                    draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
+                }
+                if !just_opened
+                    && is_mouse_button_pressed(MouseButton::Left)
+                    && self.cursor_card.is_none()
                     && local_x == local_x.clamp(tile_x, tile_x + CARD_SIZE)
                     && local_y == local_y.clamp(tile_y, tile_y + CARD_SIZE)
                     && shop.cards[y][x].is_some()
@@ -227,50 +250,10 @@ impl UIManager {
                         self.cursor_card = Some(card);
                         self.inventory_open = true;
                     }
-                    return true;
                 }
             }
         }
-
-        false
-    }
-    fn draw_shop(&self, local_x: f32, local_y: f32, card_sheet: &Spritesheet) {
-        let Some(shop) = &self.shop else {
-            return;
-        };
-        let (handle_x, handle_y, flipped) = self.get_shop_handle_state();
-        draw_img_button(
-            card_sheet,
-            handle_x,
-            handle_y,
-            local_x,
-            local_y,
-            32 * 3 + 1,
-            flipped,
-        );
-        if !shop.open {
-            return;
-        }
-        let shop_width = shop.cards[0].len() as f32 * SHOP_CARD_WIDTH + 4.0 - 7.0;
-        let shop_height = SHOP_PADDING + shop.cards.len() as f32 * SHOP_CARD_HEIGHT - 5.0;
-        let shop_x = 0.0;
-        let shop_y = SCREEN_HEIGHT - shop_height;
-        draw_square(shop_x, shop_y, shop_width, shop_height);
-        self.text_engine
-            .draw_text(shop_x + 2.0, shop_y + 2.0, "card shop", 1);
-        for y in 0..shop.cards.len() {
-            for x in 0..shop.cards[0].len() {
-                let tile_y = SHOP_PADDING + shop_y + 2.0 + y as f32 * SHOP_CARD_HEIGHT;
-                let tile_x = 2.0 + x as f32 * SHOP_CARD_WIDTH;
-                if let Some((card, price)) = &shop.cards[y][x] {
-                    self.text_engine
-                        .draw_text(tile_x, tile_y - 5.0, &price.to_string(), 0);
-                    card.draw(card_sheet, tile_x + 2.0, tile_y + 2.0);
-                } else {
-                    draw_square(tile_x, tile_y, CARD_SIZE, CARD_SIZE);
-                }
-            }
-        }
+        let shop = self.shop.as_ref().unwrap();
         for y in 0..shop.cards.len() {
             for x in 0..shop.cards[0].len() {
                 let tile_y = SHOP_PADDING + shop_y + 2.0 + y as f32 * SHOP_CARD_HEIGHT;
@@ -377,14 +360,66 @@ impl UIManager {
         }
     }
 
-    pub fn draw_ui(
-        &self,
+    pub fn is_ui_hovered(&self, local_x: f32, local_y: f32, slots_amt: usize) -> bool {
+        // topbar
+        if local_x <= 64.0 && local_y <= 8.0 {
+            return true;
+        }
+        // inventory
+        if local_x > SCREEN_WIDTH - INV_WIDTH {
+            return true;
+        }
+        // tower cards
+        if slots_amt > 0 {
+            if self.tower_open {
+                let width = (slots_amt as f32 * CARD_SIZE + 4.0).max(TOWER_CARDS_MENU_MIN_WIDTH);
+                let height = CARD_SIZE + 4.0 + 5.0 * 3.0;
+                if local_x <= width && local_y <= height {
+                    return true;
+                }
+            }
+            let (handle_x, handle_y, _) = self.get_tower_handle_state(slots_amt);
+            if local_x == local_x.clamp(handle_x, handle_x + SPRITE_SIZE)
+                && local_y == local_y.clamp(handle_y, handle_y + SPRITE_SIZE)
+            {
+                return true;
+            }
+        }
+        // shop
+        if let Some(shop) = &self.shop {
+            if shop.open {
+                let shop_width = shop.cards[0].len() as f32 * SHOP_CARD_WIDTH + 4.0 - 7.0;
+                let shop_height = SHOP_PADDING + shop.cards.len() as f32 * SHOP_CARD_HEIGHT - 5.0;
+                let shop_y = SCREEN_HEIGHT - shop_height;
+                if local_x < shop_width && local_y > shop_y {
+                    return true;
+                }
+            }
+            let (handle_x, handle_y, _) = self.get_shop_handle_state();
+            if local_x == local_x.clamp(handle_x, handle_x + SPRITE_SIZE)
+                && local_y == local_y.clamp(handle_y, handle_y + SPRITE_SIZE)
+            {
+                return true;
+            }
+        }
+        // handles
+        let (handle_x, handle_y, _) = self.get_inv_handle_state();
+        if local_x == local_x.clamp(handle_x, handle_x + SPRITE_SIZE)
+            && local_y == local_y.clamp(handle_y, handle_y + SPRITE_SIZE)
+        {
+            return true;
+        }
+        false
+    }
+    pub fn handle_ui(
+        &mut self,
         local_x: f32,
         local_y: f32,
         card_sheet: &Spritesheet,
-        selected_tower: Option<&Tower>,
+        selected_tower: Option<&mut Tower>,
     ) {
-        if let Some(tower) = selected_tower {
+        let mut just_opened_tower = false;
+        if let Some(tower) = &selected_tower {
             if self.tower_open {
                 let width = (tower.card_slots.len() as f32 * CARD_SIZE + 4.0)
                     .max(TOWER_CARDS_MENU_MIN_WIDTH);
@@ -414,7 +449,7 @@ impl UIManager {
                 }
             }
             let (handle_x, handle_y, flipped) = self.get_tower_handle_state(tower.card_slots.len());
-            draw_img_button(
+            if draw_img_button(
                 card_sheet,
                 handle_x,
                 handle_y,
@@ -422,7 +457,10 @@ impl UIManager {
                 local_y,
                 3 * 32 + 1,
                 flipped,
-            );
+            ) {
+                just_opened_tower = true;
+                self.tower_open = !self.tower_open;
+            }
         }
         self.draw_inventory(local_x, local_y, card_sheet);
         self.draw_shop(local_x, local_y, card_sheet);
@@ -432,39 +470,15 @@ impl UIManager {
             let y = local_y - SPRITE_SIZE / 2.0;
 
             card.draw(card_sheet, x, y);
-        } else {
-            let slots_amt = selected_tower.map(|f| f.card_slots.len()).unwrap_or(0);
-            let hovered = self.get_hovered_slot(local_x, local_y, slots_amt);
-            if let Some(hovered) = hovered {
-                let card = match hovered {
-                    InventorySlot::Inventory(x, y) => &self.inventory[y][x],
-                    InventorySlot::Tower(x) => &selected_tower.unwrap().card_slots[x],
-                };
-                if let Some(card) = card {
-                    self.draw_card_info(local_x, local_y, card, card_sheet);
-                }
-            }
         }
-    }
-    fn get_hovered_slot(
-        &self,
-        local_x: f32,
-        local_y: f32,
-        slots_amt: usize,
-    ) -> Option<InventorySlot> {
-        if self.inventory_open
-            && local_x > SCREEN_WIDTH - INV_WIDTH + 2.0
-            && local_x < SCREEN_WIDTH - 3.0
-            && local_y > 2.0 + INV_MARGIN_TOP
-        {
-            let tile_x =
-                (local_x as usize + INV_WIDTH_USIZE - SCREEN_WIDTH_USIZE - 2) / CARD_SIZE_USIZE;
-            let tile_y = (local_y as usize - 2 - INV_MARGIN_TOP_USIZE) / CARD_SIZE_USIZE;
+        let tower_card_slots = match selected_tower {
+            None => None,
+            Some(tower) => Some(&mut tower.card_slots),
+        };
 
-            if tile_y < INV_SLOTS_VERTICAL {
-                return Some(InventorySlot::Inventory(tile_x, tile_y));
-            }
-        } else if self.tower_open
+        let slots_amt = tower_card_slots.as_ref().map(|f| f.len()).unwrap_or(0);
+        if !just_opened_tower
+            && self.tower_open
             && local_x > 2.0
             && local_y > 8.0
             && local_y < 8.0 + SPRITE_SIZE + 4.0
@@ -472,60 +486,17 @@ impl UIManager {
         {
             let tile_x = (local_x as usize - 2) / CARD_SIZE_USIZE;
             if tile_x < slots_amt {
-                return Some(InventorySlot::Tower(tile_x));
-            }
-        }
-        None
-    }
-    pub fn handle_input(
-        &mut self,
-        local_x: f32,
-        local_y: f32,
-        selected_tower: Option<&mut Tower>,
-    ) -> bool {
-        if !is_mouse_button_pressed(MouseButton::Left) {
-            return false;
-        }
-        let (handle_x, handle_y, _) = self.get_inv_handle_state();
-        if local_x > handle_x
-            && local_x < handle_x + SPRITE_SIZE
-            && local_y > handle_y
-            && local_y < handle_y + SPRITE_SIZE
-        {
-            self.inventory_open = !self.inventory_open;
-            return true;
-        }
-
-        let tower_card_slots = match selected_tower {
-            None => None,
-            Some(tower) => Some(&mut tower.card_slots),
-        };
-
-        let slots_amt = tower_card_slots.as_ref().map(|f| f.len()).unwrap_or(0);
-
-        let (handle_x, handle_y, _) = self.get_tower_handle_state(slots_amt);
-
-        if local_x > handle_x
-            && local_x < handle_x + SPRITE_SIZE
-            && local_y > handle_y
-            && local_y < handle_y + SPRITE_SIZE
-        {
-            self.tower_open = !self.tower_open;
-            return true;
-        }
-
-        if let Some(slot) = self.get_hovered_slot(local_x, local_y, slots_amt) {
-            match slot {
-                InventorySlot::Inventory(x, y) => {
-                    std::mem::swap(&mut self.inventory[y][x], &mut self.cursor_card);
+                if let Some(card) = &tower_card_slots.as_ref().unwrap()[tile_x] {
+                    self.draw_card_info(local_x, local_y, card, card_sheet);
                 }
-                InventorySlot::Tower(x) => {
-                    std::mem::swap(&mut tower_card_slots.unwrap()[x], &mut self.cursor_card);
+                if is_mouse_button_pressed(MouseButton::Left) {
+                    std::mem::swap(
+                        &mut tower_card_slots.unwrap()[tile_x],
+                        &mut self.cursor_card,
+                    );
                 }
             }
-            return true;
         }
-        self.handle_shop_input(local_x, local_y)
     }
 }
 
