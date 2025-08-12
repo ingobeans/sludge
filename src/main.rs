@@ -255,14 +255,6 @@ impl Sludge {
                 }
             }
         }
-        // make selected tower "test fire"
-        if let Some(selected) = self.selected {
-            let tower = &mut self.towers[selected];
-            if tower.can_shoot() && !self.round_manager.in_progress {
-                let mut spawn_queue = tower.shoot();
-                self.projectile_spawnlist.append(&mut spawn_queue);
-            }
-        }
     }
     fn handle_ui(&mut self, local_x: f32, local_y: f32) {
         let selected_tower = self.selected.map(|index| &self.towers[index]);
@@ -668,6 +660,17 @@ impl Sludge {
             } else if self.round_manager.in_progress {
                 let mut spawn_queue = tower.shoot();
                 self.projectile_spawnlist.append(&mut spawn_queue);
+            }
+        }
+        // if not in round,
+        // make selected tower "test fire"
+        if !self.round_manager.in_progress {
+            if let Some(selected) = self.selected {
+                let tower = &mut self.towers[selected];
+                if tower.can_shoot() {
+                    let mut spawn_queue = tower.shoot();
+                    self.projectile_spawnlist.append(&mut spawn_queue);
+                }
             }
         }
     }

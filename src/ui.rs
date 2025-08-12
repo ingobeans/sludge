@@ -131,7 +131,7 @@ impl UIManager {
     }
     pub fn open_shop(&mut self, round: usize, width: usize, height: usize) {
         let price_modifier = 1.0 + round as f32 / 7.5;
-        let projectile_penalty = 1.2 + round as f32 / 25.0;
+        let projectile_penalty = 1.2 + round as f32 / 40.0;
         let cards = get_cards();
         let mut shop_cards: Vec<Vec<Option<(Card, u16)>>> = Vec::new();
         for _ in 0..height {
