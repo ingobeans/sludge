@@ -183,8 +183,8 @@ impl Projectile {
     pub fn fire_payload(&self) -> Vec<Projectile> {
         let mut context = FiringContext::default();
         fire_deck(
-            self.x,
-            self.y,
+            self.x - SPRITE_SIZE / 2.0,
+            self.y - SPRITE_SIZE / 2.0,
             self.direction,
             self.payload.clone(),
             &mut context,

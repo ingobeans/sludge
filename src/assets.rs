@@ -153,7 +153,6 @@ pub fn load_maps() -> Vec<Map> {
             out_of_bounds,
             obstructions,
             tower_spawnpoints: parse_spawnpoints_from_tilemap(&path),
-            path,
         };
         maps.push(map);
     }

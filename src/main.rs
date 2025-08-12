@@ -563,7 +563,8 @@ impl Sludge {
                             enemy.state.stun_frames = enemy
                                 .state
                                 .stun_frames
-                                .saturating_add(projectile.modifier_data.stuns);
+                                .saturating_add(projectile.modifier_data.stuns)
+                                .min(35);
 
                             // spawn particles to show stun (given that the enemy isnt dead)
                             if enemy.health > 0.0 {
@@ -767,11 +768,16 @@ impl Sludge {
             let mut speed_factor = 1.0;
             if enemy.state.freeze_frames > 0 {
                 enemy.state.freeze_frames -= 1;
-                speed_factor = 0.25;
+                speed_factor = 0.55;
             }
             if enemy.state.stun_frames > 0 {
                 enemy.state.stun_frames -= 1;
-                speed_factor = 0.0;
+                // make larger enemies not stun entirely
+                if enemy.ty.size == 1 {
+                    speed_factor = 0.0
+                } else {
+                    speed_factor = 0.4
+                }
             }
             enemy.state.score += enemy.ty.speed * speed_factor;
             true
@@ -786,6 +792,24 @@ impl Sludge {
                     DEFAULT_SHOP_SLOTS_HORIZONTAL,
                     DEFAULT_SHOP_SLOTS_VERTICAL,
                 );
+                // reward with new towers on special rounds
+                for (round, index) in [(17, 2), (34, 3)] {
+                    if self.round_manager.round == round {
+                        let new = get_towers(self.map.tower_spawnpoints)[index].clone();
+                        self.orphaned_particles.push((
+                            particle::NEW_TOWER,
+                            ParticleContext {
+                                x: new.x,
+                                y: new.y,
+                                origin_x: new.x,
+                                origin_y: new.y,
+                                direction: LEFT,
+                            },
+                        ));
+                        self.towers.push(new);
+                        break;
+                    }
+                }
 
                 // save
                 let data = SaveData::create(self);
@@ -1041,7 +1065,20 @@ impl GameManager {
 
         if is_key_pressed(KeyCode::Escape) {
             match game.state {
-                GameState::Running => game.state = GameState::Paused,
+                GameState::Running => {
+                    // when we pause game, try to place whatever tower we're moving
+                    // and if that spot is obstructed, default to the first tower spawnpoint
+                    if let Some(mut moving) = game.moving.take() {
+                        if !game.is_valid_tower_placement(moving.x, moving.y) {
+                            let (x, y) = game.map.tower_spawnpoints[0];
+                            let (x, y) = (x as f32, y as f32);
+                            moving.x = x;
+                            moving.y = y;
+                        }
+                        game.towers.push(moving);
+                    }
+                    game.state = GameState::Paused
+                }
                 GameState::Paused => game.state = GameState::Running,
                 _ => {}
             }

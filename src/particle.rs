@@ -81,6 +81,21 @@ fn ray_particle(
     );
 }
 
+pub const NEW_TOWER: Particle = Particle {
+    life: 0,
+    lifetime: 60,
+    function: &|this, ctx, _| {
+        let a = (1.0 - this.life as f32 / 30 as f32).max(0.0);
+        draw_circle_lines(
+            ctx.x + SPRITE_SIZE / 2.0,
+            ctx.y + SPRITE_SIZE / 2.0,
+            SCREEN_WIDTH / 2.0 * a + SPRITE_SIZE,
+            200.0,
+            WHITE,
+        );
+    },
+};
+
 pub const YOYO: Particle = Particle {
     life: 0,
     lifetime: 0,
@@ -138,7 +153,16 @@ pub const STUNNED: Particle = Particle {
     life: 0,
     lifetime: 20,
     function: &|this, ctx, particles| {
-        basic_animation_particle(this.life, 10, ctx.x + 4.0, ctx.y, 32 + 13, 1, 3, particles);
+        basic_animation_particle(
+            this.life,
+            10,
+            ctx.x + SPRITE_SIZE / 2.0,
+            ctx.y + SPRITE_SIZE / 2.0,
+            32 + 13,
+            1,
+            3,
+            particles,
+        );
     },
 };
 
@@ -192,7 +216,13 @@ pub const HIT_MARKER: Particle = Particle {
     life: 0,
     lifetime: 2,
     function: &|_, ctx, particles| {
-        particles.draw_tile(ctx.x, ctx.y, 6, false, 0.0);
+        particles.draw_tile(
+            ctx.x - SPRITE_SIZE / 2.0,
+            ctx.y - SPRITE_SIZE / 2.0,
+            6,
+            false,
+            0.0,
+        );
     },
 };
 
@@ -207,8 +237,8 @@ pub const BUBBLE: Particle = Particle {
         let move_y = this.life.min(stage_1_end) * 2 / stage_1_end;
 
         particles.draw_tile(
-            ctx.x,
-            ctx.y - move_y as f32,
+            ctx.x - SPRITE_SIZE / 2.0,
+            ctx.y - move_y as f32 - SPRITE_SIZE / 2.0,
             3 + anim_frame_offset,
             false,
             0.0,

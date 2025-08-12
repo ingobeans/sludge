@@ -675,6 +675,7 @@ pub fn stun_explosion() -> Card {
             speed: 0.0,
             lifetime: 0.0,
             shoot_delay: 0.85,
+            recharge_speed: 0.15,
             piercing: true,
             damage: hashmap!(DamageType::Burn => 5.0),
             ..Default::default()

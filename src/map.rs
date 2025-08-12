@@ -72,7 +72,6 @@ pub struct Map {
     pub background: TileMap,
     pub obstructions: TileMap,
     pub out_of_bounds: TileMap,
-    pub path: TileMap,
     pub points: Vec<(f32, f32)>,
     pub tower_spawnpoints: [(usize, usize); 4],
 }
@@ -97,13 +96,15 @@ impl Map {
     pub fn is_unobstructed(&self, x: usize, y: usize) -> bool {
         let x = x + SPRITE_SIZE_USIZE / 2;
         let y = y + SPRITE_SIZE_USIZE / 2 + 2;
-        if self.obstructions[y / SPRITE_SIZE_USIZE][x / SPRITE_SIZE_USIZE] != 0 {
+        let tile_x = x / SPRITE_SIZE_USIZE;
+        let tile_y = y / SPRITE_SIZE_USIZE;
+        if self.obstructions[tile_y][tile_x] != 0 {
             return false;
         }
-        if self.out_of_bounds[y / SPRITE_SIZE_USIZE][x / SPRITE_SIZE_USIZE] != 0 {
+        if self.out_of_bounds[tile_y][tile_x] != 0 {
             return false;
         }
-        if self.path[y / SPRITE_SIZE_USIZE][x / SPRITE_SIZE_USIZE] != 0 {
+        if self.points.contains(&(tile_x as f32, tile_y as f32)) {
             return false;
         }
 

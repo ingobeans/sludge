@@ -328,7 +328,7 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         sprite: 8 * 32 + 2,
         anim_length: 6,
         speed: 2.0,
-        anim_speed: 1.5,
+        anim_speed: 0.5,
         max_health: 13.0,
         damage_resistance: DamageResistance::Full(DamageType::Cold),
         ..DEFAULT_ENEMY_TYPE
