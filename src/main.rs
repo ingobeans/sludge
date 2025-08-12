@@ -491,7 +491,18 @@ impl Sludge {
                     .sqrt();
                     if distance < 8.0 + projectile.extra_size {
                         // hit!
-                        for (damage_type, mut amount) in projectile.modifier_data.damage.clone() {
+                        let mut damage = projectile.modifier_data.damage.clone();
+                        // if projectile deals random damage, apply that
+                        if let Some((min, max)) = projectile.random_damage {
+                            let amount = rand::gen_range(min, max) as f32;
+
+                            if let Some(amt) = damage.get_mut(&DamageType::Magic) {
+                                *amt += amount;
+                            } else {
+                                damage.insert(DamageType::Magic, amount);
+                            }
+                        }
+                        for (damage_type, mut amount) in damage {
                             match &enemy.ty.damage_resistance {
                                 // skip damage of enemy if fully resistant
                                 DamageResistance::Full(ty) => {
@@ -507,11 +518,6 @@ impl Sludge {
                                 }
                                 DamageResistance::None => {}
                             }
-                            enemy.health -= amount;
-                        }
-                        // if projectile deals random damage, apply that
-                        if let Some((min, max)) = projectile.random_damage {
-                            let amount = rand::gen_range(min, max) as f32;
                             enemy.health -= amount;
                         }
                         // play sound

@@ -375,12 +375,12 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
     },
     EnemyType {
         name: "giga_slime",
-        sprite: 2 * 32 + 1,
+        sprite: 2 * 32 + 11,
         anim_length: 5,
         damage: 20,
         speed: 0.35,
         size: 2,
-        max_health: 61.0,
+        max_health: 261.0,
         damage_resistance: DamageResistance::Partial(DamageType::Pierce),
         payload: EnemyPayload::Some(&BIG_FIRE_SLIME, 8),
         ..DEFAULT_ENEMY_TYPE

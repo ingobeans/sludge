@@ -420,10 +420,11 @@ pub fn aiming() -> Card {
 pub fn homing() -> Card {
     Card {
         name: "homing",
-        desc: "makes projectile\nhome towards nearest\nenemy",
+        desc: "home towards enemies",
         tier: 1,
         ty: CardType::Modifier(CardModifierData {
             homing: true,
+            shoot_delay: 0.25,
             ..Default::default()
         }),
         sprite: 8,
