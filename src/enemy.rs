@@ -418,4 +418,14 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         payload: EnemyPayload::Some(&TROLL, 1),
         ..TROLL
     },
+    EnemyType {
+        name: "magicbird",
+        sprite: 5 * 32 + 12,
+        speed: 1.0,
+        anim_length: 2,
+        max_health: 5.0,
+        damage: 2,
+        damage_resistance: DamageResistance::Partial(DamageType::Magic),
+        ..DEFAULT_ENEMY_TYPE
+    },
 ];
