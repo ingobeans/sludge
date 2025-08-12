@@ -4,6 +4,7 @@ use crate::{cards::*, particle};
 
 pub fn as_trigger(mut card: Card) -> Card {
     card.is_trigger = true;
+    card.tier += 1;
     card
 }
 

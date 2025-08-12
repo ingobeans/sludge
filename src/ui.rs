@@ -143,7 +143,7 @@ impl UIManager {
                     price *= projectile_penalty;
                 }
                 if card.is_trigger {
-                    price += 100.0;
+                    price += 115.0 * projectile_penalty;
                 }
                 let big_rand = rand::gen_range(-1, 4);
                 price += big_rand as f32 * 10.0;
