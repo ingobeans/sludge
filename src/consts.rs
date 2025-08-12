@@ -5,14 +5,14 @@ pub const SCREEN_HEIGHT: f32 = 144.0;
 pub const SPRITE_SIZE: f32 = 8.0;
 pub const CARD_SIZE: f32 = SPRITE_SIZE + 4.0;
 
+pub const INV_MARGIN_TOP: f32 = 8.0;
 pub const INV_SLOTS_HORIZONTAL: usize = 2;
 pub const INV_SLOTS_VERTICAL: usize = (SCREEN_HEIGHT_USIZE - 4) / CARD_SIZE_USIZE;
+pub const INV_WIDTH: f32 = INV_SLOTS_HORIZONTAL as f32 * CARD_SIZE + 4.0;
 
 pub const SHOP_PADDING: f32 = 12.0;
 pub const SHOP_CARD_WIDTH: f32 = CARD_SIZE + 7.0;
 pub const SHOP_CARD_HEIGHT: f32 = CARD_SIZE + 4.0 + 5.0;
-
-pub const INV_WIDTH: f32 = INV_SLOTS_HORIZONTAL as f32 * CARD_SIZE + 4.0;
 
 pub const LEFT: Vec2 = Vec2::new(-1.0, 0.0);
 pub const DEFAULT_SPREAD: f32 = 2.5_f32.to_radians();
@@ -50,3 +50,4 @@ pub const SCREEN_HEIGHT_USIZE: usize = SCREEN_HEIGHT as usize;
 pub const SPRITE_SIZE_USIZE: usize = SPRITE_SIZE as usize;
 pub const INV_WIDTH_USIZE: usize = INV_WIDTH as usize;
 pub const CARD_SIZE_USIZE: usize = CARD_SIZE as usize;
+pub const INV_MARGIN_TOP_USIZE: usize = INV_MARGIN_TOP as usize;

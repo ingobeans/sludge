@@ -164,10 +164,12 @@ impl UIManager {
     fn draw_inventory(&self, local_x: f32, local_y: f32, card_sheet: &Spritesheet) {
         if self.inventory_open {
             draw_square(SCREEN_WIDTH - INV_WIDTH, 0.0, INV_WIDTH, SCREEN_HEIGHT);
+            self.text_engine
+                .draw_text(SCREEN_WIDTH - INV_WIDTH + 2.0, 2.0, "cards", 1);
             for y in 0..self.inventory.len() {
                 for x in 0..self.inventory[0].len() {
                     let tile_x = SCREEN_WIDTH - INV_WIDTH + 2.0 + x as f32 * CARD_SIZE;
-                    let tile_y = 2.0 + y as f32 * CARD_SIZE;
+                    let tile_y = 2.0 + y as f32 * CARD_SIZE + INV_MARGIN_TOP;
                     if let Some(card) = &self.inventory[y][x] {
                         card.draw(card_sheet, tile_x + 2.0, tile_y + 2.0);
                     } else {
@@ -427,11 +429,11 @@ impl UIManager {
         if self.inventory_open
             && local_x > SCREEN_WIDTH - INV_WIDTH + 2.0
             && local_x < SCREEN_WIDTH - 3.0
-            && local_y > 2.0
+            && local_y > 2.0 + INV_MARGIN_TOP
         {
             let tile_x =
                 (local_x as usize + INV_WIDTH_USIZE - SCREEN_WIDTH_USIZE - 2) / CARD_SIZE_USIZE;
-            let tile_y = (local_y as usize - 2) / CARD_SIZE_USIZE;
+            let tile_y = (local_y as usize - 2 - INV_MARGIN_TOP_USIZE) / CARD_SIZE_USIZE;
 
             if tile_y < INV_SLOTS_VERTICAL {
                 return Some(InventorySlot::Inventory(tile_x, tile_y));
