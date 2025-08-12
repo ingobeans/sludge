@@ -179,17 +179,28 @@ static BIG_FIRE_SLIME: EnemyType = EnemyType {
     payload: EnemyPayload::Some(&BIG_SLIME, 2),
     ..BIG_SLIME
 };
-static TROLL: EnemyType = EnemyType {
-    name: "troll",
-    sprite: 6 * 32 + 12,
+static INJURED_TROLL: EnemyType = EnemyType {
+    name: "injured_troll",
+    sprite: 17 * 32,
     size: 3,
     anim_length: 6,
-    speed: 0.4,
+    speed: 0.2,
     damage: 20,
-    max_health: 500.0,
+    max_health: 250.0,
     anim_speed: 2.0,
     damage_resistance: DamageResistance::Full(DamageType::Acid),
     ..DEFAULT_ENEMY_TYPE
+};
+static TROLL: EnemyType = EnemyType {
+    name: "troll",
+    sprite: 14 * 32,
+    size: 3,
+    anim_length: 6,
+    speed: 0.4,
+    damage: 0,
+    damage_resistance: DamageResistance::Full(DamageType::Acid),
+    payload: EnemyPayload::Some(&INJURED_TROLL, 1),
+    ..INJURED_TROLL
 };
 pub static ENEMY_TYPES: &[EnemyType] = &[
     HORSEY,
@@ -400,7 +411,7 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
     TROLL,
     EnemyType {
         name: "armored_troll",
-        sprite: 9 * 32 + 12,
+        sprite: 20 * 32,
         speed: 0.3,
         max_health: 120.0,
         damage_resistance: DamageResistance::Full(DamageType::Pierce),
