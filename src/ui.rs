@@ -371,8 +371,8 @@ impl UIManager {
     ) {
         if let Some(tower) = selected_tower {
             let width = (tower.card_slots.len() as f32 * CARD_SIZE + 4.0).max(68.0);
-            draw_square(0.0, 8.0, width, CARD_SIZE + 4.0 + 5.0 * 3.0);
-            let tile_y = 8.0 + 2.0;
+            draw_square(0.0, 7.0, width, CARD_SIZE + 4.0 + 5.0 * 3.0);
+            let tile_y = 7.0 + 2.0;
             for (index, (k, v)) in [
                 ("shoot delay", tower.shoot_delay),
                 ("reload time", tower.recharge_speed),

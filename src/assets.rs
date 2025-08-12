@@ -122,12 +122,23 @@ pub fn load_maps() -> Vec<Map> {
     }
     for item in contents {
         let data;
+        let name;
         #[cfg(feature = "bundled")]
         {
             data = DATA.get_file(item.path()).unwrap().contents_utf8().unwrap();
+            name = item.path().file_name().unwrap().to_string_lossy()[1..]
+                .split_once('.')
+                .unwrap()
+                .0
+                .to_string();
         }
         #[cfg(not(feature = "bundled"))]
         {
+            name = item.file_name().to_string_lossy()[1..]
+                .split_once('.')
+                .unwrap()
+                .0
+                .to_string();
             data = read_to_string(item.path()).expect("failed to read map data :(");
         }
         let background = parse_tilemap_layer(&data, "Background").expect("bad map data");
@@ -136,6 +147,7 @@ pub fn load_maps() -> Vec<Map> {
         let path = parse_tilemap_layer(&data, "Path").expect("bad map data");
 
         let map = Map {
+            name,
             points: parse_points_from_tilemap(&path),
             background,
             out_of_bounds,

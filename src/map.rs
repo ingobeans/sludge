@@ -68,6 +68,7 @@ pub struct BadMapDataError(&'static str);
 
 #[derive(Clone)]
 pub struct Map {
+    pub name: String,
     pub background: TileMap,
     pub obstructions: TileMap,
     pub out_of_bounds: TileMap,
@@ -76,6 +77,23 @@ pub struct Map {
     pub tower_spawnpoints: [(usize, usize); 4],
 }
 impl Map {
+    pub fn draw_preview(&self, x: f32, y: f32, old_camera: &Camera2D, tileset: &Spritesheet) {
+        let render_target = render_target(PREVIEW_WIDTH as u32, PREVIEW_HEIGHT as u32);
+        render_target.texture.set_filter(FilterMode::Nearest);
+        let preview_camera = Camera2D {
+            render_target: Some(render_target),
+            zoom: Vec2::new(1.0 / SCREEN_WIDTH * 2.0, 1.0 / SCREEN_HEIGHT * 2.0),
+            target: Vec2::new(SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0),
+
+            ..Default::default()
+        };
+        set_camera(&preview_camera);
+        tileset.draw_tilemap(&self.background);
+        tileset.draw_tilemap(&self.out_of_bounds);
+        tileset.draw_tilemap(&self.obstructions);
+        set_camera(old_camera);
+        draw_texture(&preview_camera.render_target.unwrap().texture, x, y, WHITE);
+    }
     pub fn is_unobstructed(&self, x: usize, y: usize) -> bool {
         let x = x + SPRITE_SIZE_USIZE / 2;
         let y = y + SPRITE_SIZE_USIZE / 2 + 2;

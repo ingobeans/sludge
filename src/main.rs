@@ -305,8 +305,10 @@ impl Sludge {
         }
         self.ui_manager
             .draw_ui(local_x, local_y, &self.card_sheet, selected_tower);
+
         // display topbar
-        let mut cursor_x = 0.0;
+        let mut cursor_x = 2.0;
+        draw_square(0.0, 0.0, 64.0, 8.0);
 
         // show lives
         self.icon_sheet.draw_tile(cursor_x, 0.0, 40, false, 0.0);
@@ -764,12 +766,14 @@ impl Sludge {
 
 struct GameManager {
     sludge: Option<Sludge>,
+    in_play_menu: bool,
     maps: Vec<Map>,
     last: Instant,
     pixel_camera: Camera2D,
     gameover_anim_frame: u8,
     menu_texture: Texture2D,
     text_engine: TextEngine,
+    tileset: Spritesheet,
 }
 impl GameManager {
     fn new() -> Self {
@@ -777,6 +781,7 @@ impl GameManager {
         render_target.texture.set_filter(FilterMode::Nearest);
         let menu_texture = assets::load_texture("data/assets/menu.png");
         Self {
+            in_play_menu: false,
             sludge: None,
             maps: load_maps(),
             last: Instant::now(),
@@ -790,6 +795,7 @@ impl GameManager {
             gameover_anim_frame: 0,
             menu_texture,
             text_engine: TextEngine::new(),
+            tileset: load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE),
         }
     }
     async fn run(&mut self) {
@@ -806,6 +812,8 @@ impl GameManager {
 
             if self.sludge.is_some() {
                 self.run_game(local_x, local_y);
+            } else if self.in_play_menu {
+                self.run_play_menu(local_x, local_y).await
             } else {
                 self.run_main_menu(local_x, local_y).await;
             }
@@ -828,6 +836,67 @@ impl GameManager {
                 },
             );
             next_frame().await;
+        }
+    }
+    async fn run_play_menu(&mut self, local_x: f32, local_y: f32) {
+        clear_background(WHITE);
+        let text = "select map";
+        self.text_engine.draw_text(
+            SCREEN_WIDTH / 2.0 - text.len() as f32 * 4.0 / 2.0,
+            2.0,
+            text,
+            0,
+        );
+        if draw_button(
+            &self.text_engine,
+            2.0,
+            2.0,
+            4.0 * 4.0 + 4.0,
+            8.0,
+            local_x,
+            local_y,
+            "back",
+        ) || is_key_pressed(KeyCode::Escape)
+        {
+            self.in_play_menu = false;
+        }
+        let top_margin = 16.0;
+        let horizontal_padding = 8.0;
+        let vertical_padding = 16.0;
+        let amt_horizontal = (SCREEN_WIDTH / (PREVIEW_WIDTH + horizontal_padding)) as usize;
+        let left_padding =
+            (SCREEN_WIDTH - (PREVIEW_WIDTH + horizontal_padding) * amt_horizontal as f32) / 2.0;
+        for (index, map) in self.maps.iter().skip(1).enumerate() {
+            let x = (index % amt_horizontal) as f32 * (PREVIEW_WIDTH + horizontal_padding)
+                + left_padding;
+            let y =
+                (index / amt_horizontal) as f32 * (PREVIEW_HEIGHT + vertical_padding) + top_margin;
+            if draw_button(
+                &self.text_engine,
+                x,
+                y,
+                PREVIEW_WIDTH + 4.0,
+                PREVIEW_HEIGHT + 4.0 + 8.0,
+                local_x,
+                local_y,
+                "",
+            ) {
+                let index = index + 1;
+                // start game
+                // create new Sludge instance
+                let mut new = Sludge::new(
+                    self.maps[index].clone(),
+                    index,
+                    self.text_engine.clone(),
+                    false,
+                )
+                .await;
+                new.ui_manager.open_spawn_shop();
+                self.sludge = Some(new);
+                self.in_play_menu = false;
+            }
+            map.draw_preview(x + 2.0, y + 10.0, &self.pixel_camera, &self.tileset);
+            self.text_engine.draw_text(x + 2.0, y + 2.0, &map.name, 2);
         }
     }
     async fn run_main_menu(&mut self, local_x: f32, local_y: f32) {
@@ -874,12 +943,8 @@ impl GameManager {
             local_y,
             "play",
         ) {
-            // start game
-            // create new Sludge instance
-            let mut new =
-                Sludge::new(self.maps[1].clone(), 1, self.text_engine.clone(), false).await;
-            new.ui_manager.open_spawn_shop();
-            self.sludge = Some(new);
+            self.in_play_menu = true;
+            return;
         }
         if draw_button(
             &self.text_engine,

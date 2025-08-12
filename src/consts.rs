@@ -25,6 +25,10 @@ pub const GOLD_ROUND_REWARD: u16 = 100;
 pub const DEFAULT_SHOP_SLOTS_HORIZONTAL: usize = 4;
 pub const DEFAULT_SHOP_SLOTS_VERTICAL: usize = 1;
 
+pub const PREVIEW_FACTOR: f32 = 1.0 / 4.0;
+pub const PREVIEW_WIDTH: f32 = SCREEN_WIDTH * PREVIEW_FACTOR;
+pub const PREVIEW_HEIGHT: f32 = SCREEN_HEIGHT * PREVIEW_FACTOR;
+
 pub const TOWER_MAX_SPELLS: usize = 16;
 
 pub const FREEZE_TIME: u8 = 90;

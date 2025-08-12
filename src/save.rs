@@ -91,7 +91,7 @@ impl SaveData {
         let inventory = std::array::from_fn(|index| {
             sludge.ui_manager.inventory[index / INV_SLOTS_HORIZONTAL][index % INV_SLOTS_HORIZONTAL]
                 .as_ref()
-                .map(|f| virtualize_card(&f, &all_cards))
+                .map(|f| virtualize_card(f, &all_cards))
         });
         Self {
             lives: sludge.lives,
