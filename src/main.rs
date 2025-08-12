@@ -119,7 +119,7 @@ impl Sludge {
         }
     }
     fn start_round(&mut self) {
-        self.kill_immortal_projectiles();
+        self.projectiles.clear();
         if !self.lab {
             self.ui_manager.shop = None;
         }
@@ -693,20 +693,9 @@ impl Sludge {
         for tower in self.towers.iter_mut() {
             if !tower.can_shoot() {
                 tower.delay_counter -= deltatime_ms as f32 / 1000.0;
-            } else if self.round_manager.in_progress {
+            } else {
                 let mut spawn_queue = tower.shoot();
                 self.projectile_spawnlist.append(&mut spawn_queue);
-            }
-        }
-        // if not in round,
-        // make selected tower "test fire"
-        if !self.round_manager.in_progress {
-            if let Some(selected) = self.selected {
-                let tower = &mut self.towers[selected];
-                if tower.can_shoot() {
-                    let mut spawn_queue = tower.shoot();
-                    self.projectile_spawnlist.append(&mut spawn_queue);
-                }
             }
         }
     }
