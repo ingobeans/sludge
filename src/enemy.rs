@@ -202,6 +202,18 @@ static TROLL: EnemyType = EnemyType {
     payload: EnemyPayload::Some(&INJURED_TROLL, 1),
     ..INJURED_TROLL
 };
+static GIGA_SLIME: EnemyType = EnemyType {
+    name: "giga_slime",
+    sprite: 2 * 32 + 11,
+    anim_length: 5,
+    damage: 0,
+    speed: 0.35,
+    size: 2,
+    max_health: 261.0,
+    damage_resistance: DamageResistance::Partial(DamageType::Pierce),
+    payload: EnemyPayload::Some(&BIG_FIRE_SLIME, 8),
+    ..DEFAULT_ENEMY_TYPE
+};
 pub static ENEMY_TYPES: &[EnemyType] = &[
     HORSEY,
     EnemyType {
@@ -396,18 +408,7 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         payload: EnemyPayload::Some(&GIGA_CULTIST, 1),
         ..DEFAULT_ENEMY_TYPE
     },
-    EnemyType {
-        name: "giga_slime",
-        sprite: 2 * 32 + 11,
-        anim_length: 5,
-        damage: 20,
-        speed: 0.35,
-        size: 2,
-        max_health: 261.0,
-        damage_resistance: DamageResistance::Partial(DamageType::Pierce),
-        payload: EnemyPayload::Some(&BIG_FIRE_SLIME, 8),
-        ..DEFAULT_ENEMY_TYPE
-    },
+    GIGA_SLIME,
     TROLL,
     EnemyType {
         name: "armored_troll",
@@ -427,5 +428,17 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         damage: 2,
         damage_resistance: DamageResistance::Partial(DamageType::Magic),
         ..DEFAULT_ENEMY_TYPE
+    },
+    EnemyType {
+        name: "ultra_slime",
+        sprite: 6 * 32 + 12,
+        speed: 0.30,
+        anim_length: 6,
+        size: 3,
+        max_health: 350.0,
+        anim_speed: 1.5,
+        damage: 0,
+        payload: EnemyPayload::Some(&GIGA_SLIME, 2),
+        ..GIGA_SLIME
     },
 ];
