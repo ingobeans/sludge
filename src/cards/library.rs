@@ -27,6 +27,7 @@ pub fn shotgun() -> Card {
     Card {
         name: "shotgun",
         desc: "triple barrel",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 33,
         ..Default::default()
@@ -36,6 +37,7 @@ pub fn shock() -> Card {
     Card {
         name: "shock",
         desc: "makes projectile\nbriefly stun enemies",
+        tier: 1,
         ty: CardType::Modifier(CardModifierData {
             stuns: 7,
             ..Default::default()
@@ -62,6 +64,7 @@ pub fn lightning() -> Card {
     let card = Card {
         name: "lightning",
         desc: "zaps that chain",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 31,
         ..Default::default()
@@ -103,6 +106,7 @@ pub fn hammer() -> Card {
     Card {
         name: "hammer",
         desc: "throws a hammer",
+        tier: 1,
         ty: CardType::Projectile(projectile, false),
         sprite: 30,
         ..Default::default()
@@ -117,6 +121,7 @@ pub fn ghost_shot() -> Card {
             ..Default::default()
         }),
         sprite: 29,
+        tier: 2,
         ..Default::default()
     }
 }
@@ -130,6 +135,7 @@ pub fn scatter() -> Card {
             recharge_speed: -0.3,
             ..Default::default()
         }),
+        tier: 0,
         sprite: 28,
         ..Default::default()
     }
@@ -142,6 +148,7 @@ pub fn high_precision() -> Card {
             spread: -40.0_f32.to_radians(),
             ..Default::default()
         }),
+        tier: 1,
         sprite: 27,
         ..Default::default()
     }
@@ -163,6 +170,7 @@ pub fn playing_card() -> Card {
     Card {
         name: "playing card",
         desc: "random dmg 0-10",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 26,
         ..Default::default()
@@ -187,6 +195,7 @@ pub fn sunbeam() -> Card {
     Card {
         name: "sunbeam",
         desc: "a bright beam",
+        tier: 1,
         ty: CardType::Projectile(projectile, false),
         sprite: 2,
         ..Default::default()
@@ -200,7 +209,7 @@ pub fn death_ray() -> Card {
             speed: 8.0,
             lifetime: 3.0,
             shoot_delay: 0.85,
-            recharge_speed: 0.85,
+            recharge_speed: 0.65,
             piercing: true,
             damage: hashmap!(DamageType::Magic => 25.0),
             ..Default::default()
@@ -211,6 +220,7 @@ pub fn death_ray() -> Card {
     Card {
         name: "death ray",
         desc: "magic beam of death",
+        tier: 1,
         ty: CardType::Projectile(projectile, false),
         sprite: 21,
         ..Default::default()
@@ -235,6 +245,7 @@ pub fn freeze_ray() -> Card {
     Card {
         name: "freeze ray",
         desc: "a really cold ray",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 20,
         ..Default::default()
@@ -244,9 +255,10 @@ pub fn supercharge() -> Card {
     Card {
         name: "supercharge",
         desc: "makes tower faster",
+        tier: 1,
         ty: CardType::Modifier(CardModifierData {
             shoot_delay: -0.3,
-            recharge_speed: -0.2,
+            recharge_speed: -0.11,
             ..Default::default()
         }),
         sprite: 25,
@@ -271,6 +283,7 @@ pub fn road_thorns() -> Card {
     Card {
         name: "road thorns",
         desc: "put thorns on path",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 22,
         ..Default::default()
@@ -293,6 +306,7 @@ pub fn icecicle() -> Card {
     Card {
         name: "icecicle",
         desc: "shoot an icecicle",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 19,
         ..Default::default()
@@ -303,6 +317,7 @@ pub fn freezeify() -> Card {
     Card {
         name: "freezeify",
         desc: "adds extra cold dmg",
+        tier: 2,
         ty: CardType::Modifier(CardModifierData {
             damage: hashmap!(DamageType::Cold => 2.0),
             shoot_delay: 0.4,
@@ -317,8 +332,9 @@ pub fn acidify() -> Card {
     Card {
         name: "acidify",
         desc: "adds extra acid dmg",
+        tier: 3,
         ty: CardType::Modifier(CardModifierData {
-            damage: hashmap!(DamageType::Acid => 4.0),
+            damage: hashmap!(DamageType::Acid => 2.0),
             shoot_delay: 0.4,
             ..Default::default()
         }),
@@ -343,6 +359,7 @@ pub fn bubble() -> Card {
     Card {
         name: "bubble",
         desc: "harmless bubble",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 9,
         ..Default::default()
@@ -352,6 +369,7 @@ pub fn double() -> Card {
     Card {
         name: "double draw",
         desc: "fires next two\nprojectiles",
+        tier: 0,
         ty: CardType::Multidraw(2),
         sprite: 5,
         ..Default::default()
@@ -362,6 +380,7 @@ pub fn triple() -> Card {
     Card {
         name: "triple draw",
         desc: "fires next three\nprojectiles",
+        tier: 0,
         ty: CardType::Multidraw(3),
         sprite: 6,
         ..Default::default()
@@ -372,6 +391,7 @@ pub fn speed() -> Card {
     Card {
         name: "speedify",
         desc: "speeds a proj up",
+        tier: 0,
         ty: CardType::Modifier(CardModifierData {
             speed: 2.0,
             ..Default::default()
@@ -386,6 +406,7 @@ pub fn aiming() -> Card {
     Card {
         name: "aiming",
         desc: "makes projectile\naim towards nearest\nenemy",
+        tier: 0,
         ty: CardType::Modifier(CardModifierData {
             aim: true,
             ..Default::default()
@@ -399,6 +420,7 @@ pub fn homing() -> Card {
     Card {
         name: "homing",
         desc: "makes projectile\nhome towards nearest\nenemy",
+        tier: 1,
         ty: CardType::Modifier(CardModifierData {
             homing: true,
             ..Default::default()
@@ -425,6 +447,7 @@ pub fn magicbolt() -> Card {
     Card {
         name: "magicbolt",
         desc: "basic projectile",
+        tier: 0,
         ty: CardType::Projectile(projectile, true),
         sprite: 1,
         ..Default::default()
@@ -447,6 +470,7 @@ pub fn thorn_dart() -> Card {
     let main = Card {
         name: "thorn dart",
         desc: "pierces first enemy",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 4,
         ..Default::default()
@@ -476,6 +500,7 @@ pub fn dart() -> Card {
     Card {
         name: "dart",
         desc: "regular dart",
+        tier: 0,
         ty: CardType::Projectile(projectile, true),
         sprite: 10,
         ..Default::default()
@@ -499,6 +524,7 @@ pub fn razor() -> Card {
     Card {
         name: "razor",
         desc: "sharp razor disc",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 16,
         ..Default::default()
@@ -541,6 +567,7 @@ pub fn fireball() -> Card {
     Card {
         name: "fireball",
         desc: "burning fire",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 11,
         ..Default::default()
@@ -565,6 +592,7 @@ pub fn explosion() -> Card {
     Card {
         name: "explosion",
         desc: "instant explosion",
+        tier: 1,
         ty: CardType::Projectile(explosion_projectile, false),
         sprite: 13,
         ..Default::default()
@@ -590,6 +618,7 @@ pub fn stun_explosion() -> Card {
     Card {
         name: "stun explosion",
         desc: "akin to a flashbang",
+        tier: 1,
         ty: CardType::Projectile(explosion_projectile, false),
         sprite: 14,
         ..Default::default()
@@ -614,6 +643,7 @@ pub fn bomb() -> Card {
     Card {
         name: "bomb",
         desc: "goes boom",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 3,
         ..Default::default()
@@ -637,6 +667,7 @@ pub fn banana() -> Card {
     Card {
         name: "banana peel",
         desc: "stuns enemies",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 23,
         ..Default::default()
@@ -649,7 +680,7 @@ pub fn rocket() -> Card {
         modifier_data: CardModifierData {
             speed: 3.0,
             lifetime: 40.0,
-            shoot_delay: 1.25,
+            shoot_delay: 0.9,
             ..Default::default()
         },
         payload: vec![explosion()],
@@ -659,17 +690,18 @@ pub fn rocket() -> Card {
     Card {
         name: "rocket",
         desc: "boom on impact",
+        tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 15,
         ..Default::default()
     }
 }
 
-#[allow(dead_code)]
 pub fn piercing() -> Card {
     Card {
         name: "piercing",
         desc: "proj pierces enemies",
+        tier: 3,
         sprite: 24,
         ty: CardType::Modifier(CardModifierData {
             piercing: true,
@@ -718,6 +750,7 @@ pub fn acid_flask() -> Card {
     Card {
         name: "acid flask",
         desc: "hurl at your foes",
+        tier: 1,
         ty: CardType::Projectile(projectile, false),
         sprite: 12,
         ..Default::default()

@@ -748,6 +748,10 @@ impl Sludge {
                     DEFAULT_SHOP_SLOTS_HORIZONTAL,
                     DEFAULT_SHOP_SLOTS_VERTICAL,
                 );
+
+                // save
+                let data = SaveData::create(self);
+                write_save(data);
             } else {
                 self.ui_manager.open_lab_shop();
             }
@@ -755,10 +759,6 @@ impl Sludge {
             // because that would be kind of OP, allowing you to ex. build a larger and larger
             // heap of road thorns
             self.kill_immortal_projectiles();
-
-            // save
-            let data = SaveData::create(self);
-            write_save(data);
         }
     }
     fn kill_immortal_projectiles(&mut self) {
@@ -1066,7 +1066,8 @@ impl GameManager {
                 if clicked {
                     // save the game if we're paused and exiting to menu
                     if let GameState::Paused = game.state {
-                        if game.round_manager.round > 0
+                        if !game.lab
+                            && game.round_manager.round > 0
                             && !game.round_manager.in_progress
                             && game.ui_manager.shop.is_some()
                         {

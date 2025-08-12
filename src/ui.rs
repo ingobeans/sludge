@@ -2,7 +2,7 @@ use macroquad::prelude::*;
 
 use crate::{
     assets::load_spritesheet,
-    cards::{get_cards, library, Card, CardType},
+    cards::{get_cards, get_random_shop_card, library, Card, CardType},
     consts::*,
     map::Spritesheet,
     tower::Tower,
@@ -105,7 +105,10 @@ impl UIManager {
         });
     }
     pub fn open_spawn_shop(&mut self) {
-        self.open_shop(0, 4, 2);
+        self.shop = Some(Shop {
+            cards: vec![vec![None; 4]; 2],
+            open: true,
+        });
         let shop = self.shop.as_mut().unwrap();
         let mut cards = vec![
             (library::road_thorns(), 150),
@@ -119,12 +122,9 @@ impl UIManager {
         ];
 
         for row in shop.cards.iter_mut() {
-            for (card, price) in row.iter_mut().flatten() {
-                if let Some((popped, new_price)) = cards.pop() {
-                    *card = popped;
-                    *price = new_price;
-                } else {
-                    *price = 200
+            for slot in row.iter_mut() {
+                if let Some((popped, price)) = cards.pop() {
+                    *slot = Some((popped, price));
                 }
             }
         }
@@ -137,8 +137,8 @@ impl UIManager {
         for _ in 0..height {
             let mut row = Vec::with_capacity(width);
             for _ in 0..width {
+                let card = get_random_shop_card(round, &cards);
                 let mut price = rand::gen_range(120.0, 210.0);
-                let card = cards[rand::gen_range(0, cards.len())].clone();
                 if let CardType::Projectile(_, _) = &card.ty {
                     price *= projectile_penalty;
                 }

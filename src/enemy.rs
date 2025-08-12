@@ -357,8 +357,8 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         damage: 20,
         speed: 1.0,
         size: 2,
-        max_health: 15.0,
-        damage_resistance: DamageResistance::Partial(DamageType::Magic),
+        max_health: 61.0,
+        damage_resistance: DamageResistance::Full(DamageType::Pierce),
         payload: EnemyPayload::Some(&GIGA_CULTIST, 1),
         ..DEFAULT_ENEMY_TYPE
     },

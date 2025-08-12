@@ -36,6 +36,8 @@ pub const FREEZE_TIME: u8 = 90;
 pub const CARD_INFO_WIDTH: f32 = 64.0 + 32.0;
 pub const CARD_INFO_HEIGHT: f32 = 32.0;
 
+pub const UPGRADE_TIER_CHANCE: u8 = 7;
+
 pub const COLOR_BEIGE: Color = Color::from_hex(0xb86f50);
 pub const COLOR_BROWN: Color = Color::from_hex(0x743f39);
 pub const COLOR_YELLOW: Color = Color::from_hex(0xffe762);

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Debug};
 
-use macroquad::{color::Color, math::Vec2, shapes::draw_rectangle};
+use macroquad::{color::Color, math::Vec2, rand, shapes::draw_rectangle};
 
 use crate::{
     assets::ProjectileSound, consts::*, map::Spritesheet, particle::Particle, tower::fire_deck,
@@ -16,12 +16,12 @@ pub fn get_cards() -> Vec<Card> {
         library::homing(),
         library::speed(),
         library::acidify(),
+        library::piercing(),
         library::supercharge(),
         library::high_precision(),
         library::scatter(),
         library::ghost_shot(),
         library::shock(),
-        //library::piercing(), // piercing is disabled because its wayyyy to OP and im not sure how i want to nerf it
         library::freezeify(),
         // multidraw
         library::double(),
@@ -66,6 +66,37 @@ pub fn get_cards() -> Vec<Card> {
 
     cards.append(&mut triggers);
     cards
+}
+
+fn sort_cards_to_tiers(cards: &[Card]) -> [Vec<&Card>; 4] {
+    let mut tiers = std::array::from_fn(|_| Vec::new());
+    for card in cards {
+        tiers[card.tier as usize].push(card);
+    }
+    tiers
+}
+
+pub fn get_random_shop_card(round: usize, cards: &[Card]) -> Card {
+    let round = round as u8;
+
+    let mut tier = 0;
+    let tiers = sort_cards_to_tiers(cards);
+
+    // chance to increment tier. chance gets higher as rounds progress
+    loop {
+        if rand::gen_range(0, 100_u8).saturating_sub(round / 3) < UPGRADE_TIER_CHANCE {
+            if tier >= 2 {
+                break;
+            }
+            tier += 1;
+        } else {
+            break;
+        }
+    }
+
+    let tier_cards = &tiers[tier as usize];
+    let card = tier_cards[rand::gen_range(0, tier_cards.len())].clone();
+    card
 }
 
 #[derive(Clone)]
@@ -261,9 +292,15 @@ impl CardModifierData {
 pub struct Card {
     pub name: &'static str,
     pub desc: &'static str,
+    pub tier: u8,
     pub ty: CardType,
     pub sprite: usize,
     pub is_trigger: bool,
+}
+impl Debug for Card {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!("Card({})", self.name))
+    }
 }
 impl PartialEq for Card {
     fn eq(&self, other: &Self) -> bool {
