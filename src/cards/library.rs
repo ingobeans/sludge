@@ -8,6 +8,70 @@ pub fn as_trigger(mut card: Card) -> Card {
     card
 }
 
+pub fn yoyo() -> Card {
+    Card {
+        name: "yo-yo",
+        desc: "pretty sick",
+        tier: 0,
+        ty: CardType::Projectile(
+            Projectile {
+                draw_type: ProjectileDrawType::Particle(particle::YOYO),
+                hit_sound: ProjectileSound::Hit,
+                modifier_data: CardModifierData {
+                    speed: 5.0,
+                    lifetime: 45.0,
+                    piercing: true,
+                    shoot_delay: 0.35,
+                    damage: hashmap!(DamageType::Pierce => 1.0),
+                    boomerang: true,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            false,
+        ),
+        sprite: 36,
+        ..Default::default()
+    }
+}
+pub fn boomerangify() -> Card {
+    Card {
+        name: "boomerangify",
+        desc: "make proj arc\nback towards caster",
+        tier: 0,
+        ty: CardType::Modifier(CardModifierData {
+            shoot_delay: -0.15,
+            boomerang: true,
+            ..Default::default()
+        }),
+        sprite: 35,
+        ..Default::default()
+    }
+}
+pub fn potato() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Sprite(18, SpriteRotationMode::Spin),
+        hit_sound: ProjectileSound::Hit,
+        drag: 0.02,
+        modifier_data: CardModifierData {
+            speed: 5.0,
+            lifetime: 45.0,
+            shoot_delay: 0.15,
+            damage: hashmap!(DamageType::Pierce => 5.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    Card {
+        name: "potato",
+        desc: "just a potato",
+        tier: 0,
+        ty: CardType::Projectile(projectile, false),
+        sprite: 34,
+        ..Default::default()
+    }
+}
 pub fn shotgun() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::SHOTGUN),

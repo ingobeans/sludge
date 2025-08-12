@@ -6,7 +6,7 @@ sludge is a tower defense game written in rust with "deck building" mechanics li
 
 you have some towers that you can move around, but they wont do anything if you dont give them any cards. you get cards from a shop that opens between rounds and at the start of the game. the actual behaviour of how cards are cast is basically as close to Noita's wand building as i could get it, so theres a lot of complexity and you'll have to learn through experimentation how make good builds.
 
-theres over 30 cards in the game as of right now, of types projectile, modifier and multidraw
+theres over 35 cards in the game as of right now, of types projectile, modifier and multidraw
 
 ## install
 

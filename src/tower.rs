@@ -141,8 +141,10 @@ pub fn fire_deck(
             projectile.modifier_data.merge(&context.modifier_data);
 
             let max_spread = projectile.modifier_data.spread.max(0.0);
-            projectile.x = origin_x;
-            projectile.y = origin_y;
+            projectile.x = origin_x + SPRITE_SIZE / 2.0;
+            projectile.y = origin_y + SPRITE_SIZE / 2.0;
+            projectile.spawn_x = origin_x + SPRITE_SIZE / 2.0;
+            projectile.spawn_y = origin_y + SPRITE_SIZE / 2.0;
             for _ in 0..projectile.clones_amount + 1 {
                 let mut projectile = projectile.clone();
                 let spread = rand::gen_range(-max_spread, max_spread);

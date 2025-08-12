@@ -13,6 +13,7 @@ use crate::consts::*;
 use crate::enemy::*;
 use crate::map::*;
 use crate::particle::Particle;
+use crate::particle::ParticleContext;
 use crate::rounds::*;
 use crate::save::*;
 use crate::tower::*;
@@ -62,7 +63,7 @@ struct Sludge {
     towers: Vec<Tower>,
     projectiles: Vec<Projectile>,
     projectile_spawnlist: Vec<Projectile>,
-    orphaned_particles: Vec<(Particle, f32, f32, Vec2)>,
+    orphaned_particles: Vec<(Particle, ParticleContext)>,
     lives: u8,
     ui_manager: UIManager,
     round_manager: RoundManager,
@@ -426,8 +427,8 @@ impl Sludge {
                         SpriteRotationMode::None => 0.0,
                     };
                     self.particle_sheet.draw_tile(
-                        projectile.x,
-                        projectile.y,
+                        projectile.x - SPRITE_SIZE / 2.0,
+                        projectile.y - SPRITE_SIZE / 2.0,
                         *index,
                         false,
                         rotation,
@@ -436,21 +437,25 @@ impl Sludge {
                 ProjectileDrawType::Particle(particle) => {
                     (particle.function)(
                         particle,
-                        projectile.x,
-                        projectile.y,
-                        &projectile.direction,
+                        &ParticleContext {
+                            x: projectile.x,
+                            y: projectile.y,
+                            origin_x: projectile.spawn_x,
+                            origin_y: projectile.spawn_y,
+                            direction: projectile.direction,
+                        },
                         &self.particle_sheet,
                     );
                 }
                 _ => {}
             }
         }
-        for (particle, x, y, direction) in self.orphaned_particles.iter() {
-            (particle.function)(particle, *x, *y, direction, &self.particle_sheet);
+        for (particle, ctx) in self.orphaned_particles.iter() {
+            (particle.function)(particle, ctx, &self.particle_sheet);
         }
     }
     fn update_particles(&mut self) {
-        self.orphaned_particles.retain_mut(|(projectile, _, _, _)| {
+        self.orphaned_particles.retain_mut(|(projectile, _)| {
             projectile.life += 1;
             projectile.life < projectile.lifetime
         });
@@ -471,12 +476,23 @@ impl Sludge {
                 particle.life += 1;
             }
 
+            let mut homed = false;
             if projectile.modifier_data.homing && !projectile.straight {
                 let target_dir =
                     get_direction_nearest_enemy(&self.enemies, projectile.x, projectile.y);
                 if let Some(target_dir) = target_dir {
                     projectile.direction = target_dir;
+                    homed = true;
                 }
+            }
+            if !homed && projectile.modifier_data.boomerang {
+                // make proj boomerang back towards towers
+                let spawn_angle = Vec2::new(
+                    projectile.spawn_x - projectile.x,
+                    projectile.spawn_y - projectile.y,
+                );
+                let new = projectile.direction.lerp(spawn_angle, 0.005);
+                projectile.direction = new
             }
             if !projectile.modifier_data.anti_piercing {
                 // check if projectile hit any enemy
@@ -555,9 +571,13 @@ impl Sludge {
                                 particle.lifetime = projectile.modifier_data.stuns;
                                 self.orphaned_particles.push((
                                     particle,
-                                    enemy.x,
-                                    enemy.y,
-                                    projectile.direction,
+                                    ParticleContext {
+                                        x: enemy.x,
+                                        y: enemy.y,
+                                        origin_x: enemy.x,
+                                        origin_y: enemy.y,
+                                        direction: projectile.direction,
+                                    },
                                 ));
                             }
                         }
@@ -570,9 +590,13 @@ impl Sludge {
                         // spawn hitmarker particle
                         self.orphaned_particles.push((
                             particle::HIT_MARKER,
-                            projectile.x,
-                            projectile.y,
-                            projectile.direction,
+                            ParticleContext {
+                                x: projectile.x,
+                                y: projectile.y,
+                                origin_x: projectile.spawn_x,
+                                origin_y: projectile.spawn_y,
+                                direction: projectile.direction,
+                            },
                         ));
                         if !projectile.modifier_data.piercing {
                             // kil projectile if not piercing
@@ -634,8 +658,16 @@ impl Sludge {
             // if projectile had a particle thats still alive, orphan it
             if let ProjectileDrawType::Particle(particle) = killed.draw_type {
                 if particle.life < particle.lifetime {
-                    self.orphaned_particles
-                        .push((particle, killed.x, killed.y, killed.direction));
+                    self.orphaned_particles.push((
+                        particle,
+                        ParticleContext {
+                            x: killed.x,
+                            y: killed.y,
+                            origin_x: killed.spawn_x,
+                            origin_y: killed.spawn_y,
+                            direction: killed.direction,
+                        },
+                    ));
                 }
             }
         }

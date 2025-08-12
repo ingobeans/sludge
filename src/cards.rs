@@ -23,6 +23,7 @@ pub fn get_cards() -> Vec<Card> {
         library::ghost_shot(),
         library::shock(),
         library::freezeify(),
+        library::boomerangify(),
         // multidraw
         library::double(),
         library::triple(),
@@ -48,6 +49,8 @@ pub fn get_cards() -> Vec<Card> {
         library::hammer(),
         library::lightning(),
         library::shotgun(),
+        library::potato(),
+        library::yoyo(),
     ];
 
     if cards.len() as u8 > u8::MAX / 2 {
@@ -95,8 +98,7 @@ pub fn get_random_shop_card(round: usize, cards: &[Card]) -> Card {
     }
 
     let tier_cards = &tiers[tier as usize];
-    let card = tier_cards[rand::gen_range(0, tier_cards.len())].clone();
-    card
+    tier_cards[rand::gen_range(0, tier_cards.len())].clone()
 }
 
 #[derive(Clone)]
@@ -147,6 +149,8 @@ impl Default for ProjectileDrawType {
 pub struct Projectile {
     pub x: f32,
     pub y: f32,
+    pub spawn_x: f32,
+    pub spawn_y: f32,
     /// How much larger hitbox the projectile has than usual
     pub extra_size: f32,
     /// Direction projectile is traveling
@@ -224,6 +228,8 @@ pub struct CardModifierData {
     pub anti_piercing: bool,
     /// Can projectile travel through walls/obstacles
     pub ghost: bool,
+    /// Does projectile arc back towards caster
+    pub boomerang: bool,
     pub speed: f32,
     /// Degrees (in radians) of spread/inaccuracy
     pub spread: f32,
@@ -274,6 +280,7 @@ impl CardModifierData {
         self.lifetime += other.lifetime;
         self.piercing |= other.piercing;
         self.ghost |= other.ghost;
+        self.boomerang |= other.boomerang;
         self.speed += other.speed;
         self.spread += other.spread;
         self.stuns += other.stuns;
