@@ -14,7 +14,7 @@ big_spider-4
 
 delay-10 big_slime-10 slime_car-20
 delay-5 slime-30 delay-15 fire_slime-10 delay-10 skeleton-10
-delay-10 spider-20 delay-30 baby_spider-10 delay-10 slime-20
+delay-10 spider-20 delay-10 baby_spider-10 delay-10 slime-20
 delay-10 magicbird-5 spider-10 slime-10 spider-10 slime-10
 !delay-15 skeleton-20 delay-23 skeleton-1 cultist-3
 delay-10 big_slime-2 fire_slime-2 slime-2 big_slime-3 fire_slime-3 slime-3 big_slime-4 fire_slime-4 big_slime-4 fire_slime-4 slime-4 big_slime-4 fire_slime-4 slime-20
