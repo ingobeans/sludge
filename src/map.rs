@@ -94,10 +94,11 @@ impl Map {
         draw_texture(&preview_camera.render_target.unwrap().texture, x, y, WHITE);
     }
     pub fn is_unobstructed(&self, x: usize, y: usize) -> bool {
-        let x = x + SPRITE_SIZE_USIZE / 2;
-        let y = y + SPRITE_SIZE_USIZE / 2 + 2;
-        let tile_x = x / SPRITE_SIZE_USIZE;
-        let tile_y = y / SPRITE_SIZE_USIZE;
+        let centered_x = x + SPRITE_SIZE_USIZE / 2;
+        let centered_y = y + SPRITE_SIZE_USIZE / 2 + 2;
+        let tile_x = centered_x / SPRITE_SIZE_USIZE;
+        let tile_y = centered_y / SPRITE_SIZE_USIZE;
+
         if self.obstructions[tile_y][tile_x] != 0 {
             return false;
         }
@@ -108,6 +109,14 @@ impl Map {
             return false;
         }
 
+        // check if tile is very near the edge of a tile,
+        // if so, also check the neighbouring tile
+        let edge_margin = 2;
+        if x > edge_margin && tile_x != (centered_x - edge_margin) / SPRITE_SIZE_USIZE {
+            return self.is_unobstructed(x - SPRITE_SIZE_USIZE / 2, y);
+        } else if tile_x != (centered_x + edge_margin) / SPRITE_SIZE_USIZE {
+            return self.is_unobstructed(x + SPRITE_SIZE_USIZE / 2, y);
+        }
         true
     }
     pub fn get_pos_along_path(&self, score: f32) -> Option<(f32, f32)> {
