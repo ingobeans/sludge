@@ -49,7 +49,7 @@ impl EnemyType {
         damage
     }
 }
-#[derive(Clone, Default)]
+#[derive(Clone, Copy, Default)]
 /// Stores the state of an enemy. Is passed to its children on death
 pub struct EnemyState {
     /// Tracks how far along the path this enemy has moved

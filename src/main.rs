@@ -65,7 +65,6 @@ struct Sludge {
     map: Map,
     map_index: usize,
     enemies: Vec<Enemy>,
-    enemy_spawn_queue: Vec<Vec<(&'static EnemyType, f32, f32, EnemyState)>>,
     towers: Vec<Tower>,
     projectiles: Vec<Projectile>,
     projectile_spawnlist: Vec<Projectile>,
@@ -113,7 +112,6 @@ impl Sludge {
             map,
             map_index,
             enemies: Vec::with_capacity(100),
-            enemy_spawn_queue: Vec::with_capacity(5),
             towers,
             projectiles: Vec::with_capacity(100),
             projectile_spawnlist: Vec::with_capacity(100),
@@ -758,15 +756,7 @@ impl Sludge {
             return;
         }
 
-        self.enemy_spawn_queue.retain_mut(|entry| {
-            if let Some((ty, x, y, state)) = entry.pop() {
-                let enemy = Enemy::new(ty, x, y, state);
-                self.enemies.push(enemy);
-                true
-            } else {
-                false
-            }
-        });
+        let mut spawnlist = Vec::new();
 
         let round_update = self.round_manager.update();
         if let RoundUpdate::Spawn(enemy) = &round_update {
@@ -795,9 +785,16 @@ impl Sludge {
                 self.ui_manager.gold +=
                     (enemy.ty.damage as f32 * 4.0 * enemy.gold_factor.unwrap_or(1.0)) as u16;
                 if let EnemyPayload::Some(enemy_type, amount) = enemy.ty.payload {
-                    let new =
-                        vec![(enemy_type, enemy.x, enemy.y, enemy.state.clone()); amount.into()];
-                    self.enemy_spawn_queue.push(new);
+                    for index in 0..amount {
+                        let score = enemy.state.score + index as f32 * 2.0 - amount as f32 + 1.0;
+                        let mut state = enemy.state;
+                        state.score = score;
+                        let Some((x, y)) = self.map.get_pos_along_path(score) else {
+                            continue;
+                        };
+                        let new = Enemy::new(enemy_type, x, y, state);
+                        spawnlist.push(new);
+                    }
                 }
                 return false;
             }
@@ -836,10 +833,9 @@ impl Sludge {
             true
         });
 
-        if matches!(round_update, RoundUpdate::Finished)
-            && self.enemies.is_empty()
-            && self.enemy_spawn_queue.is_empty()
-        {
+        self.enemies.append(&mut spawnlist);
+
+        if matches!(round_update, RoundUpdate::Finished) && self.enemies.is_empty() {
             self.ui_manager.gold += GOLD_ROUND_REWARD;
             self.round_manager.finish_round();
             if !self.lab {
