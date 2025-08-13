@@ -388,7 +388,7 @@ impl UIManager {
             return true;
         }
         // inventory
-        if local_x > SCREEN_WIDTH - INV_WIDTH {
+        if self.inventory_open && local_x > SCREEN_WIDTH - INV_WIDTH {
             return true;
         }
         // tower cards
