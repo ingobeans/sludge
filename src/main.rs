@@ -653,8 +653,8 @@ impl Sludge {
                 && projectile.y > 0.0
             {
                 let (x, y) = (
-                    (projectile.x + SPRITE_SIZE / 2.0) as usize / SPRITE_SIZE_USIZE,
-                    (projectile.y + SPRITE_SIZE / 2.0) as usize / SPRITE_SIZE_USIZE,
+                    projectile.x as usize / SPRITE_SIZE_USIZE,
+                    projectile.y as usize / SPRITE_SIZE_USIZE,
                 );
                 if y < self.map.obstructions.len()
                     && x < self.map.obstructions[0].len()
