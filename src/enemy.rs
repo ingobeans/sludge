@@ -68,6 +68,8 @@ pub struct Enemy {
     pub state: EnemyState,
     /// Is enemy moving left?
     pub moving_left: bool,
+    /// The gold factor of the last projectile that hit it
+    pub gold_factor: Option<f32>,
 }
 impl Enemy {
     pub fn new(ty: &'static EnemyType, x: f32, y: f32, state: EnemyState) -> Self {
@@ -78,6 +80,7 @@ impl Enemy {
             health: ty.max_health,
             state,
             moving_left: false,
+            gold_factor: None,
         }
     }
 }

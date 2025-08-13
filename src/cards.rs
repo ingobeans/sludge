@@ -25,6 +25,7 @@ pub fn get_cards() -> Vec<Card> {
         library::freezeify(),
         library::boomerangify(),
         library::snakeify(),
+        library::greed(),
         // multidraw
         library::double(),
         library::triple(),
@@ -236,6 +237,8 @@ pub struct CardModifierData {
     pub speed: f32,
     /// Degrees (in radians) of spread/inaccuracy
     pub spread: f32,
+    /// Factor for how much gold is earned per enemy kill
+    pub gold_factor: Option<f32>,
     pub damage: HashMap<DamageType, f32>,
 }
 impl CardModifierData {
@@ -288,6 +291,10 @@ impl CardModifierData {
         self.speed += other.speed;
         self.spread += other.spread;
         self.stuns += other.stuns;
+        if self.gold_factor.is_some() || other.gold_factor.is_some() {
+            self.gold_factor =
+                Some(self.gold_factor.unwrap_or(1.0) * other.gold_factor.unwrap_or(1.0));
+        }
         for (k, v) in &other.damage {
             if let Some(amt) = self.damage.get_mut(k) {
                 *amt += v;

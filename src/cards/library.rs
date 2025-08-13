@@ -8,6 +8,20 @@ pub fn as_trigger(mut card: Card) -> Card {
     card
 }
 
+pub fn greed() -> Card {
+    Card {
+        name: "greed",
+        desc: "enemies killed by\nproj give 2x gold",
+        tier: 0,
+        ty: CardType::Modifier(CardModifierData {
+            recharge_speed: 0.1,
+            gold_factor: Some(2.0),
+            ..Default::default()
+        }),
+        sprite: 39,
+        ..Default::default()
+    }
+}
 pub fn snakeify() -> Card {
     Card {
         name: "snakeify",

@@ -568,6 +568,9 @@ impl Sludge {
                             }
                             enemy.health -= amount;
                         }
+                        if !projectile.modifier_data.damage.is_empty() {
+                            enemy.gold_factor = projectile.modifier_data.gold_factor;
+                        }
                         // play sound
                         projectile.hit_sound.play(&self.sfx_manager);
                         projectile.hit_sound = ProjectileSound::None;
@@ -761,7 +764,8 @@ impl Sludge {
 
         self.enemies.retain_mut(|enemy| {
             if enemy.health <= 0.0 {
-                self.ui_manager.gold += enemy.ty.damage as u16 * 4;
+                self.ui_manager.gold +=
+                    (enemy.ty.damage as f32 * 4.0 * enemy.gold_factor.unwrap_or(1.0)) as u16;
                 if let EnemyPayload::Some(enemy_type, amount) = enemy.ty.payload {
                     for _ in 0..amount {
                         self.enemy_spawn_queue.push_back((
