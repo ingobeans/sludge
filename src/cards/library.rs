@@ -424,7 +424,7 @@ pub fn bubble() -> Card {
     Card {
         name: "bubble",
         desc: "harmless bubble",
-        tier: 0,
+        tier: 1,
         ty: CardType::Projectile(projectile, false),
         sprite: 9,
         ..Default::default()
