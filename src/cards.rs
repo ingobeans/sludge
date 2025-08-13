@@ -26,6 +26,7 @@ pub fn get_cards() -> Vec<Card> {
         library::boomerangify(),
         library::snakeify(),
         library::greed(),
+        library::pay2win(),
         // multidraw
         library::double(),
         library::triple(),

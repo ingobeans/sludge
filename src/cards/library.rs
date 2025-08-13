@@ -8,6 +8,21 @@ pub fn as_trigger(mut card: Card) -> Card {
     card
 }
 
+pub fn pay2win() -> Card {
+    Card {
+        name: "pay to win",
+        desc: "enemies killed by\nproj give zero gold",
+        tier: 1,
+        ty: CardType::Modifier(CardModifierData {
+            shoot_delay: -0.3,
+            recharge_speed: -0.2,
+            gold_factor: Some(0.0),
+            ..Default::default()
+        }),
+        sprite: 41,
+        ..Default::default()
+    }
+}
 pub fn blowdart() -> Card {
     let projectile = Projectile {
         draw_type: ProjectileDrawType::Sprite(20, SpriteRotationMode::Direction),
@@ -375,7 +390,7 @@ pub fn supercharge() -> Card {
         desc: "makes tower faster",
         tier: 1,
         ty: CardType::Modifier(CardModifierData {
-            shoot_delay: -0.3,
+            shoot_delay: -0.25,
             recharge_speed: -0.11,
             ..Default::default()
         }),
