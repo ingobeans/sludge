@@ -501,7 +501,7 @@ pub fn bubble() -> Card {
 pub fn double() -> Card {
     Card {
         name: "double draw",
-        desc: "fires next two\nprojectiles",
+        desc: "fires next two\nprojectiles together",
         tier: 0,
         ty: CardType::Multidraw(2),
         sprite: 5,
@@ -512,7 +512,7 @@ pub fn double() -> Card {
 pub fn triple() -> Card {
     Card {
         name: "triple draw",
-        desc: "fires next three\nprojectiles",
+        desc: "fires next three\nprojectiles together",
         tier: 0,
         ty: CardType::Multidraw(3),
         sprite: 6,
