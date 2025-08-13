@@ -45,9 +45,10 @@ fn get_direction_nearest_enemy(enemies: &Vec<Enemy>, x: f32, y: f32) -> Option<V
         if enemy.health <= 0.0 {
             continue;
         }
-        let distance = ((enemy.x - x).powi(2) + (enemy.y - y).powi(2)).sqrt();
+        let (enemy_x, enemy_y) = enemy.get_centre();
+        let distance = ((enemy_x - x).powi(2) + (enemy_y - y).powi(2)).sqrt();
         if nearest.is_none() || distance < nearest.unwrap().0 {
-            nearest = Some((distance, Vec2::new(enemy.x - x, enemy.y - y).normalize()));
+            nearest = Some((distance, Vec2::new(enemy_x - x, enemy_y - y).normalize()));
         }
     }
     nearest.map(|f| f.1)
@@ -406,6 +407,7 @@ impl Sludge {
             if enemy.moving_left && enemy.ty.should_flip {
                 flipped = true;
             }
+            let (centre_x, _) = enemy.get_centre();
             for i in 0..enemy.ty.size {
                 for j in 0..enemy.ty.size {
                     let mut sprite = enemy.ty.sprite + anim_frame * enemy.ty.size;
@@ -429,7 +431,7 @@ impl Sludge {
                 let extra_size = enemy.ty.size - 1;
                 let ground_offset = 2.0 + extra_size as f32 * SPRITE_SIZE;
                 self.particle_sheet.draw_tile(
-                    enemy.x + extra_size as f32 * SPRITE_SIZE,
+                    centre_x - SPRITE_SIZE / 2.0,
                     enemy.y + extra_size as f32 * SPRITE_SIZE - ground_offset,
                     32 + 9,
                     false,
@@ -437,7 +439,6 @@ impl Sludge {
                 );
             }
             if enemy.state.stun_frames > 0 {
-                let (centre_x, _) = enemy.get_centre();
                 let anim_frame = enemy.state.stun_frames % 3;
                 self.particle_sheet.draw_tile(
                     centre_x - SPRITE_SIZE / 2.0,

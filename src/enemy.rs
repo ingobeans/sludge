@@ -88,7 +88,7 @@ impl Enemy {
     pub fn get_centre(&self) -> (f32, f32) {
         (
             self.x + (SPRITE_SIZE * self.ty.size as f32) / 2.0,
-            self.y + (SPRITE_SIZE * self.ty.size as f32) / 2.0,
+            self.y + SPRITE_SIZE / 2.0 - (SPRITE_SIZE * (self.ty.size - 1) as f32) / 2.0,
         )
     }
 }
