@@ -44,4 +44,4 @@ delay-15 giga_slime-10 delay-3 cultist-20 delay-4 big_knight_shield-5 horsey_rid
 ultra_slime-1
 delay-60 troll-2 delay-15 dragon-6 delay-60 cultist-1 delay-7 cultist-10
 delay-15 giga_cultist_shield-2 delay-7 cultist-20 delay-60 troll-2 armored_troll-1 delay-15 horsey_rider-10
-delay-150 ultra_slime-2 delay-30 giga_cultist_shield-4 delay-5 knight-20 archer-25
+delay-80 ultra_slime-2 delay-30 giga_cultist_shield-4 delay-5 knight-20 archer-25
