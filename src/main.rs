@@ -60,7 +60,7 @@ enum GameState {
 }
 struct Sludge {
     state: GameState,
-    /// just used to ensure same sublevels are used on saves
+    /// Just used to ensure same sublevels are used on saves
     seed: u64,
     map: Map,
     map_index: usize,
@@ -74,6 +74,7 @@ struct Sludge {
     ui_manager: UIManager,
     round_manager: RoundManager,
     sfx_manager: SFXManager,
+    just_selected_tower: bool,
     lab: bool,
     rotating_tower: bool,
     moving: Option<Tower>,
@@ -119,6 +120,7 @@ impl Sludge {
             orphaned_particles: Vec::with_capacity(100),
             lives: STARTING_LIVES,
             round_manager,
+            just_selected_tower: false,
             lab,
             rotating_tower: false,
             moving: None,
@@ -250,6 +252,7 @@ impl Sludge {
             let clicked = clicked.unwrap().0;
             if self.selected.is_none() {
                 self.selected = Some(clicked);
+                self.just_selected_tower = true;
                 self.ui_manager.tower_open = true;
                 self.ui_manager.inventory_open = true;
             } else {
@@ -305,7 +308,12 @@ impl Sludge {
                     .draw_tile(tower.x, tower.y - 4.0, 34, false, 0.0);
             }
         }
-        let selected_tower = self.selected.map(|index| &mut self.towers[index]);
+        let selected_tower = if self.just_selected_tower {
+            self.just_selected_tower = false;
+            None
+        } else {
+            self.selected.map(|index| &mut self.towers[index])
+        };
         self.ui_manager
             .handle_ui(local_x, local_y, &self.card_sheet, selected_tower);
 
