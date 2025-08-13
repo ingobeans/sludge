@@ -438,8 +438,8 @@ impl Sludge {
                     0.0,
                 );
             }
-            if enemy.state.stun_frames > 0 {
-                let anim_frame = enemy.state.stun_frames % 3;
+            if enemy.stun_frames > 0 {
+                let anim_frame = enemy.stun_frames % 3;
                 self.particle_sheet.draw_tile(
                     centre_x - SPRITE_SIZE / 2.0,
                     enemy.y - SPRITE_SIZE / 2.0,
@@ -614,12 +614,12 @@ impl Sludge {
                                 .min(30);
                         }
                         // stun enemy if projectile has stun frames
-                        if projectile.modifier_data.stuns > 0 {
-                            enemy.state.stun_frames = enemy
-                                .state
+                        if projectile.modifier_data.stuns > 0 && enemy.stun_immunity_frames == 0 {
+                            enemy.stun_frames = enemy
                                 .stun_frames
                                 .saturating_add(projectile.modifier_data.stuns)
                                 .min(35);
+                            enemy.stun_immunity_frames = STUN_IMMUNITY_FRAMES;
                         }
 
                         // send trigger payload
@@ -819,14 +819,19 @@ impl Sludge {
                 enemy.state.freeze_frames -= 1;
                 speed_factor = 0.55;
             }
-            if enemy.state.stun_frames > 0 {
-                enemy.state.stun_frames -= 1;
+
+            if enemy.stun_frames > 0 {
+                enemy.stun_frames -= 1;
                 // make larger enemies not stun entirely
                 if enemy.ty.size == 1 {
                     speed_factor = 0.0
                 } else {
                     speed_factor = 0.4
                 }
+            }
+            // only subtract stun immunity frames after stun frames have wore off
+            else if enemy.stun_immunity_frames > 0 {
+                enemy.stun_immunity_frames -= 1;
             }
             enemy.state.score += enemy.ty.speed * speed_factor;
             true

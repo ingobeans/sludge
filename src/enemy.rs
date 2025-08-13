@@ -56,8 +56,6 @@ pub struct EnemyState {
     pub score: f32,
     /// When an enemy is frozen, this value > 0, and ticks down
     pub freeze_frames: u8,
-    /// When an enemy is stunned, this value > 0, and ticks down
-    pub stun_frames: u8,
 }
 /// A live instance of an enemy
 pub struct Enemy {
@@ -71,6 +69,11 @@ pub struct Enemy {
     /// The gold factor of the last projectile that hit it
     pub gold_factor: Option<f32>,
     pub poison_frames: u8,
+    /// When an enemy is stunned, this value > 0, and ticks down
+    pub stun_frames: u8,
+    /// After an enemy is stunned, they get a couple frames of immunity.
+    /// This is so that a rapid-firing tower with stun cant literally stop every enemy from moving past it.
+    pub stun_immunity_frames: u8,
 }
 impl Enemy {
     pub fn new(ty: &'static EnemyType, x: f32, y: f32, state: EnemyState) -> Self {
@@ -83,6 +86,8 @@ impl Enemy {
             moving_left: false,
             gold_factor: None,
             poison_frames: 0,
+            stun_frames: 0,
+            stun_immunity_frames: 0,
         }
     }
     pub fn get_centre(&self) -> (f32, f32) {

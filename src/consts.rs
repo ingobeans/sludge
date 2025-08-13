@@ -41,6 +41,7 @@ pub const UPGRADE_TIER_CHANCE: u8 = 7;
 pub const TOWER_CARDS_MENU_MIN_WIDTH: f32 = 68.0;
 
 pub const POISON_DAMAGE: f32 = 0.15;
+pub const STUN_IMMUNITY_FRAMES: u8 = 40;
 
 pub const COLOR_BEIGE: Color = Color::from_hex(0xb86f50);
 pub const COLOR_BROWN: Color = Color::from_hex(0x743f39);
