@@ -28,7 +28,7 @@ pub struct TowerSaveData {
     x: f32,
     y: f32,
     direction: f32,
-    slots: [Option<u8>; TOWER_MAX_SPELLS],
+    slots: [Option<u8>; TOWER_MAX_SLOTS],
 }
 #[derive(Debug, PartialEq, Clone, Decode, Encode)]
 pub struct SaveData {

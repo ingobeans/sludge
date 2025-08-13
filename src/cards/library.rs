@@ -8,6 +8,21 @@ pub fn as_trigger(mut card: Card) -> Card {
     card
 }
 
+pub fn snakeify() -> Card {
+    Card {
+        name: "snakeify",
+        desc: "make proj slither",
+        tier: 0,
+        ty: CardType::Modifier(CardModifierData {
+            shoot_delay: -0.05,
+            speed: 1.0,
+            snake: true,
+            ..Default::default()
+        }),
+        sprite: 37,
+        ..Default::default()
+    }
+}
 pub fn yoyo() -> Card {
     Card {
         name: "yo-yo",
@@ -134,7 +149,7 @@ pub fn lightning() -> Card {
         sprite: 31,
         ..Default::default()
     };
-    // basically make 3 inner copies of the spell, such that the lightning chains thrice.
+    // basically make 3 inner copies of the card, such that the lightning chains thrice.
     let mut last = card;
     for _ in 0..3 {
         let old = last;

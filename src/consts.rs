@@ -29,7 +29,7 @@ pub const PREVIEW_FACTOR: f32 = 1.0 / 4.0;
 pub const PREVIEW_WIDTH: f32 = SCREEN_WIDTH * PREVIEW_FACTOR;
 pub const PREVIEW_HEIGHT: f32 = SCREEN_HEIGHT * PREVIEW_FACTOR;
 
-pub const TOWER_MAX_SPELLS: usize = 16;
+pub const TOWER_MAX_SLOTS: usize = 12;
 
 pub const FREEZE_TIME: u8 = 90;
 

@@ -24,6 +24,7 @@ pub fn get_cards() -> Vec<Card> {
         library::shock(),
         library::freezeify(),
         library::boomerangify(),
+        library::snakeify(),
         // multidraw
         library::double(),
         library::triple(),
@@ -168,7 +169,7 @@ pub struct Projectile {
     /// Used such that payloads of projectiles that hit a wall are allowed a couple frames
     /// to bounce away.
     pub ghost_frames: u8,
-    /// How many "clones" the projectile has. Ex. the shotgun spell shoots 3 projectiles at a time,
+    /// How many "clones" the projectile has. Ex. the shotgun card shoots 3 projectiles at a time,
     /// therefore it has 2 clones.
     pub clones_amount: u8,
     pub only_enemy_triggers: bool,
@@ -230,6 +231,8 @@ pub struct CardModifierData {
     pub ghost: bool,
     /// Does projectile arc back towards caster
     pub boomerang: bool,
+    /// Does the projectile follow a slithering path
+    pub snake: bool,
     pub speed: f32,
     /// Degrees (in radians) of spread/inaccuracy
     pub spread: f32,
@@ -281,6 +284,7 @@ impl CardModifierData {
         self.piercing |= other.piercing;
         self.ghost |= other.ghost;
         self.boomerang |= other.boomerang;
+        self.snake |= other.snake;
         self.speed += other.speed;
         self.spread += other.spread;
         self.stuns += other.stuns;

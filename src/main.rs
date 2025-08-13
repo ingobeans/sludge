@@ -495,16 +495,14 @@ impl Sludge {
                 particle.life += 1;
             }
 
-            let mut homed = false;
             if projectile.modifier_data.homing && !projectile.straight {
                 let target_dir =
                     get_direction_nearest_enemy(&self.enemies, projectile.x, projectile.y);
                 if let Some(target_dir) = target_dir {
                     projectile.direction = target_dir;
-                    homed = true;
                 }
             }
-            if !homed && projectile.modifier_data.boomerang {
+            if projectile.modifier_data.boomerang {
                 // make proj boomerang back towards towers
                 let spawn_angle = Vec2::new(
                     projectile.spawn_x - projectile.x,
@@ -512,6 +510,21 @@ impl Sludge {
                 );
                 let new = projectile.direction.lerp(spawn_angle, 0.005);
                 projectile.direction = new
+            }
+            if projectile.modifier_data.snake {
+                // make projectile follow cos wave
+                let period = 0.6;
+                let amp = 1.1;
+                // calculate previous frames slither amount, such that we can get the projectile's base direction, without the slithering,
+                // so we can apply the new slither amount to that
+                let old = if projectile.life > 1.0 {
+                    (period * (projectile.life - 1.0)).cos() * amp
+                } else {
+                    0.0
+                };
+                let amt = (period * projectile.life).cos() * amp;
+                let angle = projectile.direction.to_angle();
+                projectile.direction = Vec2::from_angle(angle - old + amt);
             }
             if !projectile.modifier_data.anti_piercing {
                 // check if projectile hit any enemy
