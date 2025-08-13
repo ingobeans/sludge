@@ -3,7 +3,6 @@
     windows_subsystem = "windows"
 )]
 
-use std::collections::VecDeque;
 use std::f32::consts::PI;
 use std::time::Instant;
 
@@ -66,7 +65,7 @@ struct Sludge {
     map: Map,
     map_index: usize,
     enemies: Vec<Enemy>,
-    enemy_spawn_queue: VecDeque<(&'static EnemyType, f32, f32, EnemyState)>,
+    enemy_spawn_queue: Vec<Vec<(&'static EnemyType, f32, f32, EnemyState)>>,
     towers: Vec<Tower>,
     projectiles: Vec<Projectile>,
     projectile_spawnlist: Vec<Projectile>,
@@ -114,7 +113,7 @@ impl Sludge {
             map,
             map_index,
             enemies: Vec::with_capacity(100),
-            enemy_spawn_queue: VecDeque::with_capacity(10),
+            enemy_spawn_queue: Vec::with_capacity(5),
             towers,
             projectiles: Vec::with_capacity(100),
             projectile_spawnlist: Vec::with_capacity(100),
@@ -759,10 +758,15 @@ impl Sludge {
             return;
         }
 
-        if let Some((ty, x, y, state)) = self.enemy_spawn_queue.pop_front() {
-            let enemy = Enemy::new(ty, x, y, state);
-            self.enemies.push(enemy);
-        }
+        self.enemy_spawn_queue.retain_mut(|entry| {
+            if let Some((ty, x, y, state)) = entry.pop() {
+                let enemy = Enemy::new(ty, x, y, state);
+                self.enemies.push(enemy);
+                true
+            } else {
+                false
+            }
+        });
 
         let round_update = self.round_manager.update();
         if let RoundUpdate::Spawn(enemy) = &round_update {
@@ -791,14 +795,9 @@ impl Sludge {
                 self.ui_manager.gold +=
                     (enemy.ty.damage as f32 * 4.0 * enemy.gold_factor.unwrap_or(1.0)) as u16;
                 if let EnemyPayload::Some(enemy_type, amount) = enemy.ty.payload {
-                    for _ in 0..amount {
-                        self.enemy_spawn_queue.push_back((
-                            enemy_type,
-                            enemy.x,
-                            enemy.y,
-                            enemy.state.clone(),
-                        ));
-                    }
+                    let new =
+                        vec![(enemy_type, enemy.x, enemy.y, enemy.state.clone()); amount.into()];
+                    self.enemy_spawn_queue.push(new);
                 }
                 return false;
             }
@@ -837,7 +836,10 @@ impl Sludge {
             true
         });
 
-        if matches!(round_update, RoundUpdate::Finished) && self.enemies.is_empty() {
+        if matches!(round_update, RoundUpdate::Finished)
+            && self.enemies.is_empty()
+            && self.enemy_spawn_queue.is_empty()
+        {
             self.ui_manager.gold += GOLD_ROUND_REWARD;
             self.round_manager.finish_round();
             if !self.lab {
