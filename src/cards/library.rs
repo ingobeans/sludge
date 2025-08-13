@@ -67,7 +67,7 @@ pub fn snakeify() -> Card {
         desc: "makes proj slither",
         tier: 0,
         ty: CardType::Modifier(CardModifierData {
-            shoot_delay: -0.05,
+            shoot_delay: -0.15,
             speed: 1.0,
             snake: true,
             ..Default::default()
