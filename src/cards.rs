@@ -186,6 +186,8 @@ pub struct Projectile {
 impl Projectile {
     pub fn fire_payload(&self) -> Vec<Projectile> {
         let mut context = FiringContext::default();
+        // children inherit parent's gold factor because i feel like the payload's kills should be attributed to the parent
+        context.modifier_data.gold_factor = self.modifier_data.gold_factor;
         fire_deck(
             self.x - SPRITE_SIZE / 2.0,
             self.y - SPRITE_SIZE / 2.0,
