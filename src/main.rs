@@ -670,9 +670,12 @@ impl Sludge {
                     // send trigger payload
                     if !projectile.payload.is_empty() && !projectile.only_enemy_triggers {
                         let mut spawnlist = projectile.fire_payload();
-                        // flip their direction, so payload is shot off like a bounce off the obstacle
-                        let inverted = Vec2::from_angle(PI + projectile.direction.to_angle());
                         for p in spawnlist.iter_mut() {
+                            let max_spread = (p.modifier_data.spread + DEFAULT_SPREAD).max(0.0);
+                            let spread = rand::gen_range(-max_spread, max_spread);
+                            // flip their direction, so payload is shot off like a bounce off the obstacle
+                            let inverted =
+                                Vec2::from_angle(PI + projectile.direction.to_angle() + spread);
                             p.direction = inverted;
                             p.ghost_frames = 10;
                         }
