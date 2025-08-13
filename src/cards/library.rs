@@ -12,7 +12,7 @@ pub fn pay2win() -> Card {
     Card {
         name: "pay to win",
         desc: "enemies killed by\nproj give zero gold",
-        tier: 1,
+        tier: 2,
         ty: CardType::Modifier(CardModifierData {
             shoot_delay: -0.3,
             recharge_speed: -0.2,
@@ -80,7 +80,7 @@ pub fn yoyo() -> Card {
     Card {
         name: "yo-yo",
         desc: "pretty sick",
-        tier: 0,
+        tier: 1,
         ty: CardType::Projectile(
             Projectile {
                 draw_type: ProjectileDrawType::Particle(particle::YOYO),
