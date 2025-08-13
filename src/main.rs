@@ -248,11 +248,11 @@ impl Sludge {
                 }
                 return;
             }
+            self.just_selected_tower = true;
             // if we did click a tower, and we previously didnt have a selected tower, select it
             let clicked = clicked.unwrap().0;
             if self.selected.is_none() {
                 self.selected = Some(clicked);
-                self.just_selected_tower = true;
                 self.ui_manager.tower_open = true;
                 self.ui_manager.inventory_open = true;
             } else {
