@@ -149,23 +149,6 @@ pub const LIGHTNING: Particle = Particle {
     },
 };
 
-pub const STUNNED: Particle = Particle {
-    life: 0,
-    lifetime: 20,
-    function: &|this, ctx, particles| {
-        basic_animation_particle(
-            this.life,
-            10,
-            ctx.x + SPRITE_SIZE / 2.0,
-            ctx.y + SPRITE_SIZE / 2.0,
-            32 + 13,
-            1,
-            3,
-            particles,
-        );
-    },
-};
-
 pub const DEATH_RAY: Particle = Particle {
     life: 0,
     lifetime: 5,

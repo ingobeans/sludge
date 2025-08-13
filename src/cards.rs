@@ -53,6 +53,7 @@ pub fn get_cards() -> Vec<Card> {
         library::shotgun(),
         library::potato(),
         library::yoyo(),
+        library::blowdart(),
     ];
 
     if cards.len() as u8 > u8::MAX / 2 {
@@ -222,6 +223,8 @@ pub struct CardModifierData {
     pub homing: bool,
     /// How many frames of stun does this give enemies?
     pub stuns: u8,
+    /// How many frames of poison does this give enemies?
+    pub poison: u8,
     pub lifetime: f32,
     /// Can projectile hit multiple enemies
     pub piercing: bool,
@@ -291,6 +294,7 @@ impl CardModifierData {
         self.speed += other.speed;
         self.spread += other.spread;
         self.stuns += other.stuns;
+        self.poison += other.poison;
         if self.gold_factor.is_some() || other.gold_factor.is_some() {
             self.gold_factor =
                 Some(self.gold_factor.unwrap_or(1.0) * other.gold_factor.unwrap_or(1.0));

@@ -1,4 +1,4 @@
-use crate::cards::DamageType;
+use crate::{cards::DamageType, consts::SPRITE_SIZE};
 
 #[derive(Clone, Copy)]
 pub enum DamageResistance {
@@ -70,6 +70,7 @@ pub struct Enemy {
     pub moving_left: bool,
     /// The gold factor of the last projectile that hit it
     pub gold_factor: Option<f32>,
+    pub poison_frames: u8,
 }
 impl Enemy {
     pub fn new(ty: &'static EnemyType, x: f32, y: f32, state: EnemyState) -> Self {
@@ -81,7 +82,14 @@ impl Enemy {
             state,
             moving_left: false,
             gold_factor: None,
+            poison_frames: 0,
         }
+    }
+    pub fn get_centre(&self) -> (f32, f32) {
+        (
+            self.x + (SPRITE_SIZE * self.ty.size as f32) / 2.0,
+            self.y + (SPRITE_SIZE * self.ty.size as f32) / 2.0,
+        )
     }
 }
 

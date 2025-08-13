@@ -436,6 +436,17 @@ impl Sludge {
                     0.0,
                 );
             }
+            if enemy.state.stun_frames > 0 {
+                let (centre_x, _) = enemy.get_centre();
+                let anim_frame = enemy.state.stun_frames % 3;
+                self.particle_sheet.draw_tile(
+                    centre_x - SPRITE_SIZE / 2.0,
+                    enemy.y - SPRITE_SIZE / 2.0,
+                    32 + 13 + anim_frame as usize,
+                    false,
+                    0.0,
+                );
+            }
         }
         for projectile in self.projectiles.iter() {
             match &projectile.draw_type {
@@ -533,9 +544,10 @@ impl Sludge {
                     if enemy.health <= 0.0 {
                         continue;
                     }
+                    let (enemy_x, enemy_y) = enemy.get_centre();
 
-                    let distance = ((enemy.x - projectile.x).powi(2)
-                        + (enemy.y - projectile.y).powi(2))
+                    let distance = ((enemy_x - projectile.x).powi(2)
+                        + (enemy_y - projectile.y).powi(2))
                     .sqrt();
                     if distance < 8.0 + projectile.extra_size {
                         // hit!
@@ -593,6 +605,13 @@ impl Sludge {
                                 enemy.state.freeze_frames = FREEZE_TIME;
                             }
                         }
+                        // poison enemy if projectile has poison frames
+                        if projectile.modifier_data.poison > 0 {
+                            enemy.poison_frames = enemy
+                                .poison_frames
+                                .saturating_add(projectile.modifier_data.poison)
+                                .min(60);
+                        }
                         // stun enemy if projectile has stun frames
                         if projectile.modifier_data.stuns > 0 {
                             enemy.state.stun_frames = enemy
@@ -600,22 +619,6 @@ impl Sludge {
                                 .stun_frames
                                 .saturating_add(projectile.modifier_data.stuns)
                                 .min(35);
-
-                            // spawn particles to show stun (given that the enemy isnt dead)
-                            if enemy.health > 0.0 {
-                                let mut particle = particle::STUNNED;
-                                particle.lifetime = projectile.modifier_data.stuns;
-                                self.orphaned_particles.push((
-                                    particle,
-                                    ParticleContext {
-                                        x: enemy.x,
-                                        y: enemy.y,
-                                        origin_x: enemy.x,
-                                        origin_y: enemy.y,
-                                        direction: projectile.direction,
-                                    },
-                                ));
-                            }
                         }
 
                         // send trigger payload
@@ -763,6 +766,23 @@ impl Sludge {
         }
 
         self.enemies.retain_mut(|enemy| {
+            if enemy.poison_frames > 0 {
+                let mut damage = POISON_DAMAGE;
+                match &enemy.ty.damage_resistance {
+                    DamageResistance::None => {}
+                    DamageResistance::Full(ty) => {
+                        if *ty == DamageType::Acid {
+                            damage = 0.0;
+                        }
+                    }
+                    DamageResistance::Partial(ty) => {
+                        if *ty == DamageType::Acid {
+                            damage /= 2.0;
+                        }
+                    }
+                }
+                enemy.health -= damage;
+            }
             if enemy.health <= 0.0 {
                 self.ui_manager.gold +=
                     (enemy.ty.damage as f32 * 4.0 * enemy.gold_factor.unwrap_or(1.0)) as u16;

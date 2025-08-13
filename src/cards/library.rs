@@ -8,6 +8,30 @@ pub fn as_trigger(mut card: Card) -> Card {
     card
 }
 
+pub fn blowdart() -> Card {
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Sprite(20, SpriteRotationMode::Direction),
+        hit_sound: ProjectileSound::Hit,
+        modifier_data: CardModifierData {
+            poison: 60,
+            speed: 4.0,
+            lifetime: 25.0,
+            recharge_speed: 0.3,
+            shoot_delay: 0.3,
+            damage: hashmap!(DamageType::Pierce => 2.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    Card {
+        name: "blowdart",
+        desc: "poisons hit enemies",
+        tier: 0,
+        ty: CardType::Projectile(projectile, false),
+        sprite: 40,
+        ..Default::default()
+    }
+}
 pub fn greed() -> Card {
     Card {
         name: "greed",
