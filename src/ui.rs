@@ -254,6 +254,8 @@ impl UIManager {
         let shop_x = 0.0;
         let shop_y = SCREEN_HEIGHT - shop_height;
         draw_square(shop_x, shop_y, shop_width, shop_height);
+        self.text_engine
+            .draw_text(shop_x + 2.0, shop_y + 2.0, "card shop", 1);
 
         let shop_y = SCREEN_HEIGHT - shop_height;
         for y in 0..shop.cards.len() {
