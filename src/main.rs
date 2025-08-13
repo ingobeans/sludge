@@ -526,7 +526,7 @@ impl Sludge {
             if projectile.modifier_data.snake {
                 // make projectile follow cos wave
                 let period = 0.6;
-                let amp = 1.1;
+                let amp = 0.8;
                 // calculate previous frames slither amount, such that we can get the projectile's base direction, without the slithering,
                 // so we can apply the new slither amount to that
                 let old = if projectile.life > 1.0 {
