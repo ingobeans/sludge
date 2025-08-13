@@ -308,14 +308,15 @@ impl Sludge {
                     .draw_tile(tower.x, tower.y - 4.0, 34, false, 0.0);
             }
         }
-        let selected_tower = if self.just_selected_tower {
-            self.just_selected_tower = false;
-            None
-        } else {
-            self.selected.map(|index| &mut self.towers[index])
-        };
-        self.ui_manager
-            .handle_ui(local_x, local_y, &self.card_sheet, selected_tower);
+        let selected_tower = self.selected.map(|index| &mut self.towers[index]);
+        self.ui_manager.handle_ui(
+            local_x,
+            local_y,
+            &self.card_sheet,
+            selected_tower,
+            self.just_selected_tower,
+        );
+        self.just_selected_tower = false;
 
         // display topbar
         let mut cursor_x = 2.0;

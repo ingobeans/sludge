@@ -168,18 +168,26 @@ impl UIManager {
             open: true,
         });
     }
-    fn draw_inventory(&mut self, local_x: f32, local_y: f32, card_sheet: &Spritesheet) {
+    fn draw_inventory(
+        &mut self,
+        local_x: f32,
+        local_y: f32,
+        card_sheet: &Spritesheet,
+        just_selected_tower: bool,
+    ) {
         let mut just_opened = false;
         let (handle_x, handle_y, flipped) = self.get_inv_handle_state();
-        if draw_img_button(
-            card_sheet,
-            handle_x,
-            handle_y,
-            local_x,
-            local_y,
-            32 * 3 + 1,
-            flipped,
-        ) {
+        if !just_selected_tower
+            && draw_img_button(
+                card_sheet,
+                handle_x,
+                handle_y,
+                local_x,
+                local_y,
+                32 * 3 + 1,
+                flipped,
+            )
+        {
             just_opened = true;
             self.inventory_open = !self.inventory_open
         }
@@ -209,7 +217,10 @@ impl UIManager {
                     if let Some(card) = &self.inventory[tile_y][tile_x] {
                         self.draw_card_info(local_x, local_y, card, card_sheet);
                     }
-                    if !just_opened && is_mouse_button_pressed(MouseButton::Left) {
+                    if !just_selected_tower
+                        && !just_opened
+                        && is_mouse_button_pressed(MouseButton::Left)
+                    {
                         std::mem::swap(&mut self.inventory[tile_y][tile_x], &mut self.cursor_card);
                     }
                 }
@@ -439,6 +450,7 @@ impl UIManager {
         local_y: f32,
         card_sheet: &Spritesheet,
         selected_tower: Option<&mut Tower>,
+        just_selected_tower: bool,
     ) {
         let mut just_opened_tower = false;
         if let Some(tower) = &selected_tower {
@@ -471,20 +483,22 @@ impl UIManager {
                 }
             }
             let (handle_x, handle_y, flipped) = self.get_tower_handle_state(tower.card_slots.len());
-            if draw_img_button(
-                card_sheet,
-                handle_x,
-                handle_y,
-                local_x,
-                local_y,
-                3 * 32 + 1,
-                flipped,
-            ) {
+            if !just_selected_tower
+                && draw_img_button(
+                    card_sheet,
+                    handle_x,
+                    handle_y,
+                    local_x,
+                    local_y,
+                    3 * 32 + 1,
+                    flipped,
+                )
+            {
                 just_opened_tower = true;
                 self.tower_open = !self.tower_open;
             }
         }
-        self.draw_inventory(local_x, local_y, card_sheet);
+        self.draw_inventory(local_x, local_y, card_sheet, just_selected_tower);
         self.draw_shop(local_x, local_y, card_sheet);
 
         if let Some(card) = &self.cursor_card {
@@ -499,7 +513,8 @@ impl UIManager {
         };
 
         let slots_amt = tower_card_slots.as_ref().map(|f| f.len()).unwrap_or(0);
-        if !just_opened_tower
+        if !just_selected_tower
+            && !just_opened_tower
             && self.tower_open
             && local_x > 2.0
             && local_y > 8.0
