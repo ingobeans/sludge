@@ -61,13 +61,10 @@ fn ray_particle(
         };
         draw_rectangle_ex(ctx.origin_x, ctx.origin_y, width, height, params.clone());
         params.color = colors.1;
-        draw_rectangle_ex(
-            ctx.origin_x,
-            ctx.origin_y - 1.0,
-            width,
-            height - 2.0,
-            params,
-        );
+
+        let offset_angle = ctx.direction.perp();
+        let offset = Vec2::new(ctx.origin_x, ctx.origin_y) + offset_angle;
+        draw_rectangle_ex(offset.x, offset.y, width, height - 2.0, params);
     }
     basic_animation_particle(
         life,
@@ -129,7 +126,13 @@ pub const SHOTGUN: Particle = Particle {
             );
         }
 
-        particles.draw_tile(ctx.x, ctx.y, 17, false, ctx.direction.to_angle());
+        particles.draw_tile(
+            ctx.x - SPRITE_SIZE / 2.0,
+            ctx.y - SPRITE_SIZE / 2.0,
+            17,
+            false,
+            ctx.direction.to_angle(),
+        );
     },
 };
 
@@ -279,8 +282,8 @@ pub const FIREBALL: Particle = Particle {
         let anim_frame_offset = (this.life as usize) / (10 / frame_amt) % frame_amt;
 
         particles.draw_tile(
-            ctx.x,
-            ctx.y,
+            ctx.x - SPRITE_SIZE / 2.0,
+            ctx.y - SPRITE_SIZE / 2.0,
             38 + anim_frame_offset,
             false,
             ctx.direction.to_angle(),

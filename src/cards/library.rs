@@ -28,7 +28,7 @@ pub fn blowdart() -> Card {
         draw_type: ProjectileDrawType::Sprite(20, SpriteRotationMode::Direction),
         hit_sound: ProjectileSound::Hit,
         modifier_data: CardModifierData {
-            poison: 60,
+            poison: 30,
             speed: 4.0,
             lifetime: 25.0,
             recharge_speed: 0.3,
@@ -64,7 +64,7 @@ pub fn greed() -> Card {
 pub fn snakeify() -> Card {
     Card {
         name: "snakeify",
-        desc: "make proj slither",
+        desc: "makes proj slither",
         tier: 0,
         ty: CardType::Modifier(CardModifierData {
             shoot_delay: -0.05,
@@ -105,7 +105,7 @@ pub fn yoyo() -> Card {
 pub fn boomerangify() -> Card {
     Card {
         name: "boomerangify",
-        desc: "make proj arc\nback towards caster",
+        desc: "makes proj arc back\ntowards tower",
         tier: 0,
         ty: CardType::Modifier(CardModifierData {
             shoot_delay: -0.15,
@@ -169,7 +169,7 @@ pub fn shotgun() -> Card {
 pub fn shock() -> Card {
     Card {
         name: "shock",
-        desc: "makes projectile\nbriefly stun enemies",
+        desc: "makes projectile\nbriefly stun\nenemies",
         tier: 1,
         ty: CardType::Modifier(CardModifierData {
             stuns: 7,
@@ -552,7 +552,7 @@ pub fn aiming() -> Card {
 pub fn homing() -> Card {
     Card {
         name: "homing",
-        desc: "home towards enemies",
+        desc: "home towards\nnearest enemy",
         tier: 1,
         ty: CardType::Modifier(CardModifierData {
             homing: true,
@@ -855,7 +855,7 @@ fn acid_puddle() -> Card {
             speed: 0.0,
             lifetime: 30.0,
             piercing: true,
-            damage: hashmap!(DamageType::Acid => 0.9),
+            damage: hashmap!(DamageType::Acid => 0.35),
             ..Default::default()
         },
         ..Default::default()

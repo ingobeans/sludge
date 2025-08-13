@@ -611,7 +611,7 @@ impl Sludge {
                             enemy.poison_frames = enemy
                                 .poison_frames
                                 .saturating_add(projectile.modifier_data.poison)
-                                .min(60);
+                                .min(30);
                         }
                         // stun enemy if projectile has stun frames
                         if projectile.modifier_data.stuns > 0 {
