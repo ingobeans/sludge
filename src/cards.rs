@@ -13,6 +13,7 @@ pub fn get_cards() -> Vec<Card> {
     let mut cards = vec![
         // modifiers
         library::aiming(),
+        library::smart_aiming(),
         library::homing(),
         library::speed(),
         library::acidify(),
@@ -223,6 +224,7 @@ pub struct CardModifierData {
     pub shoot_delay: f32,
     pub recharge_speed: f32,
     pub aim: bool,
+    pub smart_aim: bool,
     pub homing: bool,
     /// How many frames of stun does this give enemies?
     pub stuns: u8,
@@ -288,6 +290,7 @@ impl CardModifierData {
         self.shoot_delay += other.shoot_delay;
         self.recharge_speed += other.recharge_speed;
         self.aim |= other.aim;
+        self.smart_aim |= other.smart_aim;
         self.homing |= other.homing;
         self.lifetime += other.lifetime;
         self.piercing |= other.piercing;

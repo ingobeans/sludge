@@ -510,10 +510,15 @@ impl Sludge {
             }
 
             if projectile.modifier_data.homing && !projectile.straight {
-                let target_dir =
-                    get_direction_nearest_enemy(&self.enemies, projectile.x, projectile.y);
-                if let Some(target_dir) = target_dir {
-                    projectile.direction = target_dir;
+                let dir = if projectile.modifier_data.smart_aim {
+                    self.enemies.last().map(|enemy| {
+                        Vec2::new(enemy.x - projectile.x, enemy.y - projectile.y).normalize()
+                    })
+                } else {
+                    get_direction_nearest_enemy(&self.enemies, projectile.x, projectile.y)
+                };
+                if let Some(dir) = dir {
+                    projectile.direction = dir;
                 }
             }
             if projectile.modifier_data.boomerang {
@@ -723,9 +728,14 @@ impl Sludge {
         // and play sfx
         for projectile in &mut self.projectile_spawnlist {
             if projectile.modifier_data.aim {
-                if let Some(direction_nearest) =
+                let dir = if projectile.modifier_data.smart_aim {
+                    self.enemies.last().map(|enemy| {
+                        Vec2::new(enemy.x - projectile.x, enemy.y - projectile.y).normalize()
+                    })
+                } else {
                     get_direction_nearest_enemy(&self.enemies, projectile.x, projectile.y)
-                {
+                };
+                if let Some(direction_nearest) = dir {
                     let max_spread = projectile.modifier_data.spread.max(0.0);
                     let spread = rand::gen_range(-max_spread, max_spread);
                     projectile.direction = Vec2::from_angle(direction_nearest.to_angle() + spread);
@@ -839,6 +849,8 @@ impl Sludge {
         });
 
         self.enemies.append(&mut spawnlist);
+        self.enemies
+            .sort_by(|a, b| a.state.score.total_cmp(&b.state.score));
 
         if matches!(round_update, RoundUpdate::Finished) && self.enemies.is_empty() {
             self.ui_manager.gold += GOLD_ROUND_REWARD;

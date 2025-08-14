@@ -535,10 +535,25 @@ pub fn speed() -> Card {
     }
 }
 
+pub fn smart_aiming() -> Card {
+    Card {
+        name: "smart aiming",
+        desc: "aims towards\nthe first enemy",
+        tier: 0,
+        ty: CardType::Modifier(CardModifierData {
+            aim: true,
+            smart_aim: true,
+            ..Default::default()
+        }),
+        sprite: 42,
+        ..Default::default()
+    }
+}
+
 pub fn aiming() -> Card {
     Card {
         name: "aiming",
-        desc: "makes projectile\naim towards nearest\nenemy",
+        desc: "aims projectile\ntowards nearest\nenemy",
         tier: 0,
         ty: CardType::Modifier(CardModifierData {
             aim: true,
@@ -553,7 +568,7 @@ pub fn homing() -> Card {
     Card {
         name: "homing",
         desc: "home towards\nnearest enemy",
-        tier: 1,
+        tier: 0,
         ty: CardType::Modifier(CardModifierData {
             homing: true,
             shoot_delay: 0.25,
