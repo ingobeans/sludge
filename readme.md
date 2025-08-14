@@ -10,6 +10,8 @@ theres over 40 cards in the game as of right now, of types projectile, modifier 
 
 theres 4 different maps of varying difficulty, and a large array of different enemies.
 
+also note: github says this project is 35% javascript, but thats only because it includes the entirety of the 2000 line `gl.js` required for web builds. this is **not** a javascript game.
+
 ## install
 
 either download from releases if there is one, or use this command to install via cargo:
