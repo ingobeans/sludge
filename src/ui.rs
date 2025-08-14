@@ -9,7 +9,7 @@ use crate::{
 };
 fn count_occurence(text: &str, char: char) -> usize {
     let mut count = 0;
-    for c in text.chars().into_iter() {
+    for c in text.chars() {
         if c == char {
             count += 1;
         }

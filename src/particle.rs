@@ -82,7 +82,7 @@ pub const NEW_TOWER: Particle = Particle {
     life: 0,
     lifetime: 60,
     function: &|this, ctx, _| {
-        let a = (1.0 - this.life as f32 / 30 as f32).max(0.0);
+        let a = (1.0 - this.life as f32 / 30.0).max(0.0);
         draw_circle_lines(
             ctx.x + SPRITE_SIZE / 2.0,
             ctx.y + SPRITE_SIZE / 2.0,
@@ -249,7 +249,7 @@ pub const STAR_EXPLOSION: Particle = Particle {
             this.lifetime,
             ctx.x,
             ctx.y,
-            1 * 32 + 20,
+            32 + 20,
             2,
             5,
             particles,

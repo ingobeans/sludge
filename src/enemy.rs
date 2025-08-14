@@ -231,13 +231,13 @@ static GIGA_SLIME: EnemyType = EnemyType {
     ..DEFAULT_ENEMY_TYPE
 };
 static BLUE_MUSHROOM: EnemyType = EnemyType {
-    sprite: 0 * 32 + 27,
+    sprite: 27,
     max_health: 125.0,
     ..YELLOW_MUSHROOM
 };
 static YELLOW_MUSHROOM: EnemyType = EnemyType {
     name: "mushroom",
-    sprite: 1 * 32 + 27,
+    sprite: 32 + 27,
     anim_length: 1,
     damage: 0,
     speed: 0.0,
@@ -251,7 +251,7 @@ static GREEN_MUSHROOM: EnemyType = EnemyType {
 };
 static BLUE_MUSHROOM_GUY: EnemyType = EnemyType {
     name: "blue_mushroom_guy",
-    sprite: 0 * 32 + 28,
+    sprite: 28,
     damage: 5,
     max_health: 95.0,
     damage_resistance: DamageResistance::Partial(DamageType::Magic),
@@ -260,7 +260,7 @@ static BLUE_MUSHROOM_GUY: EnemyType = EnemyType {
 };
 static YELLOW_MUSHROOM_GUY: EnemyType = EnemyType {
     name: "yellow_mushroom_guy",
-    sprite: 1 * 32 + 28,
+    sprite: 32 + 28,
     anim_length: 4,
     damage: 2,
     speed: 1.2,

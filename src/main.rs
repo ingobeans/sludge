@@ -4,7 +4,6 @@
 )]
 
 use std::f32::consts::PI;
-use std::time::Instant;
 
 use crate::assets::*;
 use crate::cards::*;
@@ -912,7 +911,7 @@ impl Sludge {
     /// (moving is specified because mushroom guys leave after a "decoy" mushroom that just sits there,
     /// and the player shouldn't have to clean up after the round by destroying all the decoys just to get it to end)
     fn all_enemies_dead(&self) -> bool {
-        self.enemies.iter().position(|f| f.ty.speed > 0.0).is_none()
+        !self.enemies.iter().any(|f| f.ty.speed > 0.0)
     }
 }
 
@@ -920,7 +919,7 @@ struct GameManager {
     sludge: Option<Sludge>,
     in_play_menu: bool,
     maps: Vec<Map>,
-    last: Instant,
+    last: f64,
     pixel_camera: Camera2D,
     gameover_anim_frame: u8,
     menu_texture: Texture2D,
@@ -936,7 +935,7 @@ impl GameManager {
             in_play_menu: false,
             sludge: None,
             maps: load_maps(),
-            last: Instant::now(),
+            last: get_time(),
             pixel_camera: Camera2D {
                 render_target: Some(render_target),
                 zoom: Vec2::new(1.0 / SCREEN_WIDTH * 2.0, 1.0 / SCREEN_HEIGHT * 2.0),
@@ -1009,6 +1008,7 @@ impl GameManager {
             local_y,
             "back",
         ) || is_key_pressed(KeyCode::Escape)
+            || is_key_pressed(KeyCode::Q)
         {
             self.in_play_menu = false;
         }
@@ -1120,6 +1120,7 @@ impl GameManager {
             new.ui_manager.open_lab_shop();
             self.sludge = Some(new);
         }
+        #[cfg(not(target_arch = "wasm32"))]
         if draw_button(
             &self.text_engine,
             left_padding - 6.0,
@@ -1141,10 +1142,10 @@ impl GameManager {
         // run update loops if game is not over
         if let GameState::Running = game.state {
             game.handle_input(local_x, local_y);
-            let now = Instant::now();
-            let deltatime_ms = (now - self.last).as_millis();
+            let now = get_time();
+            let deltatime = now - self.last;
             // run update loops at fixed FPS
-            if deltatime_ms >= 1000 / 30 {
+            if deltatime >= 1.0 / 30.0 {
                 self.last = now;
                 game.update_projectiles();
                 game.update_enemies();
@@ -1157,7 +1158,7 @@ impl GameManager {
         // always draw
         game.draw();
 
-        if is_key_pressed(KeyCode::Escape) {
+        if is_key_pressed(KeyCode::Q) || is_key_pressed(KeyCode::Escape) {
             match game.state {
                 GameState::Running => {
                     // pause game

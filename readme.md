@@ -16,3 +16,19 @@ either download from releases if there is one, or use this command to install vi
 ```sh
 cargo install --git https://github.com/ingobeans/sludge.git --features bundled
 ```
+
+## building
+
+to build for standalone its either
+```sh
+cargo run --features bundled
+```
+or, if you want assets not to be bundled, and rather loaded at runtime:
+```sh
+cargo run
+```
+
+to build for web, with `basic-http-server`, its
+```sh
+cargo build --features bundled --release --target wasm32-unknown-unknown && cp target/wasm32-unknown-unknown/release/sludge.wasm web/ && basic-http-server web/
+```

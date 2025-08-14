@@ -1,7 +1,16 @@
+#[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
 
-use bincode::{decode_from_std_read, encode_into_std_write, Decode, Encode};
+use bincode::{Decode, Encode};
 use macroquad::math::Vec2;
+
+#[cfg(not(target_arch = "wasm32"))]
+use bincode::{decode_from_std_read, encode_into_std_write};
+
+#[cfg(target_arch = "wasm32")]
+use base64::{prelude::BASE64_STANDARD, Engine};
+#[cfg(target_arch = "wasm32")]
+use bincode::{decode_from_slice, encode_to_vec};
 
 use crate::cards::{get_cards, library, Card};
 use crate::map::Map;
@@ -10,18 +19,31 @@ use crate::ui::TextEngine;
 use crate::Sludge;
 use crate::{consts::*, ui};
 
+#[cfg(not(target_arch = "wasm32"))]
 fn get_save_path() -> PathBuf {
     let exe = std::env::current_exe().expect("couldn't get path to executable!");
     let dir = exe.parent().unwrap();
     dir.join("save.sldg")
 }
 pub fn save_exists() -> bool {
-    get_save_path().exists()
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        get_save_path().exists()
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        quad_storage::STORAGE.lock().unwrap().get("save").is_some()
+    }
 }
 pub fn remove_save() {
-    if save_exists() {
-        let _ = std::fs::remove_file(get_save_path());
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        if save_exists() {
+            let _ = std::fs::remove_file(get_save_path());
+        }
     }
+    #[cfg(target_arch = "wasm32")]
+    quad_storage::STORAGE.lock().unwrap().clear();
 }
 #[derive(Debug, PartialEq, Clone, Decode, Encode)]
 pub struct TowerSaveData {
@@ -163,18 +185,41 @@ impl SaveData {
 }
 
 pub fn write_save(data: SaveData) {
-    let binary = get_save_path();
-    let Ok(mut binary) = std::fs::File::create(binary) else {
-        return;
-    };
-    let _ = encode_into_std_write(data, &mut binary, bincode::config::standard());
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let binary = get_save_path();
+        let Ok(mut binary) = std::fs::File::create(binary) else {
+            return;
+        };
+        let _ = encode_into_std_write(data, &mut binary, bincode::config::standard());
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    {
+        let Ok(data) = encode_to_vec(data, bincode::config::standard()) else {
+            return;
+        };
+        let text = BASE64_STANDARD.encode(&data);
+        let _ = quad_storage::STORAGE.lock().unwrap().set("save", &text);
+    }
 }
 pub fn read_save() -> Option<SaveData> {
     if !save_exists() {
         return None;
     }
-    let binary = get_save_path();
-    let mut binary = std::fs::File::open(binary).ok()?;
-    let data = decode_from_std_read(&mut binary, bincode::config::standard()).ok()?;
-    Some(data)
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let binary = get_save_path();
+        let mut binary = std::fs::File::open(binary).ok()?;
+        let data = decode_from_std_read(&mut binary, bincode::config::standard()).ok()?;
+        Some(data)
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    {
+        let data = quad_storage::STORAGE.lock().unwrap().get("save")?;
+        let data = BASE64_STANDARD.decode(&data).ok()?;
+        let (data, _) = decode_from_slice(&data, bincode::config::standard()).ok()?;
+        Some(data)
+    }
 }
