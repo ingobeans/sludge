@@ -862,7 +862,9 @@ impl Sludge {
         self.enemies
             .sort_by(|a, b| a.state.score.total_cmp(&b.state.score));
 
-        if matches!(round_update, RoundUpdate::Finished) && self.enemies.is_empty() {
+        if matches!(round_update, RoundUpdate::Finished) && self.all_enemies_dead() {
+            // Make sure enemies are cleared
+            self.enemies.clear();
             self.ui_manager.gold += GOLD_ROUND_REWARD;
             self.round_manager.finish_round();
             if !self.lab {
@@ -905,6 +907,12 @@ impl Sludge {
     fn kill_immortal_projectiles(&mut self) {
         self.projectiles
             .retain(|f| f.modifier_data.lifetime != -1.0);
+    }
+    /// Checks that there are no MOVING enemies alive.
+    /// (moving is specified because mushroom guys leave after a "decoy" mushroom that just sits there,
+    /// and the player shouldn't have to clean up after the round by destroying all the decoys just to get it to end)
+    fn all_enemies_dead(&self) -> bool {
+        self.enemies.iter().position(|f| f.ty.speed > 0.0).is_none()
     }
 }
 
