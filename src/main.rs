@@ -1130,7 +1130,9 @@ impl GameManager {
         if is_key_pressed(KeyCode::Escape) {
             match game.state {
                 GameState::Running => {
-                    // when we pause game, try to place whatever tower we're moving
+                    // pause game
+
+                    // first try to place whatever tower we're moving so it isnt lost
                     // and if that spot is obstructed, default to the first tower spawnpoint
                     if let Some(mut moving) = game.moving.take() {
                         if !game.is_valid_tower_placement(moving.x, moving.y) {
@@ -1140,6 +1142,17 @@ impl GameManager {
                             moving.y = y;
                         }
                         game.towers.push(moving);
+                    }
+                    // also check if we have a card on the cursor, if so, put it in the first available inventory slot
+                    if let Some(card) = game.ui_manager.cursor_card.take() {
+                        'outer: for row in &mut game.ui_manager.inventory {
+                            for slot in row {
+                                if slot.is_none() {
+                                    *slot = Some(card);
+                                    break 'outer;
+                                }
+                            }
+                        }
                     }
                     game.state = GameState::Paused
                 }

@@ -76,7 +76,7 @@ pub struct UIManager {
     pub inventory: Vec<[Option<Card>; INV_SLOTS_HORIZONTAL]>,
     pub inventory_open: bool,
     pub tower_open: bool,
-    cursor_card: Option<Card>,
+    pub cursor_card: Option<Card>,
     pub shop: Option<Shop>,
     pub gold: u16,
     pub text_engine: TextEngine,

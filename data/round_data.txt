@@ -2,7 +2,6 @@ spider-5
 !spider-20
 delay-10 spider-5 delay-30 slime-5
 delay-35 slime-7 spider-10
-yellow_mushroom_guy-3
 !delay-20 spider-20 baby_spider-5
 !horsey-10 delay-10 slime-10
 
