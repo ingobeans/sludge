@@ -134,7 +134,7 @@ pub fn potato() -> Card {
     Card {
         name: "potato",
         desc: "just a potato",
-        tier: 0,
+        tier: 1,
         ty: CardType::Projectile(projectile, false),
         sprite: 34,
         ..Default::default()
