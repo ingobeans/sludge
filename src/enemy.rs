@@ -233,9 +233,9 @@ static GIGA_SLIME: EnemyType = EnemyType {
 static BLUE_MUSHROOM: EnemyType = EnemyType {
     sprite: 0 * 32 + 27,
     max_health: 125.0,
-    ..WHITE_MUSHROOM
+    ..YELLOW_MUSHROOM
 };
-static WHITE_MUSHROOM: EnemyType = EnemyType {
+static YELLOW_MUSHROOM: EnemyType = EnemyType {
     name: "mushroom",
     sprite: 1 * 32 + 27,
     anim_length: 1,
@@ -247,7 +247,7 @@ static WHITE_MUSHROOM: EnemyType = EnemyType {
 static GREEN_MUSHROOM: EnemyType = EnemyType {
     sprite: 2 * 32 + 27,
     max_health: 24.0,
-    ..WHITE_MUSHROOM
+    ..YELLOW_MUSHROOM
 };
 static BLUE_MUSHROOM_GUY: EnemyType = EnemyType {
     name: "blue_mushroom_guy",
@@ -256,16 +256,16 @@ static BLUE_MUSHROOM_GUY: EnemyType = EnemyType {
     max_health: 95.0,
     damage_resistance: DamageResistance::Partial(DamageType::Magic),
     payload: EnemyPayload::Some(&BLUE_MUSHROOM, 1),
-    ..WHITE_MUSHROOM_GUY
+    ..YELLOW_MUSHROOM_GUY
 };
-static WHITE_MUSHROOM_GUY: EnemyType = EnemyType {
-    name: "white_mushroom_guy",
+static YELLOW_MUSHROOM_GUY: EnemyType = EnemyType {
+    name: "yellow_mushroom_guy",
     sprite: 1 * 32 + 28,
     anim_length: 4,
     damage: 2,
     speed: 1.2,
     anim_speed: 1.0 / 1.2 * 0.5,
-    payload: EnemyPayload::Some(&WHITE_MUSHROOM, 1),
+    payload: EnemyPayload::Some(&YELLOW_MUSHROOM, 1),
     max_health: 7.0,
     ..DEFAULT_ENEMY_TYPE
 };
@@ -276,7 +276,7 @@ static GREEN_MUSHROOM_GUY: EnemyType = EnemyType {
     max_health: 20.0,
     damage_resistance: DamageResistance::Partial(DamageType::Acid),
     payload: EnemyPayload::Some(&GREEN_MUSHROOM, 1),
-    ..WHITE_MUSHROOM_GUY
+    ..YELLOW_MUSHROOM_GUY
 };
 static BIG_MUSHROOM: EnemyType = EnemyType {
     name: "big_mushroom",
@@ -286,7 +286,7 @@ static BIG_MUSHROOM: EnemyType = EnemyType {
     size: 2,
     anim_length: 1,
     max_health: 250.0,
-    payload: EnemyPayload::Some(&WHITE_MUSHROOM_GUY, 20),
+    payload: EnemyPayload::Some(&YELLOW_MUSHROOM_GUY, 20),
     ..DEFAULT_ENEMY_TYPE
 };
 static BIG_INJURED_MUSHROOM_GUY: EnemyType = EnemyType {
@@ -549,7 +549,7 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         ..GIGA_SLIME
     },
     BLUE_MUSHROOM_GUY,
-    WHITE_MUSHROOM_GUY,
+    YELLOW_MUSHROOM_GUY,
     GREEN_MUSHROOM_GUY,
     BIG_MUSHROOM_GUY,
 ];
