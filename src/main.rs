@@ -797,7 +797,7 @@ impl Sludge {
                         let Some((x, y)) = self.map.get_pos_along_path(score) else {
                             continue;
                         };
-                        let new = Enemy::new(enemy_type, x, y, state);
+                        let new = Enemy::new(enemy_type, x * SPRITE_SIZE, y * SPRITE_SIZE, state);
                         spawnlist.push(new);
                     }
                 }

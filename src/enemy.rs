@@ -324,6 +324,7 @@ static CARRIAGE: EnemyType = EnemyType {
     name: "carriage",
     sprite: 9 * 32 + 12,
     speed: 2.0,
+    size: 3,
     damage: 0,
     max_health: 150.0,
     payload: EnemyPayload::Some(&KNIGHT, 5),
