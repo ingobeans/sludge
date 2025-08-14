@@ -83,7 +83,7 @@ pub struct UIManager {
 }
 impl UIManager {
     pub fn new(text_engine: TextEngine) -> Self {
-        let inventory = vec![std::array::from_fn(|_| None.clone())];
+        let inventory = vec![std::array::from_fn(|_| None.clone()); INV_SLOTS_VERTICAL];
         Self {
             inventory,
             inventory_open: false,
