@@ -51,7 +51,7 @@ pub fn greed() -> Card {
     Card {
         name: "greed",
         desc: "enemies killed by\nproj give 2x gold",
-        tier: 0,
+        tier: 1,
         ty: CardType::Modifier(CardModifierData {
             recharge_speed: 0.1,
             gold_factor: Some(2.0),
