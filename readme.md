@@ -6,6 +6,11 @@ sludge is a tower defense game written in rust with "deck building" mechanics li
 
 you have some towers that you can move around, but they wont do anything if you dont give them any cards. you get cards from a shop that opens between rounds and at the start of the game. the actual behaviour of how cards are cast is basically as close to Noita's wand building as i could get it, so theres a lot of complexity and you'll have to learn through experimentation how make good builds.
 
+if you give a tower a projectile card, it will fire that projectile. if you give it two projectiles, it will fire them sequentially.
+add projectile modifiers before a projectile, and the stats of the modifiers will apply to the projectile. if you use multidraw cards you can shoot multiple projectiles simultaneously. if you apply modifiers to that multidraw group, it will apply to all projectiles being drawn.
+
+theres also trigger type projectiles, that fire another projectile as a payload on hit. the payload can also have modifiers, or be several projectiles with multidraw cards.
+
 theres over 40 cards in the game as of right now, of types projectile, modifier and multidraw.
 
 theres 4 different maps of varying difficulty, and a large array of different enemies.
