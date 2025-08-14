@@ -325,6 +325,7 @@ pub struct Card {
     pub ty: CardType,
     pub sprite: usize,
     pub is_trigger: bool,
+    pub show_child_stats: bool,
 }
 impl Debug for Card {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

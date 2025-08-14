@@ -336,6 +336,35 @@ impl UIManager {
 
         // make stats get offset based on how many lines the description was
         let mut index = count_occurence(card.desc, '\n') as f32;
+
+        // first check if we should start by printing the card's childrens' stats
+        if card.show_child_stats {
+            if let CardType::Projectile(projectile, _) = &card.ty {
+                for child in projectile
+                    .death_payload
+                    .iter()
+                    .chain(projectile.payload.iter())
+                {
+                    let modifier_data = match &child.ty {
+                        CardType::Modifier(modifier_data) => modifier_data,
+                        CardType::Projectile(proj, _) => &proj.modifier_data,
+                        _ => {
+                            return;
+                        }
+                    };
+                    for (k, v) in modifier_data.iter() {
+                        self.text_engine.draw_text(
+                            local_x + 2.0,
+                            local_y + index * 5.0 + CARD_SIZE + 4.0,
+                            &format!("{k}:{v}"),
+                            2,
+                        );
+                        index += 1.0;
+                    }
+                }
+            }
+        }
+
         for (k, v) in modifier_data.iter() {
             self.text_engine.draw_text(
                 local_x + 2.0,

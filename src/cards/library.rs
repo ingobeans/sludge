@@ -14,9 +14,9 @@ pub fn star_cannon() -> Card {
         fire_sound: ProjectileSound::Explosion,
         modifier_data: CardModifierData {
             speed: 0.0,
-            lifetime: 1.0,
+            lifetime: 0.0,
             piercing: true,
-            damage: hashmap!(DamageType::Magic => 6.0),
+            damage: hashmap!(DamageType::Magic => 12.0),
             ..Default::default()
         },
         ..Default::default()
@@ -43,6 +43,7 @@ pub fn star_cannon() -> Card {
         name: "star cannon",
         desc: "an exploding star",
         tier: 2,
+        show_child_stats: true,
         ty: CardType::Projectile(projectile, false),
         sprite: 43,
         ..Default::default()
@@ -726,9 +727,9 @@ fn fire_explosion() -> Card {
         fire_sound: ProjectileSound::Explosion,
         modifier_data: CardModifierData {
             speed: 0.0,
-            lifetime: 1.0,
+            lifetime: 0.0,
             piercing: true,
-            damage: hashmap!(DamageType::Burn => 6.0),
+            damage: hashmap!(DamageType::Burn => 14.0),
             ..Default::default()
         },
         ..Default::default()
@@ -746,7 +747,6 @@ pub fn fireball() -> Card {
             speed: 3.0,
             lifetime: 120.0,
             shoot_delay: 1.15,
-            damage: hashmap!(DamageType::Burn => 1.0),
             ..Default::default()
         },
         payload: vec![fire_explosion()],
@@ -757,6 +757,7 @@ pub fn fireball() -> Card {
         name: "fireball",
         desc: "burning fire",
         tier: 0,
+        show_child_stats: true,
         ty: CardType::Projectile(projectile, false),
         sprite: 11,
         ..Default::default()
@@ -786,6 +787,13 @@ pub fn explosion() -> Card {
         sprite: 13,
         ..Default::default()
     }
+}
+fn explosion_payload() -> Card {
+    let mut card = explosion();
+    if let CardType::Projectile(projectile, _) = &mut card.ty {
+        projectile.modifier_data.shoot_delay = 0.0;
+    }
+    card
 }
 
 pub fn stun_explosion() -> Card {
@@ -826,13 +834,14 @@ pub fn bomb() -> Card {
             shoot_delay: 0.85,
             ..Default::default()
         },
-        death_payload: vec![explosion()],
+        death_payload: vec![explosion_payload()],
         ..Default::default()
     };
 
     Card {
         name: "bomb",
         desc: "goes boom",
+        show_child_stats: true,
         tier: 0,
         ty: CardType::Projectile(projectile, false),
         sprite: 3,
@@ -873,7 +882,7 @@ pub fn rocket() -> Card {
             shoot_delay: 0.9,
             ..Default::default()
         },
-        payload: vec![explosion()],
+        payload: vec![explosion_payload()],
         ..Default::default()
     };
 
@@ -881,6 +890,7 @@ pub fn rocket() -> Card {
         name: "rocket",
         desc: "boom on impact",
         tier: 0,
+        show_child_stats: true,
         ty: CardType::Projectile(projectile, false),
         sprite: 15,
         ..Default::default()
@@ -942,6 +952,7 @@ pub fn acid_flask() -> Card {
         desc: "hurl at your foes",
         tier: 1,
         ty: CardType::Projectile(projectile, false),
+        show_child_stats: true,
         sprite: 12,
         ..Default::default()
     }
