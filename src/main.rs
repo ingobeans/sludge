@@ -426,13 +426,15 @@ impl Sludge {
                 }
             }
             if enemy.state.freeze_frames > 0 {
-                self.particle_sheet.draw_tile(
-                    centre_x - SPRITE_SIZE / 2.0,
-                    enemy.y + extra_size as f32 * SPRITE_SIZE - ground_offset,
-                    32 + 9,
-                    false,
-                    0.0,
-                );
+                for j in 0..enemy.ty.size {
+                    self.particle_sheet.draw_tile(
+                        enemy.x + j as f32 * SPRITE_SIZE - extra_size as f32 * SPRITE_SIZE / 2.0,
+                        enemy.y + extra_size as f32 * SPRITE_SIZE - ground_offset,
+                        32 + 9,
+                        false,
+                        0.0,
+                    );
+                }
             }
             if enemy.stun_frames > 0 {
                 let anim_frame = enemy.stun_frames % 3;
