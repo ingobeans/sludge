@@ -56,6 +56,7 @@ pub fn get_cards() -> Vec<Card> {
         library::potato(),
         library::yoyo(),
         library::blowdart(),
+        library::star_cannon(),
     ];
 
     if cards.len() as u8 > u8::MAX / 2 {

@@ -240,6 +240,22 @@ pub const EXPLOSION: Particle = Particle {
     },
 };
 
+pub const STAR_EXPLOSION: Particle = Particle {
+    life: 0,
+    lifetime: 15,
+    function: &|this, ctx, particles| {
+        basic_animation_particle(
+            this.life,
+            this.lifetime,
+            ctx.x,
+            ctx.y,
+            1 * 32 + 20,
+            2,
+            5,
+            particles,
+        );
+    },
+};
 pub const FIRE_EXPLOSION: Particle = Particle {
     life: 0,
     lifetime: 10,

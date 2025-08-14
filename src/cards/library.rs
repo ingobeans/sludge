@@ -7,7 +7,47 @@ pub fn as_trigger(mut card: Card) -> Card {
     card.tier += 1;
     card
 }
+pub fn star_cannon() -> Card {
+    let explosion_projectile = Projectile {
+        draw_type: ProjectileDrawType::Particle(particle::STAR_EXPLOSION),
+        extra_size: SPRITE_SIZE,
+        fire_sound: ProjectileSound::Explosion,
+        modifier_data: CardModifierData {
+            speed: 0.0,
+            lifetime: 1.0,
+            piercing: true,
+            damage: hashmap!(DamageType::Magic => 6.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let explosion = Card {
+        ty: CardType::Projectile(explosion_projectile, false),
+        sprite: 1,
+        ..Default::default()
+    };
 
+    let projectile = Projectile {
+        draw_type: ProjectileDrawType::Sprite(21, SpriteRotationMode::Direction),
+        modifier_data: CardModifierData {
+            speed: 3.5,
+            lifetime: 50.0,
+            shoot_delay: 1.15,
+            ..Default::default()
+        },
+        payload: vec![explosion],
+        ..Default::default()
+    };
+
+    Card {
+        name: "star cannon",
+        desc: "an exploding star",
+        tier: 2,
+        ty: CardType::Projectile(projectile, false),
+        sprite: 43,
+        ..Default::default()
+    }
+}
 pub fn pay2win() -> Card {
     Card {
         name: "pay to win",
