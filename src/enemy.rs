@@ -417,7 +417,7 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         size: 2,
         max_health: 65.0,
         damage_resistance: DamageResistance::Partial(DamageType::Burn),
-        payload: EnemyPayload::Some(&FIRE_MITE, 10),
+        payload: EnemyPayload::Some(&FIRE_MITE, 5),
         ..DEFAULT_ENEMY_TYPE
     },
     EnemyType {
