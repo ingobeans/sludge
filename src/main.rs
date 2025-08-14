@@ -398,6 +398,8 @@ impl Sludge {
             self.draw_tower(tower);
         }
         for enemy in &self.enemies {
+            let extra_size = enemy.ty.size - 1;
+            let ground_offset = 2.0 + extra_size as f32 * SPRITE_SIZE;
             let anim_frame = (enemy.state.score * enemy.ty.speed * enemy.ty.anim_speed) as usize
                 % enemy.ty.anim_length;
             let mut flipped = false;
@@ -414,9 +416,8 @@ impl Sludge {
                         sprite += j;
                     }
                     sprite += i * 32;
-                    let ground_offset = 2.0 + (enemy.ty.size - 1) as f32 * SPRITE_SIZE;
                     self.icon_sheet.draw_tile(
-                        enemy.x + j as f32 * SPRITE_SIZE,
+                        enemy.x + j as f32 * SPRITE_SIZE - extra_size as f32 * SPRITE_SIZE / 2.0,
                         enemy.y + i as f32 * SPRITE_SIZE - ground_offset,
                         sprite,
                         flipped,
@@ -425,8 +426,6 @@ impl Sludge {
                 }
             }
             if enemy.state.freeze_frames > 0 {
-                let extra_size = enemy.ty.size - 1;
-                let ground_offset = 2.0 + extra_size as f32 * SPRITE_SIZE;
                 self.particle_sheet.draw_tile(
                     centre_x - SPRITE_SIZE / 2.0,
                     enemy.y + extra_size as f32 * SPRITE_SIZE - ground_offset,
