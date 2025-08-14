@@ -106,7 +106,7 @@ pub fn greed() -> Card {
     Card {
         name: "greed",
         desc: "enemies killed by\nproj give 2x gold",
-        tier: 1,
+        tier: 0,
         ty: CardType::Modifier(CardModifierData {
             recharge_speed: 0.1,
             gold_factor: Some(2.0),
@@ -336,7 +336,7 @@ pub fn high_precision() -> Card {
             spread: -40.0_f32.to_radians(),
             ..Default::default()
         }),
-        tier: 1,
+        tier: 0,
         sprite: 27,
         ..Default::default()
     }
