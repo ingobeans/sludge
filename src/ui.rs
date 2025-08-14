@@ -177,16 +177,15 @@ impl UIManager {
     ) {
         let mut just_opened = false;
         let (handle_x, handle_y, flipped) = self.get_inv_handle_state();
-        if !just_selected_tower
-            && draw_img_button(
-                card_sheet,
-                handle_x,
-                handle_y,
-                local_x,
-                local_y,
-                32 * 3 + 1,
-                flipped,
-            )
+        if draw_img_button(
+            card_sheet,
+            handle_x,
+            handle_y,
+            local_x,
+            local_y,
+            32 * 3 + 1,
+            flipped,
+        ) && !just_selected_tower
         {
             just_opened = true;
             self.inventory_open = !self.inventory_open

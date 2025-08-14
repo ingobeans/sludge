@@ -246,7 +246,6 @@ impl Sludge {
             if clicked.is_none() {
                 if self.selected.is_some() {
                     self.selected = None;
-                    self.ui_manager.inventory_open = false;
                 }
                 return;
             }
@@ -256,7 +255,6 @@ impl Sludge {
             if self.selected.is_none() {
                 self.selected = Some(clicked);
                 self.ui_manager.tower_open = true;
-                self.ui_manager.inventory_open = true;
             } else {
                 // if we did click a tower, and we previously did have a selected tower, check if theyre the same
                 let old_selected = self.selected.unwrap();
