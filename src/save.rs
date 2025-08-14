@@ -147,12 +147,13 @@ impl SaveData {
                 towers.push(tower);
             }
         }
-        let inventory = std::array::from_fn(|y| {
-            std::array::from_fn(|x| {
+        let mut inventory = Vec::new();
+        for y in 0..INV_SLOTS_VERTICAL {
+            inventory.push(std::array::from_fn(|x| {
                 self.inventory[y * INV_SLOTS_HORIZONTAL + x]
                     .map(|card| actualize_virtual_card(card, &all_cards))
-            })
-        });
+            }));
+        }
 
         new.ui_manager.shop = Some(shop);
         new.towers = towers;

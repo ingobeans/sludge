@@ -73,7 +73,7 @@ pub struct Shop {
 }
 
 pub struct UIManager {
-    pub inventory: [[Option<Card>; INV_SLOTS_HORIZONTAL]; INV_SLOTS_VERTICAL],
+    pub inventory: Vec<[Option<Card>; INV_SLOTS_HORIZONTAL]>,
     pub inventory_open: bool,
     pub tower_open: bool,
     cursor_card: Option<Card>,
@@ -83,7 +83,7 @@ pub struct UIManager {
 }
 impl UIManager {
     pub fn new(text_engine: TextEngine) -> Self {
-        let inventory = std::array::from_fn(|_| std::array::from_fn(|_| None.clone()).clone());
+        let inventory = vec![std::array::from_fn(|_| None.clone())];
         Self {
             inventory,
             inventory_open: false,
