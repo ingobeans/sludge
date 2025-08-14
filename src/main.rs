@@ -211,18 +211,22 @@ impl Sludge {
             // if we're currently rotating a tower
             if self.rotating_tower {
                 tower.direction = Vec2::new(local_x - x1, local_y - y1).normalize();
-                if !is_mouse_button_down(MouseButton::Left) {
+                if !is_mouse_button_down(MouseButton::Left)
+                    && !is_mouse_button_down(MouseButton::Right)
+                {
                     self.rotating_tower = false;
                 }
                 return;
             }
 
-            if is_mouse_button_pressed(MouseButton::Left) {
-                let distance = ((x2 - local_x).powi(2) + (y2 - local_y).powi(2)).sqrt();
-                if distance <= 2.0 {
-                    self.rotating_tower = true;
-                    return;
+            if is_mouse_button_pressed(MouseButton::Right)
+                || is_mouse_button_pressed(MouseButton::Left) && {
+                    let distance = ((x2 - local_x).powi(2) + (y2 - local_y).powi(2)).sqrt();
+                    distance < 2.0
                 }
+            {
+                self.rotating_tower = true;
+                return;
             }
         }
 
