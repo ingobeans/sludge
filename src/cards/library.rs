@@ -106,7 +106,7 @@ pub fn boomerangify() -> Card {
     Card {
         name: "boomerangify",
         desc: "makes proj arc back\ntowards tower",
-        tier: 0,
+        tier: 1,
         ty: CardType::Modifier(CardModifierData {
             shoot_delay: -0.15,
             boomerang: true,
@@ -125,7 +125,7 @@ pub fn potato() -> Card {
             speed: 5.0,
             lifetime: 45.0,
             shoot_delay: 0.15,
-            damage: hashmap!(DamageType::Pierce => 5.0),
+            damage: hashmap!(DamageType::Pierce => 2.0),
             ..Default::default()
         },
         ..Default::default()
@@ -265,10 +265,10 @@ pub fn scatter() -> Card {
         ty: CardType::Modifier(CardModifierData {
             spread: 40.0_f32.to_radians(),
             shoot_delay: -0.2,
-            recharge_speed: -0.3,
+            recharge_speed: -0.2,
             ..Default::default()
         }),
-        tier: 0,
+        tier: 2,
         sprite: 28,
         ..Default::default()
     }

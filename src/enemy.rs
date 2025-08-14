@@ -230,6 +230,105 @@ static GIGA_SLIME: EnemyType = EnemyType {
     payload: EnemyPayload::Some(&BIG_FIRE_SLIME, 8),
     ..DEFAULT_ENEMY_TYPE
 };
+static BLUE_MUSHROOM: EnemyType = EnemyType {
+    sprite: 0 * 32 + 27,
+    max_health: 125.0,
+    ..WHITE_MUSHROOM
+};
+static WHITE_MUSHROOM: EnemyType = EnemyType {
+    name: "mushroom",
+    sprite: 1 * 32 + 27,
+    anim_length: 1,
+    damage: 0,
+    speed: 0.0,
+    max_health: 16.0,
+    ..DEFAULT_ENEMY_TYPE
+};
+static GREEN_MUSHROOM: EnemyType = EnemyType {
+    sprite: 2 * 32 + 27,
+    max_health: 24.0,
+    ..WHITE_MUSHROOM
+};
+static BLUE_MUSHROOM_GUY: EnemyType = EnemyType {
+    name: "blue_mushroom_guy",
+    sprite: 0 * 32 + 28,
+    damage: 5,
+    max_health: 95.0,
+    damage_resistance: DamageResistance::Partial(DamageType::Magic),
+    payload: EnemyPayload::Some(&BLUE_MUSHROOM, 1),
+    ..WHITE_MUSHROOM_GUY
+};
+static WHITE_MUSHROOM_GUY: EnemyType = EnemyType {
+    name: "white_mushroom_guy",
+    sprite: 1 * 32 + 28,
+    anim_length: 4,
+    damage: 2,
+    speed: 1.2,
+    anim_speed: 1.0 / 1.2 * 0.5,
+    payload: EnemyPayload::Some(&WHITE_MUSHROOM, 1),
+    max_health: 7.0,
+    ..DEFAULT_ENEMY_TYPE
+};
+static GREEN_MUSHROOM_GUY: EnemyType = EnemyType {
+    name: "green_mushroom_guy",
+    sprite: 2 * 32 + 28,
+    damage: 3,
+    max_health: 20.0,
+    damage_resistance: DamageResistance::Partial(DamageType::Acid),
+    payload: EnemyPayload::Some(&GREEN_MUSHROOM, 1),
+    ..WHITE_MUSHROOM_GUY
+};
+static BIG_MUSHROOM: EnemyType = EnemyType {
+    name: "big_mushroom",
+    sprite: 15 * 32 + 30,
+    damage: 0,
+    speed: 0.0,
+    size: 2,
+    anim_length: 1,
+    max_health: 250.0,
+    payload: EnemyPayload::Some(&WHITE_MUSHROOM_GUY, 20),
+    ..DEFAULT_ENEMY_TYPE
+};
+static BIG_INJURED_MUSHROOM_GUY: EnemyType = EnemyType {
+    name: "big_mushroom_guy",
+    sprite: 17 * 32 + 18,
+    speed: 0.5,
+    anim_speed: 0.5,
+    size: 3,
+    anim_length: 4,
+    damage: 0,
+    max_health: 150.0,
+    payload: EnemyPayload::Some(&BIG_MUSHROOM, 1),
+    ..DEFAULT_ENEMY_TYPE
+};
+static BIG_MUSHROOM_GUY: EnemyType = EnemyType {
+    name: "big_mushroom_guy",
+    sprite: 14 * 32 + 18,
+    speed: 0.5,
+    damage: 5,
+    max_health: 150.0,
+    payload: EnemyPayload::Some(&BIG_INJURED_MUSHROOM_GUY, 1),
+    ..BIG_INJURED_MUSHROOM_GUY
+};
+static KNIGHT: EnemyType = EnemyType {
+    name: "knight",
+    sprite: 11 * 32 + 2,
+    anim_length: 2,
+    speed: 1.0,
+    damage: 4,
+    max_health: 15.0,
+    damage_resistance: DamageResistance::Full(DamageType::Pierce),
+    ..DEFAULT_ENEMY_TYPE
+};
+static CARRIAGE: EnemyType = EnemyType {
+    name: "carriage",
+    sprite: 9 * 32 + 12,
+    speed: 2.0,
+    damage: 0,
+    max_health: 150.0,
+    payload: EnemyPayload::Some(&KNIGHT, 5),
+    ..DEFAULT_ENEMY_TYPE
+};
 pub static ENEMY_TYPES: &[EnemyType] = &[
     HORSEY,
     EnemyType {
@@ -370,23 +469,15 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         damage_resistance: DamageResistance::Full(DamageType::Magic),
         ..DEFAULT_ENEMY_TYPE
     },
-    EnemyType {
-        name: "knight",
-        sprite: 11 * 32 + 2,
-        anim_length: 2,
-        speed: 1.0,
-        damage: 4,
-        max_health: 15.0,
-        damage_resistance: DamageResistance::Full(DamageType::Pierce),
-        ..DEFAULT_ENEMY_TYPE
-    },
+    KNIGHT,
+    CARRIAGE,
     EnemyType {
         name: "archer",
         sprite: 11 * 32 + 4,
         anim_length: 2,
         speed: 1.2,
         damage: 4,
-        max_health: 5.0,
+        max_health: 10.0,
         ..DEFAULT_ENEMY_TYPE
     },
     EnemyType {
@@ -457,4 +548,8 @@ pub static ENEMY_TYPES: &[EnemyType] = &[
         payload: EnemyPayload::Some(&GIGA_SLIME, 2),
         ..GIGA_SLIME
     },
+    BLUE_MUSHROOM_GUY,
+    WHITE_MUSHROOM_GUY,
+    GREEN_MUSHROOM_GUY,
+    BIG_MUSHROOM_GUY,
 ];

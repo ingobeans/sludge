@@ -2,6 +2,7 @@ spider-5
 !spider-20
 delay-10 spider-5 delay-30 slime-5
 delay-35 slime-7 spider-10
+white_mushroom_guy-3
 !delay-20 spider-20 baby_spider-5
 !horsey-10 delay-10 slime-10
 
@@ -14,15 +15,18 @@ big_spider-4
 
 delay-10 big_slime-10 slime_car-20
 delay-5 slime-30 delay-15 fire_slime-10 delay-10 skeleton-10
+white_mushroom_guy-3 delay-60 white_mushroom_guy-1 green_mushroom_guy-1
 delay-10 spider-20 delay-10 baby_spider-10 delay-10 slime-20
 delay-10 magicbird-5 spider-10 slime-10 spider-10 slime-10
 !delay-15 skeleton-20 delay-23 skeleton-1 cultist-3
 delay-10 big_slime-2 fire_slime-2 slime-2 big_slime-3 fire_slime-3 slime-3 big_slime-4 fire_slime-4 big_slime-4 fire_slime-4 slime-4 big_slime-4 fire_slime-4 slime-20
 
+
 delay-10 horsey-20 delay-15 knight-20
 delay-15 horsey_rider-20 delay-5 skeleton-30
 delay-7 cultist-10 delay-15 horsey_rider-20 delay-8 knight-20
 delay-30 big_knight_shield-1 delay-5 archer-30 fire_slime-10
+delay-30 green_mushroom_guy-10 delay-15 white_mushroom_guy-15
 
 delay-3 spider-50 delay-30 armored_spider-15
 delay-10 armored_spider-5 delay-20 spider_warrior-5
@@ -33,12 +37,16 @@ delay-30 giga_ice_slug-3 delay-60 giga_ice_slug-1 delay-7 cultist-10 spider-10
 delay-13 cultist-20 delay-30 cultist-1 giga_cultist_shield-1 dragon-3
 delay-30 giga_cultist_shield-2 delay-13 cultist-20 delay-4 magicbird-7 skeleton-20
 
-delay-40 fire_golem-3 delay-60 fire_golem-1 delay-5 knight-30 
+delay-40 fire_golem-3 delay-60 fire_golem-1 delay-5 knight-30
+delay-40 carriage-1 delay-15 horsey_rider-30
 delay-25 big_knight_shield-2 big_knight_shield-1 delay-5 spider-10 delay-5 spider_warrior-10 delay-5 armored_spider-15
 delay-30 giga_cultist_shield-2 delay-13 big_spider-10 delay-5 horsey_rider-45
+delay-25 big_knight_shield-3 carriage-2
+delay-30 blue_mushroom_guy-2 delay-5 green_mushroom_guy-30
 delay-6 spider_warrior-25 delay-10 armored_spider-35 delay-5 cultist-5 skeleton-5 cultist-5 skeleton-5 cultist-5 skeleton-5 cultist-5 skeleton-15
 delay-5 slime-50 delay-30 slime-1 giga_slime-1 delay-6 slime_car-10
 delay-15 giga_cultist_shield-5 big_knight_shield-5 giga_slime-5 giga_ice_slug-5 fire_golem-5 delay-5 snow_ball-30
+delay-5 blue_mushroom_guy-30 delay-3 green_mushroom_guy-20 white_mushroom_guy-20 delay-30 white_mushroom_guy-1 big_mushroom_guy-1
 delay-15 giga_slime-10 delay-3 cultist-20 delay-4 big_knight_shield-5 horsey_rider-20
 ultra_slime-1
 delay-60 troll-2 delay-15 dragon-6 delay-60 cultist-1 delay-7 cultist-10
