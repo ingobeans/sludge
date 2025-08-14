@@ -323,3 +323,34 @@ pub const ACID_PUDDLE: Particle = Particle {
         );
     },
 };
+
+pub const CONFETTIS: [Particle; 4] = [
+    Particle {
+        life: 0,
+        lifetime: 10,
+        function: &|this, ctx, particles| {
+            basic_animation_particle(this.life, 10, ctx.x, ctx.y, 32 * 3 + 13, 1, 4, particles);
+        },
+    },
+    Particle {
+        life: 0,
+        lifetime: 10,
+        function: &|this, ctx, particles| {
+            basic_animation_particle(this.life, 10, ctx.x, ctx.y, 32 * 4 + 13, 1, 4, particles);
+        },
+    },
+    Particle {
+        life: 0,
+        lifetime: 10,
+        function: &|this, ctx, particles| {
+            basic_animation_particle(this.life, 10, ctx.x, ctx.y, 32 * 5 + 13, 1, 4, particles);
+        },
+    },
+    Particle {
+        life: 0,
+        lifetime: 10,
+        function: &|this, ctx, particles| {
+            basic_animation_particle(this.life, 10, ctx.x, ctx.y, 32 * 6 + 13, 1, 4, particles);
+        },
+    },
+];

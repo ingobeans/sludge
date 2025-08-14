@@ -28,6 +28,7 @@ pub fn get_cards() -> Vec<Card> {
         library::snakeify(),
         library::greed(),
         library::pay2win(),
+        library::confetti_trail(),
         // multidraw
         library::double(),
         library::triple(),
@@ -244,6 +245,8 @@ pub struct CardModifierData {
     /// Does the projectile follow a slithering path
     pub snake: bool,
     pub speed: f32,
+    /// Does the proejctile have a confetti trail?
+    pub confetti_trail: bool,
     /// Degrees (in radians) of spread/inaccuracy
     pub spread: f32,
     /// Factor for how much gold is earned per enemy kill
@@ -297,6 +300,7 @@ impl CardModifierData {
         self.piercing |= other.piercing;
         self.ghost |= other.ghost;
         self.boomerang |= other.boomerang;
+        self.confetti_trail |= other.confetti_trail;
         self.snake |= other.snake;
         self.speed += other.speed;
         self.spread += other.spread;

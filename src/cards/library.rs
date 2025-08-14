@@ -7,6 +7,20 @@ pub fn as_trigger(mut card: Card) -> Card {
     card.tier += 1;
     card
 }
+pub fn confetti_trail() -> Card {
+    Card {
+        name: "confetti trail",
+        desc: "gives projectile a\nsparkly rainbow\ntrail",
+        tier: 0,
+        ty: CardType::Modifier(CardModifierData {
+            shoot_delay: -0.05,
+            confetti_trail: true,
+            ..Default::default()
+        }),
+        sprite: 44,
+        ..Default::default()
+    }
+}
 pub fn star_cannon() -> Card {
     let explosion_projectile = Projectile {
         draw_type: ProjectileDrawType::Particle(particle::STAR_EXPLOSION),

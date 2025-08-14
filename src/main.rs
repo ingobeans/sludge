@@ -495,6 +495,18 @@ impl Sludge {
     }
     fn update_projectiles(&mut self) {
         let death_queue = self.projectiles.extract_if(.., |projectile| {
+            if projectile.modifier_data.confetti_trail {
+                self.orphaned_particles.push((
+                    particle::CONFETTIS[rand::gen_range(0, particle::CONFETTIS.len())].clone(),
+                    ParticleContext {
+                        x: projectile.x,
+                        y: projectile.y,
+                        origin_x: projectile.spawn_x,
+                        origin_y: projectile.spawn_y,
+                        direction: projectile.direction,
+                    },
+                ));
+            }
             projectile.x += projectile.direction.x * projectile.modifier_data.speed;
             projectile.y += projectile.direction.y * projectile.modifier_data.speed;
             projectile.life += 1.0;
