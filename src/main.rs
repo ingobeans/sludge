@@ -130,6 +130,39 @@ impl Sludge {
             particle_sheet,
         }
     }
+    fn pause(&mut self) {
+        match self.state {
+            GameState::Running => {
+                // pause game
+
+                // first try to place whatever tower we're moving so it isnt lost
+                // and if that spot is obstructed, default to the first tower spawnpoint
+                if let Some(mut moving) = self.moving.take() {
+                    if !self.is_valid_tower_placement(moving.x, moving.y) {
+                        let (x, y) = self.map.tower_spawnpoints[0];
+                        let (x, y) = (x as f32, y as f32);
+                        moving.x = x;
+                        moving.y = y;
+                    }
+                    self.towers.push(moving);
+                }
+                // also check if we have a card on the cursor, if so, put it in the first available inventory slot
+                if let Some(card) = self.ui_manager.cursor_card.take() {
+                    'outer: for row in &mut self.ui_manager.inventory {
+                        for slot in row {
+                            if slot.is_none() {
+                                *slot = Some(card);
+                                break 'outer;
+                            }
+                        }
+                    }
+                }
+                self.state = GameState::Paused
+            }
+            GameState::Paused => self.state = GameState::Running,
+            _ => {}
+        }
+    }
     fn start_round(&mut self) {
         self.projectiles.clear();
         if !self.lab {
@@ -221,7 +254,7 @@ impl Sludge {
             if is_mouse_button_pressed(MouseButton::Right)
                 || is_mouse_button_pressed(MouseButton::Left) && {
                     let distance = ((x2 - local_x).powi(2) + (y2 - local_y).powi(2)).sqrt();
-                    distance < 2.0
+                    distance < 4.0
                 }
             {
                 self.rotating_tower = true;
@@ -289,7 +322,7 @@ impl Sludge {
             }
 
             let distance = ((x2 - local_x).powi(2) + (y2 - local_y).powi(2)).sqrt();
-            let border_color = if distance <= 2.0 {
+            let border_color = if distance <= 4.0 {
                 COLOR_BEIGE
             } else {
                 COLOR_BROWN
@@ -373,6 +406,21 @@ impl Sludge {
             )
         {
             self.start_round();
+        }
+        // draw pause button
+        let x = SCREEN_WIDTH - SPRITE_SIZE;
+        if !self.ui_manager.inventory_open
+            && draw_img_button(
+                &self.card_sheet,
+                x,
+                0.0,
+                local_x,
+                local_y,
+                3 + 32 * 3,
+                false,
+            )
+        {
+            self.pause();
         }
     }
     fn draw_tower(&self, tower: &Tower) {
@@ -1159,37 +1207,7 @@ impl GameManager {
         game.draw();
 
         if is_key_pressed(KeyCode::Q) || is_key_pressed(KeyCode::Escape) {
-            match game.state {
-                GameState::Running => {
-                    // pause game
-
-                    // first try to place whatever tower we're moving so it isnt lost
-                    // and if that spot is obstructed, default to the first tower spawnpoint
-                    if let Some(mut moving) = game.moving.take() {
-                        if !game.is_valid_tower_placement(moving.x, moving.y) {
-                            let (x, y) = game.map.tower_spawnpoints[0];
-                            let (x, y) = (x as f32, y as f32);
-                            moving.x = x;
-                            moving.y = y;
-                        }
-                        game.towers.push(moving);
-                    }
-                    // also check if we have a card on the cursor, if so, put it in the first available inventory slot
-                    if let Some(card) = game.ui_manager.cursor_card.take() {
-                        'outer: for row in &mut game.ui_manager.inventory {
-                            for slot in row {
-                                if slot.is_none() {
-                                    *slot = Some(card);
-                                    break 'outer;
-                                }
-                            }
-                        }
-                    }
-                    game.state = GameState::Paused
-                }
-                GameState::Paused => game.state = GameState::Running,
-                _ => {}
-            }
+            game.pause();
         }
 
         match game.state {
@@ -1233,20 +1251,34 @@ impl GameManager {
                 let button_width = 60.0;
                 let button_height = 8.0;
                 let button_x = x + width / 2.0 - button_width / 2.0;
-                let button_y = y + height - 4.0 - button_height;
+                let button_y = y + height - 4.0 - button_height * 2.0;
 
-                let clicked = draw_button(
+                if let GameState::Paused = game.state {
+                    // draw resume button
+                    if draw_button(
+                        &game.ui_manager.text_engine,
+                        button_x,
+                        button_y,
+                        button_width,
+                        button_height,
+                        local_x,
+                        local_y,
+                        "resume game",
+                    ) {
+                        game.pause();
+                    }
+                }
+                // draw return to menu button
+                if draw_button(
                     &game.ui_manager.text_engine,
                     button_x,
-                    button_y,
+                    button_y + 9.0,
                     button_width,
                     button_height,
                     local_x,
                     local_y,
                     "return to menu",
-                );
-
-                if clicked {
+                ) {
                     // save the game if we're paused and exiting to menu
                     if let GameState::Paused = game.state {
                         if !game.lab
