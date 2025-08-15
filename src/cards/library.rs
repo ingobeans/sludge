@@ -309,7 +309,7 @@ pub fn ghost_shot() -> Card {
             ..Default::default()
         }),
         sprite: 29,
-        tier: 2,
+        tier: 0,
         ..Default::default()
     }
 }
