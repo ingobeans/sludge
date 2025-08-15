@@ -20,22 +20,26 @@
       image-rendering: -o-crisp-edges;
       image-rendering: -webkit-optimize-contrast;
       image-rendering: pixelated;
-      border: none
+      border: none;
+      border: 0px !important;
     }
   </style>
 </head>
 
 <body oncontextmenu="return false;">
   <canvas id='glcanvas' tabindex="1"></canvas>
+  <div id="cover" style="background-color: black; height: 100%; position: absolute; left: 0;"></div>
   <script src="gl.js"></script>
   <script src="sapp_jsutils.js"></script>
   <script src="quad-storage.js"></script>
   <script>
+    let cover = document.getElementById("cover");
     // load wasm
     load('sludge.wasm');
     function resizeCanvas() {
       let scaleFactor = Math.min((window.innerWidth / 192), (window.innerHeight / 144));
-      canvas.style.left = (window.innerWidth - 192 * scaleFactor) / 2;
+      cover.style.width = canvas.style.left = (window.innerWidth - 192 * scaleFactor) / 2;
+
     }
 
     resizeCanvas();

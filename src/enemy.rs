@@ -1,4 +1,4 @@
-use crate::{cards::DamageType, consts::SPRITE_SIZE};
+use crate::{cards::DamageType, consts::SPRITE_SIZE, GameAssets};
 
 #[derive(Clone, Copy)]
 pub enum DamageResistance {
@@ -88,6 +88,56 @@ impl Enemy {
             poison_frames: 0,
             stun_frames: 0,
             stun_immunity_frames: 0,
+        }
+    }
+    pub fn draw(&self, assets: &GameAssets) {
+        let extra_size = self.ty.size - 1;
+        let ground_offset = 2.0 + extra_size as f32 * SPRITE_SIZE;
+        let anim_frame =
+            (self.state.score * self.ty.speed * self.ty.anim_speed) as usize % self.ty.anim_length;
+        let mut flipped = false;
+        if self.moving_left && self.ty.should_flip {
+            flipped = true;
+        }
+        let (centre_x, _) = self.get_centre();
+        for i in 0..self.ty.size {
+            for j in 0..self.ty.size {
+                let mut sprite = self.ty.sprite + anim_frame * self.ty.size;
+                if flipped {
+                    sprite += self.ty.size - j - 1;
+                } else {
+                    sprite += j;
+                }
+                sprite += i * 32;
+                assets.icon_sheet.draw_tile(
+                    self.x + j as f32 * SPRITE_SIZE - extra_size as f32 * SPRITE_SIZE / 2.0,
+                    self.y + i as f32 * SPRITE_SIZE - ground_offset,
+                    sprite,
+                    flipped,
+                    0.0,
+                );
+            }
+        }
+        if self.state.freeze_frames > 0 {
+            for j in 0..self.ty.size {
+                assets.particle_sheet.draw_tile(
+                    self.x + j as f32 * SPRITE_SIZE - extra_size as f32 * SPRITE_SIZE / 2.0,
+                    self.y + extra_size as f32 * SPRITE_SIZE - ground_offset,
+                    32 + 9,
+                    false,
+                    0.0,
+                );
+            }
+        }
+        if self.stun_frames > 0 {
+            let anim_frame = self.stun_frames % 3;
+            assets.particle_sheet.draw_tile(
+                centre_x - SPRITE_SIZE / 2.0,
+                self.y - SPRITE_SIZE / 2.0,
+                32 + 13 + anim_frame as usize,
+                false,
+                0.0,
+            );
         }
     }
     pub fn get_centre(&self) -> (f32, f32) {

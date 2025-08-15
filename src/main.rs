@@ -57,7 +57,7 @@ enum GameState {
     Lose,
     Paused,
 }
-struct Sludge {
+struct Sludge<'a> {
     state: GameState,
     /// Just used to ensure same sublevels are used on saves
     seed: u64,
@@ -69,32 +69,18 @@ struct Sludge {
     projectile_spawnlist: Vec<Projectile>,
     orphaned_particles: Vec<(Particle, ParticleContext)>,
     lives: u8,
-    ui_manager: UIManager,
+    ui_manager: UIManager<'a>,
     round_manager: RoundManager,
-    sfx_manager: SFXManager,
     just_selected_tower: bool,
     lab: bool,
     rotating_tower: bool,
     moving: Option<Tower>,
     selected: Option<usize>,
-    tileset: Spritesheet,
-    icon_sheet: Spritesheet,
-    card_sheet: Spritesheet,
-    particle_sheet: Spritesheet,
+    assets: &'a GameAssets,
 }
-impl Sludge {
-    async fn new(
-        map: Map,
-        map_index: usize,
-        text_engine: TextEngine,
-        lab: bool,
-        seed: u64,
-    ) -> Self {
-        let tileset = load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE);
-        let icon_sheet = load_spritesheet("data/assets/entities.png", SPRITE_SIZE_USIZE);
-        let card_sheet = load_spritesheet("data/assets/cards.png", SPRITE_SIZE_USIZE);
-        let particle_sheet = load_spritesheet("data/assets/particles.png", SPRITE_SIZE_USIZE);
-
+impl<'a> Sludge<'a> {
+    async fn new(map_index: usize, lab: bool, seed: u64, assets: &'a GameAssets) -> Self {
+        let map = assets.maps[map_index].clone();
         // add starting towers
         let base_towers = get_towers(map.tower_spawnpoints);
         let towers = if !lab {
@@ -103,7 +89,6 @@ impl Sludge {
             base_towers.into()
         };
         let round_manager = load_round_data(seed);
-        let sfx_manager = SFXManager::new().await;
 
         Self {
             state: GameState::Running,
@@ -122,12 +107,8 @@ impl Sludge {
             rotating_tower: false,
             moving: None,
             selected: None,
-            ui_manager: UIManager::new(text_engine),
-            sfx_manager,
-            tileset,
-            icon_sheet,
-            card_sheet,
-            particle_sheet,
+            ui_manager: UIManager::new(&assets.text_engine),
+            assets,
         }
     }
     fn pause(&mut self) {
@@ -304,7 +285,9 @@ impl Sludge {
     fn handle_ui(&mut self, local_x: f32, local_y: f32) {
         let selected_tower = self.selected.map(|index| &self.towers[index]);
         if let Some(tower) = selected_tower {
-            self.icon_sheet.draw_tile(tower.x, tower.y, 32, false, 0.0);
+            self.assets
+                .icon_sheet
+                .draw_tile(tower.x, tower.y, 32, false, 0.0);
             // draw little arrow thingy
             let x1 = (tower.x + SPRITE_SIZE / 2.0).round();
             let y1 = (tower.y + SPRITE_SIZE / 2.0).round();
@@ -332,11 +315,15 @@ impl Sludge {
             draw_circle(x2, y2, 1.0, COLOR_YELLOW);
         }
         if let Some(tower) = &self.moving {
-            self.icon_sheet
+            self.assets
+                .icon_sheet
                 .draw_tile(tower.x, tower.y - 4.0, tower.sprite, false, 0.0);
-            self.icon_sheet.draw_tile(tower.x, tower.y, 33, false, 0.0);
+            self.assets
+                .icon_sheet
+                .draw_tile(tower.x, tower.y, 33, false, 0.0);
             if !self.is_valid_tower_placement(tower.x, tower.y) {
-                self.icon_sheet
+                self.assets
+                    .icon_sheet
                     .draw_tile(tower.x, tower.y - 4.0, 34, false, 0.0);
             }
         }
@@ -344,7 +331,7 @@ impl Sludge {
         self.ui_manager.handle_ui(
             local_x,
             local_y,
-            &self.card_sheet,
+            &self.assets.card_sheet,
             selected_tower,
             self.just_selected_tower,
         );
@@ -355,7 +342,9 @@ impl Sludge {
         draw_square(0.0, 0.0, 64.0, 8.0);
 
         // show lives
-        self.icon_sheet.draw_tile(cursor_x, 0.0, 40, false, 0.0);
+        self.assets
+            .icon_sheet
+            .draw_tile(cursor_x, 0.0, 40, false, 0.0);
         cursor_x += 6.0;
         self.ui_manager
             .text_engine
@@ -363,7 +352,9 @@ impl Sludge {
         cursor_x += 4.0 * 4.0;
 
         // show gold counter
-        self.icon_sheet.draw_tile(cursor_x, 0.0, 39, false, 0.0);
+        self.assets
+            .icon_sheet
+            .draw_tile(cursor_x, 0.0, 39, false, 0.0);
         cursor_x += 6.0;
         let gold_text = self.ui_manager.gold.to_string();
         self.ui_manager
@@ -379,7 +370,8 @@ impl Sludge {
         } else {
             37
         };
-        self.icon_sheet
+        self.assets
+            .icon_sheet
             .draw_tile(cursor_x, 0.0, round_icon, false, 0.0);
         cursor_x += 6.0;
         self.ui_manager.text_engine.draw_text(
@@ -411,7 +403,7 @@ impl Sludge {
         let x = SCREEN_WIDTH - SPRITE_SIZE;
         if !self.ui_manager.inventory_open
             && draw_img_button(
-                &self.card_sheet,
+                &self.assets.card_sheet,
                 x,
                 0.0,
                 local_x,
@@ -436,65 +428,19 @@ impl Sludge {
         } else if angle < 90.0 && angle > -90.0 {
             flipped = true;
         }
-        self.icon_sheet
+        self.assets
+            .icon_sheet
             .draw_tile(tower.x, tower.y, sprite, flipped, 0.0);
     }
     fn draw(&self) {
-        self.tileset.draw_tilemap(&self.map.background);
-        self.tileset.draw_tilemap(&self.map.out_of_bounds);
-        self.tileset.draw_tilemap(&self.map.obstructions);
+        self.assets.tileset.draw_tilemap(&self.map.background);
+        self.assets.tileset.draw_tilemap(&self.map.out_of_bounds);
+        self.assets.tileset.draw_tilemap(&self.map.obstructions);
         for tower in self.towers.iter() {
             self.draw_tower(tower);
         }
         for enemy in &self.enemies {
-            let extra_size = enemy.ty.size - 1;
-            let ground_offset = 2.0 + extra_size as f32 * SPRITE_SIZE;
-            let anim_frame = (enemy.state.score * enemy.ty.speed * enemy.ty.anim_speed) as usize
-                % enemy.ty.anim_length;
-            let mut flipped = false;
-            if enemy.moving_left && enemy.ty.should_flip {
-                flipped = true;
-            }
-            let (centre_x, _) = enemy.get_centre();
-            for i in 0..enemy.ty.size {
-                for j in 0..enemy.ty.size {
-                    let mut sprite = enemy.ty.sprite + anim_frame * enemy.ty.size;
-                    if flipped {
-                        sprite += enemy.ty.size - j - 1;
-                    } else {
-                        sprite += j;
-                    }
-                    sprite += i * 32;
-                    self.icon_sheet.draw_tile(
-                        enemy.x + j as f32 * SPRITE_SIZE - extra_size as f32 * SPRITE_SIZE / 2.0,
-                        enemy.y + i as f32 * SPRITE_SIZE - ground_offset,
-                        sprite,
-                        flipped,
-                        0.0,
-                    );
-                }
-            }
-            if enemy.state.freeze_frames > 0 {
-                for j in 0..enemy.ty.size {
-                    self.particle_sheet.draw_tile(
-                        enemy.x + j as f32 * SPRITE_SIZE - extra_size as f32 * SPRITE_SIZE / 2.0,
-                        enemy.y + extra_size as f32 * SPRITE_SIZE - ground_offset,
-                        32 + 9,
-                        false,
-                        0.0,
-                    );
-                }
-            }
-            if enemy.stun_frames > 0 {
-                let anim_frame = enemy.stun_frames % 3;
-                self.particle_sheet.draw_tile(
-                    centre_x - SPRITE_SIZE / 2.0,
-                    enemy.y - SPRITE_SIZE / 2.0,
-                    32 + 13 + anim_frame as usize,
-                    false,
-                    0.0,
-                );
-            }
+            enemy.draw(self.assets)
         }
         for projectile in self.projectiles.iter() {
             match &projectile.draw_type {
@@ -504,7 +450,7 @@ impl Sludge {
                         SpriteRotationMode::Spin => (15.0 - projectile.life % 30.0) / 15.0 * PI,
                         SpriteRotationMode::None => 0.0,
                     };
-                    self.particle_sheet.draw_tile(
+                    self.assets.particle_sheet.draw_tile(
                         projectile.x - SPRITE_SIZE / 2.0,
                         projectile.y - SPRITE_SIZE / 2.0,
                         *index,
@@ -522,14 +468,14 @@ impl Sludge {
                             origin_y: projectile.spawn_y,
                             direction: projectile.direction,
                         },
-                        &self.particle_sheet,
+                        &self.assets.particle_sheet,
                     );
                 }
                 _ => {}
             }
         }
         for (particle, ctx) in self.orphaned_particles.iter() {
-            (particle.function)(particle, ctx, &self.particle_sheet);
+            (particle.function)(particle, ctx, &self.assets.particle_sheet);
         }
     }
     fn update_particles(&mut self) {
@@ -649,7 +595,7 @@ impl Sludge {
                             enemy.gold_factor = projectile.modifier_data.gold_factor;
                         }
                         // play sound
-                        projectile.hit_sound.play(&self.sfx_manager);
+                        projectile.hit_sound.play(&self.assets.sfx_manager);
                         projectile.hit_sound = ProjectileSound::None;
 
                         // also check whether enemy should be frozen
@@ -799,7 +745,7 @@ impl Sludge {
                 }
             }
 
-            projectile.fire_sound.play(&self.sfx_manager);
+            projectile.fire_sound.play(&self.assets.sfx_manager);
         }
         self.projectiles.append(&mut self.projectile_spawnlist);
     }
@@ -963,26 +909,50 @@ impl Sludge {
     }
 }
 
-struct GameManager {
-    sludge: Option<Sludge>,
-    in_play_menu: bool,
+struct GameAssets {
+    logo_texture: Texture2D,
+    text_engine: TextEngine,
+    tileset: Spritesheet,
+    icon_sheet: Spritesheet,
+    card_sheet: Spritesheet,
+    particle_sheet: Spritesheet,
+    sfx_manager: SFXManager,
     maps: Vec<Map>,
+}
+
+fn create_random_enemy(index: usize) -> Enemy {
+    let ty = &ENEMY_TYPES[rand::gen_range(0, ENEMY_TYPES.len())];
+    Enemy::new(
+        ty,
+        index as f32 * -SPRITE_SIZE * 2.0 - SPRITE_SIZE * ty.size as f32,
+        SCREEN_HEIGHT - SPRITE_SIZE,
+        EnemyState {
+            score: 0.0,
+            freeze_frames: 0,
+        },
+    )
+}
+struct GameManager<'a> {
+    sludge: Option<Sludge<'a>>,
+    in_play_menu: bool,
     last: f64,
     pixel_camera: Camera2D,
     gameover_anim_frame: u8,
-    menu_texture: Texture2D,
-    text_engine: TextEngine,
-    tileset: Spritesheet,
+    menu_enemies: Vec<Enemy>,
+    assets: &'a GameAssets,
 }
-impl GameManager {
-    fn new() -> Self {
+impl<'a> GameManager<'a> {
+    async fn new(assets: &'a GameAssets) -> Self {
         let render_target = render_target(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32);
         render_target.texture.set_filter(FilterMode::Nearest);
-        let menu_texture = assets::load_texture("data/assets/menu.png");
+        let mut menu_enemies = Vec::new();
+        rand::srand(macroquad::miniquad::date::now() as _);
+        for index in 0..5 {
+            menu_enemies.push(create_random_enemy(index));
+        }
         Self {
             in_play_menu: false,
             sludge: None,
-            maps: load_maps(),
             last: get_time(),
             pixel_camera: Camera2D {
                 render_target: Some(render_target),
@@ -992,9 +962,8 @@ impl GameManager {
                 ..Default::default()
             },
             gameover_anim_frame: 0,
-            menu_texture,
-            text_engine: TextEngine::new(),
-            tileset: load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE),
+            assets,
+            menu_enemies,
         }
     }
     async fn run(&mut self) {
@@ -1040,14 +1009,14 @@ impl GameManager {
     async fn run_play_menu(&mut self, local_x: f32, local_y: f32) {
         clear_background(WHITE);
         let text = "select map";
-        self.text_engine.draw_text(
+        self.assets.text_engine.draw_text(
             SCREEN_WIDTH / 2.0 - text.len() as f32 * 4.0 / 2.0,
             2.0,
             text,
             0,
         );
         if draw_button(
-            &self.text_engine,
+            &self.assets.text_engine,
             2.0,
             2.0,
             4.0 * 4.0 + 4.0,
@@ -1066,13 +1035,13 @@ impl GameManager {
         let amt_horizontal = (SCREEN_WIDTH / (PREVIEW_WIDTH + horizontal_padding)) as usize;
         let left_padding =
             (SCREEN_WIDTH - (PREVIEW_WIDTH + horizontal_padding) * amt_horizontal as f32) / 2.0;
-        for (index, map) in self.maps.iter().skip(1).enumerate() {
+        for (index, map) in self.assets.maps.iter().skip(1).enumerate() {
             let x = (index % amt_horizontal) as f32 * (PREVIEW_WIDTH + horizontal_padding)
                 + left_padding;
             let y =
                 (index / amt_horizontal) as f32 * (PREVIEW_HEIGHT + vertical_padding) + top_margin;
             if draw_button(
-                &self.text_engine,
+                &self.assets.text_engine,
                 x,
                 y,
                 PREVIEW_WIDTH + 4.0,
@@ -1084,43 +1053,52 @@ impl GameManager {
                 let index = index + 1;
                 // start game
                 // create new Sludge instance
-                let mut new = Sludge::new(
-                    self.maps[index].clone(),
-                    index,
-                    self.text_engine.clone(),
-                    false,
-                    get_seed(),
-                )
-                .await;
+                let mut new = Sludge::new(index, false, get_seed(), self.assets).await;
                 new.ui_manager.open_spawn_shop();
                 self.sludge = Some(new);
                 self.in_play_menu = false;
             }
-            map.draw_preview(x + 2.0, y + 10.0, &self.pixel_camera, &self.tileset);
-            self.text_engine.draw_text(x + 2.0, y + 2.0, &map.name, 2);
+            map.draw_preview(x + 2.0, y + 10.0, &self.pixel_camera, &self.assets.tileset);
+            self.assets
+                .text_engine
+                .draw_text(x + 2.0, y + 2.0, &map.name, 2);
         }
     }
     async fn run_main_menu(&mut self, local_x: f32, local_y: f32) {
-        draw_texture(&self.menu_texture, 0.0, 0.0, WHITE);
+        clear_background(WHITE);
+        let logo_width = 50.0;
+        draw_texture(
+            &self.assets.logo_texture,
+            (SCREEN_WIDTH - logo_width) / 2.0,
+            4.0,
+            WHITE,
+        );
 
-        let left_padding = 12.0;
-        let top_padding = 26.0;
+        self.menu_enemies.sort_by(|a, b| a.x.total_cmp(&b.x));
+        let extracted = self.menu_enemies.extract_if(.., |enemy| {
+            enemy.draw(self.assets);
+            enemy.x += enemy.ty.speed * 0.5;
+            enemy.state.score += enemy.ty.speed * 0.5;
+            enemy.x > SCREEN_WIDTH
+        });
+        for index in 0..extracted.count() {
+            self.menu_enemies.push(create_random_enemy(index));
+        }
 
+        let width = 64.0;
+        let height = 64.0;
+        let menu_x = (SCREEN_WIDTH - width) / 2.0;
+        let menu_y = 26.0;
+        draw_square(menu_x, menu_y, width, height);
         let button_width = 60.0;
         let button_height = 8.0;
+        let left_padding = menu_x + 2.0;
+        let top_padding = menu_y + 2.0;
 
-        draw_button_disabled(
-            &self.text_engine,
-            left_padding,
-            top_padding,
-            button_width,
-            button_height,
-            "load save",
-        );
         if save_exists() {
             if let Some(save) = read_save() {
                 if draw_button(
-                    &self.text_engine,
+                    &self.assets.text_engine,
                     left_padding,
                     top_padding,
                     button_width,
@@ -1129,14 +1107,23 @@ impl GameManager {
                     local_y,
                     "load save",
                 ) {
-                    let sludge = save.load(&self.maps, self.text_engine.clone()).await;
+                    let sludge = save.load(self.assets).await;
                     self.sludge = Some(sludge);
                 }
             }
+        } else {
+            draw_button_disabled(
+                &self.assets.text_engine,
+                left_padding,
+                top_padding,
+                button_width,
+                button_height,
+                "load save",
+            )
         }
         if draw_button(
-            &self.text_engine,
-            left_padding - 2.0,
+            &self.assets.text_engine,
+            left_padding,
             top_padding + button_height + 2.0,
             button_width,
             button_height,
@@ -1148,8 +1135,8 @@ impl GameManager {
             return;
         }
         if draw_button(
-            &self.text_engine,
-            left_padding - 4.0,
+            &self.assets.text_engine,
+            left_padding,
             top_padding + (button_height + 2.0) * 2.0,
             button_width,
             button_height,
@@ -1157,21 +1144,14 @@ impl GameManager {
             local_y,
             "open lab",
         ) {
-            let mut new = Sludge::new(
-                self.maps[0].clone(),
-                0,
-                self.text_engine.clone(),
-                true,
-                get_seed(),
-            )
-            .await;
+            let mut new = Sludge::new(0, true, get_seed(), self.assets).await;
             new.ui_manager.open_lab_shop();
             self.sludge = Some(new);
         }
         #[cfg(not(target_arch = "wasm32"))]
         if draw_button(
-            &self.text_engine,
-            left_padding - 6.0,
+            &self.assets.text_engine,
+            left_padding,
             top_padding + (button_height + 2.0) * 3.0,
             button_width,
             button_height,
@@ -1303,6 +1283,16 @@ impl GameManager {
 
 #[macroquad::main("sludge")]
 async fn main() {
-    let mut game_manager = GameManager::new();
+    let assets = GameAssets {
+        maps: load_maps(),
+        logo_texture: assets::load_texture("data/assets/logo.png"),
+        text_engine: TextEngine::new(),
+        tileset: load_spritesheet("data/assets/tileset.png", SPRITE_SIZE_USIZE),
+        icon_sheet: load_spritesheet("data/assets/entities.png", SPRITE_SIZE_USIZE),
+        card_sheet: load_spritesheet("data/assets/cards.png", SPRITE_SIZE_USIZE),
+        particle_sheet: load_spritesheet("data/assets/particles.png", SPRITE_SIZE_USIZE),
+        sfx_manager: SFXManager::new().await,
+    };
+    let mut game_manager = GameManager::new(&assets).await;
     game_manager.run().await;
 }

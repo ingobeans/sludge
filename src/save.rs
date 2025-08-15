@@ -13,11 +13,9 @@ use base64::{prelude::BASE64_STANDARD, Engine};
 use bincode::{decode_from_slice, encode_to_vec};
 
 use crate::cards::{get_cards, library, Card};
-use crate::map::Map;
 use crate::tower::get_towers;
-use crate::ui::TextEngine;
-use crate::Sludge;
 use crate::{consts::*, ui};
+use crate::{GameAssets, Sludge};
 
 #[cfg(not(target_arch = "wasm32"))]
 fn get_save_path() -> PathBuf {
@@ -127,16 +125,9 @@ impl SaveData {
             inventory,
         }
     }
-    pub async fn load(&self, maps: &[Map], text_engine: TextEngine) -> Sludge {
+    pub async fn load<'a>(&self, assets: &'a GameAssets) -> Sludge<'a> {
         let all_cards = get_cards();
-        let mut new = Sludge::new(
-            maps[self.map_index as usize].clone(),
-            self.map_index as usize,
-            text_engine,
-            false,
-            self.seed,
-        )
-        .await;
+        let mut new = Sludge::new(self.map_index as usize, false, self.seed, assets).await;
         new.lives = self.lives;
         new.ui_manager.gold = self.gold;
         new.round_manager.round = self.round_index as usize;
